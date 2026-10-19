@@ -1,16 +1,21 @@
 # Chief of Staff
 
-A personal AI chief of staff. The assistant is called **Tower** (the user picks the name; see [docs/vision.md](docs/vision.md)).
+A personal AI chief of staff app.
+
+## Naming
+
+- **Chief of Staff** is the app: the product, the repo, the server, the database, the code (prefix `cos`).
+- **Tower** is Andrew's name for his assistant. Every user names their own (see [docs/vision.md](docs/vision.md)). These docs say "Tower" when describing Andrew's setup and examples; product-level docs say "the assistant".
 
 Tower runs the morning, watches every calendar in the household, spots conflicts before they happen and proposes fixes. Nothing is created or sent until you approve it.
 
-Today Tower runs as a Claude Code scheduled task wired to Gmail, Google Calendar and Brain. This repo is the living spec for that setup and the source for the self-contained Tower app ([docs/self-contained.md](docs/self-contained.md)), whose only outside resources are hosting, the phone carrier, the AI service and Google.
+Today Tower runs as a Claude Code scheduled task wired to Gmail, Google Calendar and Brain. This repo is the living spec for that setup and the source for the self-contained Chief of Staff app ([docs/self-contained.md](docs/self-contained.md)), whose only outside resources are hosting, the phone carrier, the AI service and Google.
 
 ## What's here
 
 | Path | What it is |
 |---|---|
-| [docs/self-contained.md](docs/self-contained.md) | **Target design:** one Tower app; only hosting, telephony, AI and Google stay outside |
+| [docs/self-contained.md](docs/self-contained.md) | **Target design:** one Chief of Staff app; only hosting, telephony, AI and Google stay outside |
 | [docs/architecture.md](docs/architecture.md) | How Tower works end to end, without readywhen |
 | [docs/vision.md](docs/vision.md) | End goal, principles, product requirements |
 | [docs/deployment.md](docs/deployment.md) | Cloud, hybrid and self-hosted (home/office) modes |

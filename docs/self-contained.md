@@ -1,6 +1,6 @@
-# Self-contained Tower
+# Self-contained Chief of Staff
 
-Goal: one Tower app that does everything itself. The only outside resources are the ones that can't sensibly be owned:
+Goal: one Chief of Staff app that does everything itself (Andrew's assistant inside it is Tower). The only outside resources are the ones that can't sensibly be owned:
 
 | Allowed outside resource | Why it stays outside |
 |---|---|
@@ -18,7 +18,7 @@ Everything else moves inside the app.
 | Run the brief every morning | Claude Code scheduled task | Built-in scheduler | No |
 | Read/write Calendar and Gmail | Claude connectors | Direct Google APIs with Tower's own OAuth | Google only |
 | Meeting notes | Granola connector | Optional connector; off by default | Optional |
-| Commitments board | Gist (`tower-board.json`) | Local database (SQLite) | No |
+| Commitments board | Gist (`cos-board.json`) | Local database (SQLite) | No |
 | Rules, preferences, context | Brain gist | Local database; **Brain sync** as an optional two-way connector so the Brain app still shows Tower's memory | Optional |
 | Digest intake | Gmail + AgentMail inbox | Gmail label via plus-address (`awpeace1906+tower@gmail.com` → label `Tower/Intake`), read through the Gmail API. Self-hosted companies can point Tower at any IMAP mailbox instead | No (uses Gmail) |
 | Commitment tracking | readywhen | Built-in capture + board | No |
@@ -35,7 +35,7 @@ Removed entirely: readywhen, AgentMail, Claude Code scheduled tasks, Claude conn
 One process, one Docker image, one database file.
 
 ```
-                        ┌──────────────────────── Tower app ────────────────────────┐
+                        ┌──────────────────────── Chief of Staff app ────────────────────────┐
  Carrier (SMS/calls) ──►│ Channels: SMS · calls · voice notes · web/PWA · email     │
                         │      │                                                     │
                         │ Speech: Whisper (in) · Piper (out)                         │
@@ -65,7 +65,7 @@ One process, one Docker image, one database file.
 ## Data and migration
 
 - Import from the current setup on first run: `config/tower.json`, `config/digests.json`, Tower entries from Brain, and any board items.
-- Export at any time: one JSON file in `brain/v1` + `tower-board/v1` formats, so nothing is locked in.
+- Export at any time: one JSON file in `brain/v1` + `cos-board/v1` formats, so nothing is locked in.
 - Backups: nightly copy of the SQLite file to wherever the user chooses (local disk, S3-compatible bucket).
 
 ## Transition plan

@@ -16,9 +16,9 @@
 - [ ] Run capture + board alongside readywhen for 2 weeks; log misses in `docs/capture-misses.md`
 - [ ] Parity reached → drop readywhen from the brief; move brief time if wanted
 - [x] Voice and messaging spec; deployment modes (cloud / hybrid / self-hosted)
-- [ ] Choose home hardware for the Tower server
+- [ ] Choose home hardware for the Chief of Staff server
 - [ ] Rent a number (VoIP.ms or Telnyx); start A2P 10DLC registration
-- [ ] Tower server v0: inbound SMS → Claude with Tower's tools → reply; approvals by text
+- [ ] Chief of Staff server v0: inbound SMS → Claude with Tower's tools → reply; approvals by text
 - [ ] Voice notes with local Whisper
 - [ ] Calls via provider real-time speech; later local speech
 - [ ] Retire readywhen's WhatsApp
@@ -28,7 +28,7 @@
 - [ ] burrell.edu Outlook rules: forward Microsoft 365 digests (Viva briefing, Teams, Planner, SharePoint) to the Tower inbox; confirm IT allows external forwarding
 - [ ] Confirm real sender addresses for each adapter from the first digest received
 
-## The app: self-contained Tower
+## The app: self-contained Chief of Staff
 
 See [docs/self-contained.md](docs/self-contained.md).
 
@@ -45,7 +45,7 @@ See [docs/self-contained.md](docs/self-contained.md).
 
 - [ ] Configurable assistant name, divisions, coverage people, standing agreements
 - [ ] Google OAuth for Calendar and Gmail; Microsoft Graph as an optional direct source
-- [ ] Per-user Tower inbox and a digest adapter library users can extend
+- [ ] Per-user assistant inbox and a digest adapter library users can extend
 - [ ] Brain (`brain/v1` gist) as the memory store
 - [ ] Scheduler for the brief and re-plan triggers
 - [ ] One-tap approvals (push / email)

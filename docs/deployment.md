@@ -5,7 +5,7 @@ People and companies will want different trade-offs between convenience and cont
 | | **Cloud** (default) | **Hybrid** | **Self-hosted** (home or office) |
 |---|---|---|---|
 | Who it's for | Most people; zero setup | Privacy-minded individuals (Andrew's setup) | Practices, clinics, companies with their own IT |
-| Tower server | Our cloud | Your machine | Your machine or your servers |
+| Chief of Staff server | Our cloud | Your machine | Your machine or your servers |
 | Phone number | We provision it | You rent it (VoIP.ms, Telnyx, Twilio) | You rent it, or bring your own SIP trunk / PBX (Asterisk, FreeSWITCH, existing office phone system) |
 | Speech (calls, voice notes) | Hosted | Voice notes local; calls hosted until hardware allows | Fully local (Whisper, Piper/Kokoro) |
 | Memory (Brain) and board | Your private gist | Your private gist | Your gist, or a local database / your own storage |
