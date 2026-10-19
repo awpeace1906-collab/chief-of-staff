@@ -1,0 +1,43 @@
+{
+  "assistant": { "name": "Tower", "owner": "Andrew", "email": "awpeace1906@gmail.com" },
+  "timezone": "America/Denver",
+  "brief": { "time": "08:25", "deliver": ["email", "claude-session"], "subjectPrefix": "Tower:" },
+  "approvals": "propose-only",
+  "divisions": {
+    "me": {
+      "label": "Me",
+      "calendars": {
+        "Andrew's Calendar": "awpeace1906@gmail.com",
+        "Andrew Work": "21651c05bcd47141a608f2b0c0a47a3445a2f0fdf179ac3f8b4df7642cad6938@group.calendar.google.com"
+      },
+      "notes": "No call calendar right now."
+    },
+    "stephanie": {
+      "label": "Stephanie",
+      "calendars": {
+        "Stephanie": "peacestephaniem@gmail.com",
+        "LCDF": "25ca89a80db464d95fb2d4f71f7902c765efe8334247bd80fc111ba665479e4e@group.calendar.google.com",
+        "Call": "4d42db5d8f7abfd36db079aff00aa3c7fbfad60f8871d7bbf75a93af5de97e06@group.calendar.google.com"
+      },
+      "notes": "Call is Stephanie's call schedule."
+    },
+    "kids": {
+      "label": "Kids & coverage",
+      "calendars": {
+        "Family": "family06075562626243028006@group.calendar.google.com",
+        "Tiffany Schedule": "e8357bc9ccf690ed8762c48241f1433730406533eb8880dd9a60725daeb5483a@group.calendar.google.com"
+      },
+      "coverage": ["Tiffany"],
+      "notes": "Tiffany is the nanny."
+    }
+  },
+  "standingAgreements": [
+    {
+      "who": "Jason Wyatt",
+      "rule": "When Andrew is out of town on rotation, Jason appointments go remote. Propose switching to remote; don't flag as a conflict."
+    }
+  ],
+  "openItems": [
+    { "title": "Re-evaluate Tiffany's contract and pay", "due": null }
+  ]
+}

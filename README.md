@@ -1,0 +1,34 @@
+# Chief of Staff
+
+A personal AI chief of staff. The assistant is called **Tower** (the user picks the name; see [docs/vision.md](docs/vision.md)).
+
+Tower runs the morning, watches every calendar in the household, spots conflicts before they happen and proposes fixes. Nothing is created or sent until you approve it.
+
+Today Tower runs as a Claude Code scheduled task wired to Gmail, Google Calendar and Brain. This repo is the living spec for that setup, and later the source for a self-contained app that does the same job without Claude Code.
+
+## What's here
+
+| Path | What it is |
+|---|---|
+| [docs/vision.md](docs/vision.md) | End goal, principles, product requirements |
+| [docs/features/](docs/features/) | One file per feature: what it does, its rules, its data |
+| [docs/integrations.md](docs/integrations.md) | Every outside system Tower reads or writes, and how |
+| [config/tower.json](config/tower.json) | Andrew's personal config: calendars, divisions, people, rules |
+| [prompts/morning-brief.md](prompts/morning-brief.md) | The exact instructions the daily scheduled task runs |
+| [tools/tower_brain.py](tools/tower_brain.py) | Read and write Tower's memory in Brain |
+| [ROADMAP.md](ROADMAP.md) | What's live, what's next, what the app needs |
+
+## Status
+
+| Feature | Status |
+|---|---|
+| Morning brief (8:25am MT daily) | Live |
+| Coverage check | Live (inside the brief) |
+| Propose → approve flow | Live (approve in the Claude session) |
+| Brain as long-term memory | Built; waiting on `BRAIN_GIST_TOKEN` and `api.github.com` access |
+| Voice | Interim: readywhen WhatsApp beta. Own line later |
+| Self-contained app | Later |
+
+## Rule for changes
+
+When a rule, workflow or integration changes, update the matching doc here in the same change. If it isn't written here, the app won't have it.
