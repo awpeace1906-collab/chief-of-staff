@@ -6,7 +6,7 @@ import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS settings (
@@ -33,6 +33,11 @@ CREATE TABLE IF NOT EXISTS board_items (
     updated_at TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS secrets (
+    key   TEXT PRIMARY KEY,
+    value TEXT NOT NULL              -- JSON; OAuth tokens and the like, never exported
+);
+
 CREATE TABLE IF NOT EXISTS audit_log (
     id     INTEGER PRIMARY KEY AUTOINCREMENT,
     at     TEXT NOT NULL,
@@ -55,6 +60,7 @@ def connect(path: Path | str | None = None) -> sqlite3.Connection:
     path = Path(path) if path else default_path()
     if str(path) != ":memory:":
         path.parent.mkdir(parents=True, exist_ok=True)
+        path.touch(mode=0o600, exist_ok=True)  # holds OAuth tokens: owner-only
     conn = sqlite3.connect(path, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode=WAL")
@@ -68,3 +74,19 @@ def audit(conn: sqlite3.Connection, actor: str, action: str, **detail) -> None:
         "INSERT INTO audit_log (at, actor, action, detail) VALUES (?, ?, ?, ?)",
         (now(), actor, action, json.dumps(detail)),
     )
+
+
+def get_secret(conn: sqlite3.Connection, key: str):
+    row = conn.execute("SELECT value FROM secrets WHERE key = ?", (key,)).fetchone()
+    return json.loads(row["value"]) if row else None
+
+
+def put_secret(conn: sqlite3.Connection, key: str, value) -> None:
+    """Store a secret; None deletes it. The caller commits."""
+    if value is None:
+        conn.execute("DELETE FROM secrets WHERE key = ?", (key,))
+    else:
+        conn.execute(
+            "INSERT INTO secrets (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+            (key, json.dumps(value)),
+        )

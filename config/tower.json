@@ -71,5 +71,9 @@
     },
     "ai": "anthropic-api",
     "notes": "No spare machine. Start on a ~$5/mo cloud server; move to a Mac mini M4 (or N100 mini PC for text only) once usage is clear."
+  },
+  "google": {
+    "intakeAddress": "awpeace1906+tower@gmail.com",
+    "redirectUri": "http://127.0.0.1:8700/oauth/google/callback"
   }
 }
