@@ -32,9 +32,10 @@
 
 See [docs/self-contained.md](docs/self-contained.md).
 
-- [ ] v0.1 Skeleton: FastAPI app, SQLite store, settings, Docker image; import `config/*.json`
+- [x] v0.1 Skeleton: FastAPI app, SQLite store, settings, AI routes, Docker image; import `config/*.json`, Brain and board; portable export ([app/](app/))
 - [ ] v0.2 Google: own OAuth; Calendar + Gmail read; plus-address intake label
-- [ ] v0.3 Core: capture → board → plan with Claude tool use; morning brief by email
+- [ ] v0.3 Core: capture → board → plan with Claude tool use; morning brief by email; token usage logged per route
+- [ ] Optional local AI provider (Ollama / llama.cpp) for any route ([docs/features/ai-providers.md](docs/features/ai-providers.md))
 - [ ] v0.4 Approvals: PWA (brief, board, one-tap approve) + audit log
 - [ ] v0.5 Channels: carrier webhooks for SMS; approvals by text
 - [ ] v0.6 Voice notes (faster-whisper); calls via carrier speech; Piper for replies

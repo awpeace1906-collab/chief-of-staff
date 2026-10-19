@@ -57,7 +57,7 @@ One process, one Docker image, one database file.
 | Web/API | FastAPI | Webhooks, PWA backend and settings API in one |
 | Store | SQLite (one file) | Zero setup, easy backup; swap for Postgres in company installs |
 | Scheduler | In-process (APScheduler) | No outside cron |
-| AI | Anthropic Python SDK, tool use | Tower's tools map directly to Calendar, Gmail, board, rules |
+| AI | Anthropic Python SDK, tool use; per-task routes with an optional local (OpenAI-compatible) provider | The assistant's tools map directly to Calendar, Gmail, board, rules; see [features/ai-providers.md](features/ai-providers.md) |
 | Speech | faster-whisper, Piper | Runs on a CPU server for voice notes; live calls use the carrier's speech until hardware allows |
 | UI | Small PWA served by the app | Brief, board, proposals with one-tap approve, settings |
 | Packaging | Docker image + `docker compose up` | Same image on a cloud server, a Mac mini or an office server |
