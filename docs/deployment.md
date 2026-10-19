@@ -30,6 +30,20 @@ People and companies will want different trade-offs between convenience and cont
 | Data retention | How long transcripts, briefs and closed board items are kept |
 | Audit log | On/off; every action Tower took and who approved it |
 
+## Hardware guide (hybrid and self-hosted)
+
+Ballpark prices; check before buying. Same software everywhere, so starting in the cloud and moving home later is one migration.
+
+| Option | Up front | Power | Text + voice notes | Local live-call speech | Best for |
+|---|---|---|---|---|---|
+| Cloud server (Hetzner, DigitalOcean) | $0 | ~$5–7/mo rent | Yes | No (provider speech) | Starting out, no hardware |
+| Raspberry Pi 5, 8GB + SSD | ~$120–150 | ~$0.50/mo | Yes, slower | No | Tightest budget |
+| Mini PC, Intel N100/N150, 16GB | ~$150–250 | ~$1/mo | Yes | Borderline | Text-first users |
+| Mac mini M4, 16GB | ~$600 | ~$1/mo | Yes | Yes | Fully local, one person or small office |
+| PC with GPU (e.g. RTX 3060 12GB) | ~$500–800 | ~$5–10/mo | Yes | Yes | Several users or heavy call volume |
+
+Add a small UPS (~$60) for any home box. Andrew's plan: cloud server now, Mac mini M4 (or N100 for text only) once usage is clear.
+
 ## Company and practice installs
 
 Things organizations will ask for, to design in from the start:

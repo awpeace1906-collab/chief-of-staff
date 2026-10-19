@@ -63,13 +63,13 @@
   "hosting": {
     "mode": "hybrid",
     "planned": true,
-    "server": null,
+    "server": "cloud-vps (planned)",
     "telephony": null,
     "speech": {
       "voiceNotes": "local-whisper",
       "calls": "provider-realtime"
     },
     "ai": "anthropic-api",
-    "notes": "Hardware and number not chosen yet."
+    "notes": "No spare machine. Start on a ~$5/mo cloud server; move to a Mac mini M4 (or N100 mini PC for text only) once usage is clear."
   }
 }
