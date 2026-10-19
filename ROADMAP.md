@@ -28,7 +28,20 @@
 - [ ] burrell.edu Outlook rules: forward Microsoft 365 digests (Viva briefing, Teams, Planner, SharePoint) to the Tower inbox; confirm IT allows external forwarding
 - [ ] Confirm real sender addresses for each adapter from the first digest received
 
-## The app (later)
+## The app: self-contained Tower
+
+See [docs/self-contained.md](docs/self-contained.md).
+
+- [ ] v0.1 Skeleton: FastAPI app, SQLite store, settings, Docker image; import `config/*.json`
+- [ ] v0.2 Google: own OAuth; Calendar + Gmail read; plus-address intake label
+- [ ] v0.3 Core: capture → board → plan with Claude tool use; morning brief by email
+- [ ] v0.4 Approvals: PWA (brief, board, one-tap approve) + audit log
+- [ ] v0.5 Channels: carrier webhooks for SMS; approvals by text
+- [ ] v0.6 Voice notes (faster-whisper); calls via carrier speech; Piper for replies
+- [ ] v0.7 Brain sync (two-way, optional); export/backup
+- [ ] Cut over from Claude Code scheduled task, AgentMail and readywhen
+
+## The app: later
 
 - [ ] Configurable assistant name, divisions, coverage people, standing agreements
 - [ ] Google OAuth for Calendar and Gmail; Microsoft Graph as an optional direct source

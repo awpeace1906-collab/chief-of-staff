@@ -25,7 +25,7 @@ People and companies will want different trade-offs between convenience and cont
 | Text-to-speech | Hosted / Local Piper or Kokoro (voice) |
 | AI endpoint | Anthropic API / Bedrock / Vertex / custom |
 | Storage | Gist / local database / S3-compatible bucket |
-| Email intake | Tower inbox (AgentMail) / your own IMAP mailbox / Microsoft Graph / Google API |
+| Email intake | Gmail label via plus-address (default) / your own IMAP mailbox / Microsoft Graph |
 | Allowed users and numbers | Per person, with permissions (e.g. Stephanie can view, not approve) |
 | Data retention | How long transcripts, briefs and closed board items are kept |
 | Audit log | On/off; every action Tower took and who approved it |

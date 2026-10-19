@@ -1,6 +1,6 @@
 # Architecture
 
-Tower runs on its own. readywhen is an optional extra input, never a dependency.
+Tower runs on its own. readywhen is an optional extra input, never a dependency. This page describes the pipeline; [self-contained.md](self-contained.md) describes how it's packaged into one app.
 
 ```
  Sources ──► Capture ──► Board ──► Plan ──► Propose ──► Approve ──► Act ──► Close
