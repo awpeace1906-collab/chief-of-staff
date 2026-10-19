@@ -1,6 +1,6 @@
 # Morning brief
 
-**Status:** live. Claude Code scheduled task "Chief of Staff · Tower morning brief", daily at 8:25am America/Denver. Exact instructions: [prompts/morning-brief.md](../../prompts/morning-brief.md).
+**Status:** live as a Claude Code scheduled task; built into the Chief of Staff app in v0.3 (see below). Claude Code scheduled task "Chief of Staff · Tower morning brief", daily at 8:25am America/Denver. Exact instructions: [prompts/morning-brief.md](../../prompts/morning-brief.md).
 
 ## When
 
@@ -33,3 +33,15 @@ Emailed to Andrew (subject starts `Tower:`) and posted in the Claude session. Se
 - Works without readywhen. If readywhen's brief exists, it's only a cross-check for capture misses.
 - Times in Mountain unless Andrew is traveling; then show local and Mountain.
 - Apply standing agreements before flagging conflicts (e.g. Jason → remote during rotations).
+
+## In the Chief of Staff app (v0.3)
+
+`cos brief --send`, `POST /api/brief/run?send=true`, or automatically with `COS_SCHEDULER=1`:
+
+1. **Capture** (`triage` route, Claude Haiku 5.5): new inbox mail, sent mail and the intake address since the last run → board changes. Senders whose digest adapter is `sensitive` or `ignore` are dropped before anything reaches the model. Items close only with evidence; unknown item ids are never guessed.
+2. **Plan** (`plan` route, Claude Opus 5.5, effort high): board + capture changelog + 7-day agenda by division + standing rules → brief markdown and numbered proposals (structured JSON).
+3. **Deliver:** saved in the database (`/api/brief/latest`), and emailed to the owner only.
+
+The scheduler runs once a day at `brief.time` in the configured timezone, catches up the same day if the server was down, and retries a failed run after 15 minutes, at most 3 times a day. A brief that was written but couldn't be emailed is kept and counts as done (the error shows in the scheduler state), so a delivery problem never re-runs the model. Token use and estimated cost per route: `cos usage` or `/api/ai/usage`.
+
+Not in the app yet: readywhen parity line, flight-email parsing for coverage, Brain sync.

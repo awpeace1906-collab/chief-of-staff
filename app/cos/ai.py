@@ -3,7 +3,7 @@
 Each task the assistant does goes through a named route. A route points at a
 provider (Claude API, or a local model behind an OpenAI-compatible endpoint
 such as Ollama or llama.cpp) and a model. Users change routes in
-Settings → Advanced → AI. v0.1 only stores and resolves routes; calls arrive in v0.3.
+Settings → Advanced → AI. Calls go through cos.llm.
 """
 
 import sqlite3
@@ -18,6 +18,7 @@ ROUTES = {
 }
 
 PROVIDER_TYPES = {"anthropic", "openai-compatible"}
+EFFORTS = {"low", "medium", "high", "xhigh", "max"}
 
 DEFAULT_AI = {
     "providers": {
@@ -25,10 +26,10 @@ DEFAULT_AI = {
         "local": {"type": "openai-compatible", "enabled": False, "baseUrl": "http://localhost:11434/v1"},
     },
     "routes": {
-        "triage": {"provider": "anthropic", "model": "claude-haiku-5-5"},
-        "plan": {"provider": "anthropic", "model": "claude-opus-5-5"},
-        "draft": {"provider": "anthropic", "model": "claude-opus-5-5"},
-        "chat": {"provider": "anthropic", "model": "claude-opus-5-5"},
+        "triage": {"provider": "anthropic", "model": "claude-haiku-5-5", "effort": "low"},
+        "plan": {"provider": "anthropic", "model": "claude-opus-5-5", "effort": "high"},
+        "draft": {"provider": "anthropic", "model": "claude-opus-5-5", "effort": "medium"},
+        "chat": {"provider": "anthropic", "model": "claude-opus-5-5", "effort": "medium"},
     },
 }
 
@@ -53,6 +54,8 @@ def validate(ai: dict) -> None:
             raise ValueError(f"route '{route}' uses unknown provider '{r.get('provider')}'")
         if not r.get("model"):
             raise ValueError(f"route '{route}' needs a model")
+        if r.get("effort") is not None and r["effort"] not in EFFORTS:
+            raise ValueError(f"route '{route}' has unknown effort '{r['effort']}'")
 
 
 def resolve(conn: sqlite3.Connection, route: str) -> dict:
@@ -62,4 +65,5 @@ def resolve(conn: sqlite3.Connection, route: str) -> dict:
     provider = ai["providers"][r["provider"]]
     if not provider.get("enabled"):
         raise RuntimeError(f"route '{route}' points at disabled provider '{r['provider']}'")
-    return {"route": route, "provider": r["provider"], "model": r["model"], **provider}
+    effort = r.get("effort") or DEFAULT_AI["routes"][route]["effort"]
+    return {"route": route, "provider": r["provider"], "model": r["model"], "effort": effort, **provider}

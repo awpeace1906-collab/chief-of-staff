@@ -40,7 +40,7 @@ Today Tower runs as a Claude Code scheduled task wired to Gmail, Google Calendar
 | Digests from siloed systems (Microsoft 365 etc.) | Framework drafted; Gmail digests live, work account needs forwarding |
 | Brain as long-term memory | Built; waiting on `BRAIN_GIST_TOKEN` and `api.github.com` access |
 | Voice and messaging (own number: text, voice notes, calls) | Spec written; interim is readywhen's WhatsApp beta |
-| Self-contained app | v0.2: skeleton + direct Google Calendar/Gmail ([app/](app/)); AI brief next |
+| Self-contained app | v0.3: writes and emails the morning brief itself ([app/](app/)); approvals next |
 | AI providers | Claude by default, per-task routes; local models optional ([docs/features/ai-providers.md](docs/features/ai-providers.md)) |
 
 ## Rule for changes

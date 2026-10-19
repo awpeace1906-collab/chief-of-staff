@@ -1,4 +1,4 @@
-"""Command line: `cos serve`, `cos import`, `cos export`, `cos google`, `cos agenda`, `cos mail`."""
+"""Command line: serve, import, export, google, agenda, mail, capture, brief, usage."""
 
 import argparse
 import json
@@ -7,7 +7,7 @@ import sys
 
 import httpx
 
-from . import db
+from . import brief, capture, db, llm
 from .google import oauth
 from .google.api import Google
 from .importer import export_all, import_board, import_brain, import_config
@@ -40,6 +40,14 @@ def main(argv: list[str] | None = None) -> int:
     m.add_argument("action", choices=["search", "intake"])
     m.add_argument("query", nargs="?", help="Gmail search query (for search)")
     m.add_argument("--limit", type=int, default=10)
+
+    sub.add_parser("capture", help="read new mail and update the board")
+
+    b = sub.add_parser("brief", help="capture, then write the morning brief")
+    b.add_argument("--send", action="store_true", help="also email it to the owner")
+
+    u = sub.add_parser("usage", help="AI token use and estimated cost")
+    u.add_argument("--days", type=int, default=30)
 
     args = parser.parse_args(argv)
 
@@ -78,6 +86,16 @@ def main(argv: list[str] | None = None) -> int:
         else:
             msgs = g.intake(limit=args.limit)
         _print([{k: m[k] for k in ("date", "from", "subject", "snippet", "url")} for m in msgs])
+    elif args.cmd == "capture":
+        _print(capture.run(conn, Google(conn)))
+    elif args.cmd == "brief":
+        result = brief.run(conn, Google(conn), send=args.send)
+        print(result["subject"], "\n")
+        print(result["markdown"])
+        if result["sent"]:
+            print("\n(emailed)")
+    elif args.cmd == "usage":
+        _print(llm.usage_summary(conn, args.days))
     return 0
 
 
@@ -90,7 +108,7 @@ def run() -> int:
     """Entry point: friendly one-line errors instead of tracebacks."""
     try:
         return main()
-    except (oauth.GoogleNotConnected, RuntimeError) as e:
+    except (oauth.GoogleNotConnected, llm.ModelError, RuntimeError) as e:
         print(f"cos: {e}", file=sys.stderr)
     except httpx.HTTPError as e:
         print(f"cos: Google request failed ({e.__class__.__name__}: {e})", file=sys.stderr)

@@ -2,6 +2,7 @@
 
 import base64
 import re
+from email.message import EmailMessage
 import sqlite3
 from datetime import date, datetime, time, timedelta
 from html import unescape
@@ -11,7 +12,7 @@ from zoneinfo import ZoneInfo
 import httpx
 
 from ..store import get_setting
-from .oauth import GoogleNotConnected, access_token, expire
+from .oauth import GoogleNotConnected, access_token, expire, status
 
 CAL = "https://www.googleapis.com/calendar/v3"
 GMAIL = "https://gmail.googleapis.com/gmail/v1/users/me"
@@ -109,6 +110,24 @@ class Google:
             "body": _body(m.get("payload", {})),
             "url": f"https://mail.google.com/mail/u/0/#all/{m.get('threadId', m['id'])}",
         }
+
+    def send_to_owner(self, subject: str, text: str) -> str:
+        """Email the owner (and only the owner). Returns the Gmail message id."""
+        owner = get_setting(self.conn, "assistant", {}).get("email")
+        if not owner:
+            raise RuntimeError("no owner email; set assistant.email in settings")
+        if not status(self.conn).get("canSend"):
+            raise GoogleNotConnected("Google is connected without send permission; reconnect at /oauth/google/start")
+        msg = EmailMessage()
+        msg["To"] = owner
+        msg["From"] = owner
+        msg["Subject"] = subject
+        msg.set_content(text)
+        raw = base64.urlsafe_b64encode(msg.as_bytes()).decode()
+        token = access_token(self.conn, self.http)
+        r = self.http.post(f"{GMAIL}/messages/send", json={"raw": raw}, headers={"Authorization": f"Bearer {token}"})
+        r.raise_for_status()
+        return r.json()["id"]
 
     def intake(self, since_days: int = 2, limit: int = 50) -> list[dict]:
         """Mail sent to the intake plus-address (e.g. you+tower@gmail.com)."""

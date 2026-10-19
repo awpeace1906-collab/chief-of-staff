@@ -1,15 +1,17 @@
 # AI providers and routing
 
-**Status:** v0.1 stores and validates routes; calls arrive in v0.3.
+**Status:** live in v0.3 for the Claude provider (`triage` and `plan` are used by capture and the brief). The local provider is configurable but not wired up yet; a route pointed at it fails visibly.
 
 Every AI task goes through a named **route**, and each route picks a provider and model. Users change them in **Settings → Advanced → AI**.
 
-| Route | What it does | Default | Why |
-|---|---|---|---|
-| `triage` | Sort mail and digests, spot commitments, classify | Claude Haiku 5.5 | High volume, simple judgments; Haiku is very cheap |
-| `plan` | Morning brief, coverage check, proposals | Claude Opus 5.5 | Reasoning across calendars, travel and rules; mistakes are costly |
-| `draft` | Emails and messages for approval | Claude Opus 5.5 | Quality of writing that goes out under your name |
-| `chat` | Texts, voice notes, calls | Claude Opus 5.5 | Has to understand loose speech and act correctly |
+| Route | What it does | Default | Effort | Why |
+|---|---|---|---|---|
+| `triage` | Sort mail and digests, spot commitments, classify | Claude Haiku 5.5 | low | High volume, simple judgments; Haiku is very cheap |
+| `plan` | Morning brief, coverage check, proposals | Claude Opus 5.5 | high | Reasoning across calendars, travel and rules; mistakes are costly |
+| `draft` | Emails and messages for approval | Claude Opus 5.5 | medium | Quality of writing that goes out under your name |
+| `chat` | Texts, voice notes, calls | Claude Opus 5.5 | medium | Has to understand loose speech and act correctly |
+
+How calls are made: structured JSON output, stable instructions and rules in a cached system block, and server-side refusal fallback (`fallbacks: "default"`) on Opus and Sonnet routes. A refusal or truncated answer fails visibly; it is never silently retried on a different provider.
 
 Providers:
 - **`anthropic`**: Claude API (Anthropic SDK).
@@ -53,5 +55,5 @@ Estimates from list prices (Anthropic, Oct 2026: Haiku 5.5 $0.10 / $0.50, Sonnet
 ## Rules for any provider
 
 - No clinical or patient details in prompts, regardless of provider.
-- Every AI call is logged in the audit log with route, provider, model and token counts (v0.3).
+- Every AI call is logged with route, provider, model and token counts (`ai_usage` table; `cos usage` shows estimated cost).
 - If a route's provider is unavailable, the task fails visibly in the brief; it never silently switches to a different provider.
