@@ -16,7 +16,7 @@ Talk to Tower like a person: text it, send a voice note, or call it.
 ## Architecture (hybrid, recommended for Andrew)
 
 ```
- Phone ──SMS/call──► Carrier number ──webhook / SIP──► Tower server ──► Claude (brain)
+ Phone ──SMS/call──► Carrier number ──webhook / SIP──► Chief of Staff server ──► Claude (brain)
  (Andrew)            (VoIP.ms or Telnyx)               (home mini PC,     │
                                                         Cloudflare Tunnel) ├─► Google Calendar / Gmail
                                                            │               ├─► Board gist, Brain gist
@@ -36,7 +36,7 @@ Talk to Tower like a person: text it, send a voice note, or call it.
 ## Flows
 
 **Inbound text**
-1. Carrier posts the message to the Tower server.
+1. Carrier posts the message to the Chief of Staff server.
 2. Server checks the sender is an allowed number (Andrew; later Stephanie with her own permissions).
 3. Claude answers using Tower's tools and rules from Brain.
 4. Any action comes back as a numbered proposal; "approve 2" executes it.
@@ -69,7 +69,7 @@ Same rules as [approvals.md](approvals.md). Extra guards for phone channels:
 1. Pick hardware: spare mini PC, old Mac or Raspberry Pi 5 for text and voice notes; a machine with a GPU for local live-call speech.
 2. Open a VoIP.ms or Telnyx account and buy one number.
 3. Start A2P 10DLC registration (sole proprietor) for SMS. Takes days to weeks, so do it first.
-4. Install the Tower server and Cloudflare Tunnel (installer to come).
+4. Install the Chief of Staff server and Cloudflare Tunnel (installer to come).
 5. Point the number's SMS and voice webhooks at the tunnel URL.
 6. Add allowed numbers in settings.
 7. Test: text "what's today?", send a voice note, place a call.

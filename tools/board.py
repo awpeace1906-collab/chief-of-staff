@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
-"""Tower board (tower-board/v1) in its own private gist.
+"""Chief of Staff board (cos-board/v1) in its own private gist.
 
-  tower_board.py list [status ...]       print items (default: open proposed waiting)
-  tower_board.py add < item.json         add one item (id/createdAt/updatedAt filled in)
-  tower_board.py update <id> < patch.json  merge fields into an item
-  tower_board.py mark-captured <iso>     set lastCaptureAt after a capture run
+  board.py list [status ...]       print items (default: open proposed waiting)
+  board.py add < item.json         add one item (id/createdAt/updatedAt filled in)
+  board.py update <id> < patch.json  merge fields into an item
+  board.py mark-captured <iso>     set lastCaptureAt after a capture run
 
 Uses BRAIN_GIST_TOKEN (gist scope). Creates the gist on first write if missing.
 """
 import json, random, string, sys, time
 
-from tower_brain import API, TOKEN, now, req
+from brain_sync import API, TOKEN, now, req
 
-FILE = "tower-board.json"
-DESCRIPTION = "{ tower } board"
+FILE = "cos-board.json"
+DESCRIPTION = "{ chief of staff } board"
 
 
 def find_gist():
@@ -25,7 +25,7 @@ def find_gist():
 
 def load(url):
     if not url:
-        return {"schema": "tower-board/v1", "lastCaptureAt": None, "updatedAt": now(), "items": []}
+        return {"schema": "cos-board/v1", "lastCaptureAt": None, "updatedAt": now(), "items": []}
     return json.loads(req(url)["files"][FILE]["content"])
 
 

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Tower <-> Brain (brain/v1) gist helper.
 
-  tower_brain.py list [tag]                     print entries (default: tag "tower")
-  tower_brain.py add <tag> <summary> <content>  append a tower entry (tag: rule|preference|context)
+  brain_sync.py list [tag]                     print entries (default: tag "tower")
+  brain_sync.py add <tag> <summary> <content>  append a tower entry (tag: rule|preference|context)
 
 Reads BRAIN_GIST_TOKEN. Read-modify-write in one step; keeps every entry and
 field it didn't write; never re-adds an id listed in `deleted`.

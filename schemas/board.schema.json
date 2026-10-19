@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "tower-board/v1",
-  "title": "Tower board",
+  "$id": "cos-board/v1",
+  "title": "Chief of Staff board",
   "type": "object",
   "required": [
     "schema",
@@ -10,7 +10,7 @@
   ],
   "properties": {
     "schema": {
-      "const": "tower-board/v1"
+      "const": "cos-board/v1"
     },
     "lastCaptureAt": {
       "type": "string",

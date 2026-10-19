@@ -14,9 +14,10 @@ A self-contained application that does everything Tower does today: briefs, cove
 
 ## Product requirements
 
-- **Assistant name is configurable.** "Tower" is Andrew's name for his assistant. In the public app each user names their own. The name drives email subjects (`<name>:`), the voice wake phrase and how drafts are signed. Never hard-code it.
+- **The app is Chief of Staff; the assistant's name is the user's.** "Tower" is Andrew's alias for his assistant. In the public app each user names their own. The name drives email subjects (`<name>:`), the voice wake phrase, how drafts are signed, and the `source`/id prefix of entries it writes to Brain (Andrew's: `tower`). Never hard-code it; product code, schemas and files use `cos`.
 - **Divisions are configurable.** Users map any calendars to any divisions and say which division's events count as "working".
 - **Standing agreements are first-class.** Example: "when I'm out of town on rotation, Jason appointments go remote." Store these as rules the planner applies, not as one-off notes.
+- **Self-contained.** One app, one database. Outside resources are limited to hosting, the phone carrier, the AI service and the user's own data sources (Google). See [self-contained.md](self-contained.md).
 - **Hosting is the user's choice.** Cloud (default), hybrid, or fully self-hosted at home or in an office, set in Settings → Advanced → Hosting. People and companies can run Tower on their own hardware and integrate it with their own systems. See [deployment.md](deployment.md).
 - **Talk, text or call.** Voice and messaging are core, not add-ons. See [features/voice-and-messaging.md](features/voice-and-messaging.md).
 - **Every rule is portable.** Rules live as structured entries (Brain `brain/v1`) so the app can load the same memory.

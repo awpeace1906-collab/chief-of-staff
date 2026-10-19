@@ -5,10 +5,10 @@
 | Google Calendar | Every division's schedule | Claude connector | Read; write after approval |
 | Gmail | Inbox scan, readywhen briefs, flights, sending the brief | Claude connector | Read; send to Andrew; drafts |
 | Brain | Long-term memory (rules, preferences, context) | Private gist `brain-data.json`, `brain/v1`, via `BRAIN_GIST_TOKEN` | Read + write |
-| Tower board | Commitments (replaces readywhen's board) | Private gist `tower-board.json` (`{ tower } board`), same token | Read + write |
+| Board | Commitments (replaces readywhen's board) | Private gist `cos-board.json` (`{ chief of staff } board`), same token | Read + write |
 | readywhen | Optional cross-check during transition | Reads its brief email (no public API) | Read |
 | readywhen WhatsApp | Interim voice until Tower's own line is live | Separate; capture lands on readywhen's board, which Tower reads via the brief | — |
-| Phone number (VoIP.ms / Telnyx) | Tower's own text, voice-note and call line | Webhooks to the Tower server ([features/voice-and-messaging.md](features/voice-and-messaging.md)) | Read + write |
+| Phone number (VoIP.ms / Telnyx) | Tower's own text, voice-note and call line | Webhooks to the Chief of Staff server ([features/voice-and-messaging.md](features/voice-and-messaging.md)) | Read + write |
 | Granola | Meeting notes → commitments | Claude connector | Read |
 | Flights | Travel for coverage check | Airline / Expedia emails, TripIt forwards | Read |
 | Tower inbox `tower-andrew@agentmail.to` | Intake for digests forwarded from siloed accounts | AgentMail connector | Read; mark handled messages read |
@@ -22,7 +22,7 @@ Full contract: [awpeace1906-collab/Brain INTEGRATION.md](https://github.com/awpe
 - Read, change and `PATCH` the whole file back in one step. Keep everything Tower didn't write.
 - Tower's entries: id `tower-<ms>-<rand4>`, `"source": "tower"`, tags `["tower", rule|preference|context]`, summary ≤ 12 words.
 - Never re-add an id listed in `deleted`.
-- Helper: [tools/tower_brain.py](../tools/tower_brain.py).
+- Helper: [tools/brain_sync.py](../tools/brain_sync.py).
 
 ## Environment needs (Claude Code cloud)
 
