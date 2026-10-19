@@ -24,9 +24,12 @@ REVOKE_URL = "https://oauth2.googleapis.com/revoke"
 SCOPES = [
     "https://www.googleapis.com/auth/calendar.readonly",
     "https://www.googleapis.com/auth/gmail.readonly",
+    "https://www.googleapis.com/auth/gmail.send",  # only ever used to email the owner (the brief)
     "openid",
     "email",
 ]
+
+SEND_SCOPE = "https://www.googleapis.com/auth/gmail.send"
 
 DEFAULT_REDIRECT = "http://127.0.0.1:8700/oauth/google/callback"
 TOKEN_KEY = "google.tokens"
@@ -132,7 +135,9 @@ def status(conn: sqlite3.Connection) -> dict:
     tok = get_secret(conn, TOKEN_KEY)
     if not tok:
         return {"connected": False}
-    return {"connected": True, "scopes": tok["scope"].split(), "connectedAt": tok.get("connected_at")}
+    scopes = tok["scope"].split()
+    return {"connected": True, "scopes": scopes, "canSend": SEND_SCOPE in scopes,
+            "connectedAt": tok.get("connected_at")}
 
 
 def disconnect(conn: sqlite3.Connection, http: httpx.Client | None = None) -> None:

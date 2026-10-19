@@ -6,7 +6,7 @@ import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS settings (
@@ -36,6 +36,30 @@ CREATE TABLE IF NOT EXISTS board_items (
 CREATE TABLE IF NOT EXISTS secrets (
     key   TEXT PRIMARY KEY,
     value TEXT NOT NULL              -- JSON; OAuth tokens and the like, never exported
+);
+
+CREATE TABLE IF NOT EXISTS ai_usage (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    at          TEXT NOT NULL,
+    route       TEXT NOT NULL,
+    provider    TEXT NOT NULL,
+    model       TEXT NOT NULL,
+    input       INTEGER NOT NULL,
+    output      INTEGER NOT NULL,
+    cache_read  INTEGER NOT NULL DEFAULT 0,
+    cache_write INTEGER NOT NULL DEFAULT 0,
+    stop_reason TEXT
+);
+
+CREATE TABLE IF NOT EXISTS briefs (
+    id        INTEGER PRIMARY KEY AUTOINCREMENT,
+    at        TEXT NOT NULL,
+    day       TEXT NOT NULL,         -- local date the brief is for
+    subject   TEXT NOT NULL,
+    markdown  TEXT NOT NULL,
+    proposals TEXT NOT NULL,         -- JSON list
+    capture   TEXT NOT NULL,         -- JSON changelog from the capture step
+    sent      INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS audit_log (

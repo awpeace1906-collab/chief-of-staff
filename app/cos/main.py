@@ -4,6 +4,7 @@ import html
 import os
 import secrets
 import sqlite3
+import threading
 import time
 from contextlib import asynccontextmanager
 from typing import Any
@@ -12,7 +13,7 @@ import httpx
 from fastapi import Body, Depends, FastAPI, Header, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
 
-from . import __version__, ai, db, store
+from . import __version__, ai, brief, capture, db, llm, scheduler, store
 from .google import oauth
 from .google.api import Google
 from .importer import export_all
@@ -20,16 +21,20 @@ from .importer import export_all
 OAUTH_PENDING_TTL = 600
 
 
-def create_app(db_path: str | None = None, http: httpx.Client | None = None) -> FastAPI:
-    """`http` overrides the client used for Google calls (tests pass a mock transport)."""
+def create_app(db_path: str | None = None, http: httpx.Client | None = None, client=None) -> FastAPI:
+    """`http` overrides the Google HTTP client and `client` the Anthropic client (tests pass fakes)."""
     conn: sqlite3.Connection | None = None
     pending: dict[str, tuple[str, float]] = {}  # OAuth state -> (PKCE verifier, created)
+    run_lock = threading.Lock()  # one capture/brief at a time, manual or scheduled
 
     @asynccontextmanager
     async def lifespan(_: FastAPI):
         nonlocal conn
         conn = db.connect(db_path)
+        stop = scheduler.start(conn, run_lock) if os.environ.get("COS_SCHEDULER") == "1" else None
         yield
+        if stop:
+            stop.set()
         conn.close()
 
     app = FastAPI(title="Chief of Staff", version=__version__, lifespan=lifespan)
@@ -52,6 +57,8 @@ def create_app(db_path: str | None = None, http: httpx.Client | None = None) -> 
             return fn()
         except oauth.GoogleNotConnected as e:
             raise HTTPException(409, str(e))
+        except llm.ModelError as e:
+            raise HTTPException(502, str(e))
         except httpx.HTTPStatusError as e:
             raise HTTPException(502, f"Google returned {e.response.status_code}")
         except httpx.HTTPError as e:
@@ -165,6 +172,35 @@ def create_app(db_path: str | None = None, http: httpx.Client | None = None) -> 
             return google_call(lambda: Google(c, http).intake(max(1, min(days, 30))))
         except RuntimeError as e:
             raise HTTPException(409, str(e))
+
+    # Capture, brief, AI usage
+
+    def exclusive(fn):
+        if not run_lock.acquire(blocking=False):
+            raise HTTPException(409, "a capture or brief is already running")
+        try:
+            return google_call(fn)
+        finally:
+            run_lock.release()
+
+    @app.post("/api/capture/run", dependencies=api)
+    def capture_run(c=Depends(get_conn)):
+        return exclusive(lambda: capture.run(c, Google(c, http), client=client))
+
+    @app.post("/api/brief/run", dependencies=api)
+    def brief_run(send: bool = False, c=Depends(get_conn)):
+        return exclusive(lambda: brief.run(c, Google(c, http), client=client, send=send))
+
+    @app.get("/api/brief/latest", dependencies=api)
+    def brief_latest(c=Depends(get_conn)):
+        latest = brief.latest(c)
+        if latest is None:
+            raise HTTPException(404, "no brief yet")
+        return latest
+
+    @app.get("/api/ai/usage", dependencies=api)
+    def ai_usage(days: int = 30, c=Depends(get_conn)):
+        return llm.usage_summary(c, max(1, min(days, 365)))
 
     @app.get("/", response_class=HTMLResponse)
     def home(c=Depends(get_conn)):
