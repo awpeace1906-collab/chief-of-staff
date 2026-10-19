@@ -25,7 +25,8 @@ Today Tower runs as a Claude Code scheduled task wired to Gmail, Google Calendar
 | [config/digests.json](config/digests.json) | Digest adapters: which systems Tower reads and how |
 | [prompts/](prompts/) | The exact instructions Tower runs: morning brief, capture |
 | [schemas/board.schema.json](schemas/board.schema.json) | The commitments board format |
-| [tools/](tools/) | Brain (memory) and board (commitments) helpers |
+| [app/](app/) | **The Chief of Staff app** (v0.1 skeleton): run instructions and API |
+| [tools/](tools/) | Brain (memory) and board (commitments) helpers for the current Claude Code setup |
 | [ROADMAP.md](ROADMAP.md) | What's live, what's next, what the app needs |
 
 ## Status
@@ -39,7 +40,8 @@ Today Tower runs as a Claude Code scheduled task wired to Gmail, Google Calendar
 | Digests from siloed systems (Microsoft 365 etc.) | Framework drafted; Gmail digests live, work account needs forwarding |
 | Brain as long-term memory | Built; waiting on `BRAIN_GIST_TOKEN` and `api.github.com` access |
 | Voice and messaging (own number: text, voice notes, calls) | Spec written; interim is readywhen's WhatsApp beta |
-| Self-contained app | Later |
+| Self-contained app | v0.1 skeleton built ([app/](app/)); AI, Google and channels next |
+| AI providers | Claude by default, per-task routes; local models optional ([docs/features/ai-providers.md](docs/features/ai-providers.md)) |
 
 ## Rule for changes
 

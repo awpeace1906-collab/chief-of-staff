@@ -1,0 +1,14 @@
+services:
+  cos:
+    build: .
+    ports:
+      - "127.0.0.1:8700:8700"
+    volumes:
+      - cos-data:/data
+      - ../config:/config:ro
+    environment:
+      COS_API_TOKEN: ${COS_API_TOKEN:?set COS_API_TOKEN in .env}
+    restart: unless-stopped
+
+volumes:
+  cos-data:
