@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "tower-board/v1",
+  "title": "Tower board",
+  "type": "object",
+  "required": ["schema", "items", "updatedAt"],
+  "properties": {
+    "schema": { "const": "tower-board/v1" },
+    "lastCaptureAt": { "type": "string", "format": "date-time", "description": "End of the window the last capture run covered" },
+    "updatedAt": { "type": "string", "format": "date-time" },
+    "items": { "type": "array", "items": { "$ref": "#/$defs/item" } }
+  },
+  "$defs": {
+    "item": {
+      "type": "object",
+      "required": ["id", "title", "direction", "division", "status", "createdAt", "updatedAt"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^c-[0-9]+-[a-z0-9]{4}$" },
+        "title": { "type": "string", "description": "Imperative, under 12 words: 'Upload flu shot to My Clinical Exchange'" },
+        "direction": { "enum": ["i-owe", "owed-to-me", "deadline", "household"] },
+        "division": { "enum": ["me", "stephanie", "kids"] },
+        "counterparty": { "type": "string", "description": "Who asked, or who owes it" },
+        "due": { "type": ["string", "null"], "description": "ISO date or date-time" },
+        "dueConfidence": { "enum": ["explicit", "inferred", "none"] },
+        "status": { "enum": ["open", "proposed", "waiting", "snoozed", "done", "dropped"] },
+        "snoozedUntil": { "type": ["string", "null"] },
+        "source": {
+          "type": "object",
+          "properties": {
+            "kind": { "enum": ["gmail", "calendar", "granola", "drive", "voice", "manual", "readywhen"] },
+            "ref": { "type": "string", "description": "Thread id, event id, note id" },
+            "url": { "type": "string" }
+          }
+        },
+        "notes": { "type": "string", "description": "Context needed to act. No clinical details." },
+        "evidence": { "type": "string", "description": "What showed it was done" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      }
+    }
+  }
+}

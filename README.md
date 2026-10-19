@@ -10,12 +10,14 @@ Today Tower runs as a Claude Code scheduled task wired to Gmail, Google Calendar
 
 | Path | What it is |
 |---|---|
+| [docs/architecture.md](docs/architecture.md) | How Tower works end to end, without readywhen |
 | [docs/vision.md](docs/vision.md) | End goal, principles, product requirements |
 | [docs/features/](docs/features/) | One file per feature: what it does, its rules, its data |
 | [docs/integrations.md](docs/integrations.md) | Every outside system Tower reads or writes, and how |
 | [config/tower.json](config/tower.json) | Andrew's personal config: calendars, divisions, people, rules |
-| [prompts/morning-brief.md](prompts/morning-brief.md) | The exact instructions the daily scheduled task runs |
-| [tools/tower_brain.py](tools/tower_brain.py) | Read and write Tower's memory in Brain |
+| [prompts/](prompts/) | The exact instructions Tower runs: morning brief, capture |
+| [schemas/board.schema.json](schemas/board.schema.json) | The commitments board format |
+| [tools/](tools/) | Brain (memory) and board (commitments) helpers |
 | [ROADMAP.md](ROADMAP.md) | What's live, what's next, what the app needs |
 
 ## Status
@@ -25,6 +27,7 @@ Today Tower runs as a Claude Code scheduled task wired to Gmail, Google Calendar
 | Morning brief (8:25am MT daily) | Live |
 | Coverage check | Live (inside the brief) |
 | Propose → approve flow | Live (approve in the Claude session) |
+| Commitment capture + board (replaces readywhen) | Framework drafted; runs once the gist is reachable |
 | Brain as long-term memory | Built; waiting on `BRAIN_GIST_TOKEN` and `api.github.com` access |
 | Voice | Interim: readywhen WhatsApp beta. Own line later |
 | Self-contained app | Later |

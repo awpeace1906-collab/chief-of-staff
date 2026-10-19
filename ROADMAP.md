@@ -12,7 +12,9 @@
 
 - [ ] Connect Brain (needs `BRAIN_GIST_TOKEN` + `api.github.com` access); seed Tower's rules into it
 - [ ] Planning on the fly: when something changes (delay, cancellation, new deadline), re-plan the day and propose the moves
-- [ ] Commitment capture beyond readywhen: promises in sent mail and Granola notes
+- [x] Commitment framework drafted: architecture, board schema, capture prompt, board helper
+- [ ] Run capture + board alongside readywhen for 2 weeks; log misses in `docs/capture-misses.md`
+- [ ] Parity reached → drop readywhen from the brief; move brief time if wanted
 - [ ] Voice: try readywhen's WhatsApp beta and Claude app voice mode; decide on Tower's own line
 - [ ] Tiffany contract review: pull her scheduled hours from the calendar as a starting point
 - [ ] Dedicated Tower inbox (AgentMail) for forwarding and CC

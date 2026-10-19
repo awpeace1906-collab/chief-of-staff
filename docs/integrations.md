@@ -5,9 +5,11 @@
 | Google Calendar | Every division's schedule | Claude connector | Read; write after approval |
 | Gmail | Inbox scan, readywhen briefs, flights, sending the brief | Claude connector | Read; send to Andrew; drafts |
 | Brain | Long-term memory (rules, preferences, context) | Private gist `brain-data.json`, `brain/v1`, via `BRAIN_GIST_TOKEN` | Read + write |
-| readywhen | Commitment tracking and its own morning brief | Reads its brief email (no public API) | Read |
+| Tower board | Commitments (replaces readywhen's board) | Private gist `tower-board.json` (`{ tower } board`), same token | Read + write |
+| readywhen | Optional cross-check during transition | Reads its brief email (no public API) | Read |
 | readywhen WhatsApp | Interim voice: call, voice-note or message | Separate; capture lands on readywhen's board, which Tower reads via the brief | — |
-| Granola | Meeting notes | Claude connector (not used yet) | Read |
+| Granola | Meeting notes → commitments | Claude connector | Read |
+| Flights | Travel for coverage check | Airline / Expedia emails, TripIt forwards | Read |
 | AgentMail | Possible dedicated inbox for Tower | Claude connector (not set up) | — |
 
 ## Brain contract
