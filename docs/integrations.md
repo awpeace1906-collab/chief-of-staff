@@ -10,7 +10,8 @@
 | readywhen WhatsApp | Interim voice: call, voice-note or message | Separate; capture lands on readywhen's board, which Tower reads via the brief | — |
 | Granola | Meeting notes → commitments | Claude connector | Read |
 | Flights | Travel for coverage check | Airline / Expedia emails, TripIt forwards | Read |
-| AgentMail | Possible dedicated inbox for Tower | Claude connector (not set up) | — |
+| Tower inbox (AgentMail) | Intake for digests forwarded from siloed accounts | Claude connector (not set up) | Read |
+| Siloed systems (Microsoft 365 at burrell.edu, MedHub, Amion, Canvas, …) | Commitments, schedule changes, FYIs | Their digest emails, via adapters in `config/digests.json` | Read |
 
 ## Brain contract
 

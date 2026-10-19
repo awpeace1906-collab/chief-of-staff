@@ -7,6 +7,8 @@ Tower runs on its own. readywhen is an optional extra input, never a dependency.
  Gmail         extract    commitments  today+7    numbered     Andrew     calendar   detect done,
  Calendar      dedupe     (gist)       coverage   actions                 email      drop from board
  Granola       link       Brain rules  re-plan                            drafts
+ Digests (M365,
+  GME, call…)
  TripIt/flights                                                                        ▲
  Voice (later)                                                                         │
      └───────────────────────────── evidence (sent reply, event created) ─────────────┘
@@ -16,7 +18,7 @@ Tower runs on its own. readywhen is an optional extra input, never a dependency.
 
 | Stage | Job | Today | In the app |
 |---|---|---|---|
-| **Sources** | Raw signal | Gmail, Google Calendar, Granola connectors; flight emails (Expedia, airlines, TripIt forwards) | OAuth to the same services |
+| **Sources** | Raw signal | Gmail, Google Calendar, Granola connectors; flight emails (Expedia, airlines, TripIt forwards); digests from siloed systems via Gmail or the Tower inbox ([features/digests.md](features/digests.md)) | OAuth to the same services + a per-user Tower inbox |
 | **Capture** | Turn signal into commitments | LLM pass over the last 24h of mail and meeting notes ([prompts/capture.md](../prompts/capture.md)) | Same prompt, run on new mail via push/webhook |
 | **Board** | The single list of what's owed, by whom, by when | `tower-board.json` in a private gist ([schemas/board.schema.json](../schemas/board.schema.json)) | Same file or a local DB synced to it |
 | **Plan** | Fit commitments into real time | Morning brief: calendars by division + coverage check | Brief + event-driven re-plan |

@@ -17,12 +17,16 @@
 - [ ] Parity reached → drop readywhen from the brief; move brief time if wanted
 - [ ] Voice: try readywhen's WhatsApp beta and Claude app voice mode; decide on Tower's own line
 - [ ] Tiffany contract review: pull her scheduled hours from the calendar as a starting point
-- [ ] Dedicated Tower inbox (AgentMail) for forwarding and CC
+- [x] Digest framework: adapters registry, routing, Roundup section
+- [ ] Create the Tower inbox (AgentMail); set it as `intake.towerInbox`
+- [ ] burrell.edu Outlook rules: forward Microsoft 365 digests (Viva briefing, Teams, Planner, SharePoint) to the Tower inbox; confirm IT allows external forwarding
+- [ ] Confirm real sender addresses for each adapter from the first digest received
 
 ## The app (later)
 
 - [ ] Configurable assistant name, divisions, coverage people, standing agreements
-- [ ] Google OAuth for Calendar and Gmail
+- [ ] Google OAuth for Calendar and Gmail; Microsoft Graph as an optional direct source
+- [ ] Per-user Tower inbox and a digest adapter library users can extend
 - [ ] Brain (`brain/v1` gist) as the memory store
 - [ ] Scheduler for the brief and re-plan triggers
 - [ ] One-tap approvals (push / email)

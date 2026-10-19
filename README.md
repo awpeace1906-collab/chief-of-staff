@@ -15,6 +15,7 @@ Today Tower runs as a Claude Code scheduled task wired to Gmail, Google Calendar
 | [docs/features/](docs/features/) | One file per feature: what it does, its rules, its data |
 | [docs/integrations.md](docs/integrations.md) | Every outside system Tower reads or writes, and how |
 | [config/tower.json](config/tower.json) | Andrew's personal config: calendars, divisions, people, rules |
+| [config/digests.json](config/digests.json) | Digest adapters: which systems Tower reads and how |
 | [prompts/](prompts/) | The exact instructions Tower runs: morning brief, capture |
 | [schemas/board.schema.json](schemas/board.schema.json) | The commitments board format |
 | [tools/](tools/) | Brain (memory) and board (commitments) helpers |
@@ -28,6 +29,7 @@ Today Tower runs as a Claude Code scheduled task wired to Gmail, Google Calendar
 | Coverage check | Live (inside the brief) |
 | Propose → approve flow | Live (approve in the Claude session) |
 | Commitment capture + board (replaces readywhen) | Framework drafted; runs once the gist is reachable |
+| Digests from siloed systems (Microsoft 365 etc.) | Framework drafted; Gmail digests live, work account needs forwarding |
 | Brain as long-term memory | Built; waiting on `BRAIN_GIST_TOKEN` and `api.github.com` access |
 | Voice | Interim: readywhen WhatsApp beta. Own line later |
 | Self-contained app | Later |

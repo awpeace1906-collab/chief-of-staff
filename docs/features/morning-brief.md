@@ -12,7 +12,8 @@
 2. The board, freshly updated by the capture step ([commitments.md](commitments.md)).
 3. All division calendars, today + 7 days.
 4. Flight emails for travel changes.
-5. Optional: today's readywhen brief, as a cross-check only.
+5. Digests from siloed systems (Microsoft 365, residency platforms, call schedules, …), via Gmail or the Tower inbox.
+6. Optional: today's readywhen brief, as a cross-check only.
 
 ## Output
 
@@ -23,8 +24,9 @@ Emailed to Andrew (subject starts `Tower:`) and posted in the Claude session. Se
 3. **Coverage** (see [coverage-check.md](coverage-check.md))
 4. **Next 7 days**, only what matters
 5. **Proposals**, numbered (see [approvals.md](approvals.md))
-6. **Closed since yesterday**, with the evidence
-7. Parity line while readywhen runs in parallel; `Brain offline: <reason>` if memory couldn't load
+6. **Roundup**: one line per digest source, only when it matters ([digests.md](digests.md))
+7. **Closed since yesterday**, with the evidence
+8. Parity line while readywhen runs in parallel; `Brain offline: <reason>` if memory couldn't load
 
 ## Rules
 

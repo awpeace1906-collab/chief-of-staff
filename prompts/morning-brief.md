@@ -13,7 +13,7 @@ Tower morning brief. Run the daily brief for Andrew, then email it to Andrew (su
 
 **Step 1: capture.** Run [prompts/capture.md](capture.md) for the window since the board's `lastCaptureAt`, update the board with `tools/tower_board.py`, then `mark-captured`. readywhen is optional: if today's readywhen brief exists, use it only as a cross-check and report the parity line. If the board gist is unreachable, run capture over the last 7 days of mail and show the result without saving.
 
-**Step 2: calendars.** Pull today + 7 days from every division calendar. Sections: You owe (from the board: overdue, today, next 7 days, waiting past due), Today (by division), Coverage, Next 7 days (only what matters), Proposals (numbered), Closed since yesterday, Parity line (while readywhen runs in parallel).
+**Step 2: calendars.** Pull today + 7 days from every division calendar. Sections: You owe (from the board: overdue, today, next 7 days, waiting past due), Today (by division), Coverage, Next 7 days (only what matters), Proposals (numbered), Roundup (one line per digest source, only if it matters; see docs/features/digests.md), Closed since yesterday, Parity line (while readywhen runs in parallel).
 
 **Step 3: travel.** Check flight emails (airlines, Expedia, TripIt forwards) for changes affecting the next 7 days and feed them into the coverage check.
 

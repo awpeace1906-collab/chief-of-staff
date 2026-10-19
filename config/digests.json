@@ -1,0 +1,294 @@
+{
+  "schema": "tower-digests/v1",
+  "intake": {
+    "gmail": "awpeace1906@gmail.com",
+    "towerInbox": null,
+    "notes": "towerInbox: AgentMail address once created. Siloed accounts forward digests there. Sender addresses for systems not yet seen in Andrew's mail are best guesses; confirm and correct each from the first real digest."
+  },
+  "adapters": [
+    {
+      "id": "m365-viva-briefing",
+      "silo": "Microsoft 365",
+      "match": {
+        "from": [
+          "viva-noreply@microsoft.com",
+          "no-reply@microsoft.com"
+        ],
+        "subject": [
+          "Your daily briefing",
+          "briefing"
+        ]
+      },
+      "yields": [
+        "commitments",
+        "schedule"
+      ],
+      "handling": "itemize",
+      "division": "me",
+      "notes": "Viva Insights briefing lists follow-ups you promised in email and meetings to prep."
+    },
+    {
+      "id": "m365-teams-activity",
+      "silo": "Microsoft 365",
+      "match": {
+        "from": [
+          "noreply@email.teams.microsoft.com"
+        ],
+        "subject": [
+          "missed",
+          "activity",
+          "mentioned you"
+        ]
+      },
+      "yields": [
+        "commitments",
+        "fyi"
+      ],
+      "handling": "itemize",
+      "division": "me"
+    },
+    {
+      "id": "m365-planner-todo",
+      "silo": "Microsoft 365",
+      "match": {
+        "from": [
+          "noreply@planner.office365.com",
+          "no-reply@todo.microsoft.com"
+        ],
+        "subject": [
+          "due",
+          "assigned"
+        ]
+      },
+      "yields": [
+        "commitments"
+      ],
+      "handling": "itemize",
+      "division": "me"
+    },
+    {
+      "id": "m365-sharepoint-onedrive",
+      "silo": "Microsoft 365",
+      "match": {
+        "from": [
+          "no-reply@sharepointonline.com"
+        ],
+        "subject": [
+          "shared",
+          "commented",
+          "digest"
+        ]
+      },
+      "yields": [
+        "commitments",
+        "fyi"
+      ],
+      "handling": "itemize",
+      "division": "me",
+      "notes": "A comment or @mention asking for edits becomes a commitment."
+    },
+    {
+      "id": "m365-outlook-calendar",
+      "silo": "Microsoft 365",
+      "match": {
+        "subject": [
+          "Updated invitation",
+          "Canceled:",
+          "Accepted:",
+          "Declined:"
+        ]
+      },
+      "yields": [
+        "schedule"
+      ],
+      "handling": "itemize",
+      "division": "me"
+    },
+    {
+      "id": "gme-evals-schedules",
+      "silo": "Residency / school platforms (MedHub, New Innovations)",
+      "match": {
+        "from": [
+          "medhub",
+          "new-innov.com"
+        ],
+        "subject": [
+          "evaluation",
+          "due",
+          "schedule"
+        ]
+      },
+      "yields": [
+        "commitments",
+        "schedule"
+      ],
+      "handling": "itemize",
+      "division": "me"
+    },
+    {
+      "id": "call-scheduling",
+      "silo": "Call schedules (Amion, QGenda, ShiftAdmin)",
+      "match": {
+        "from": [
+          "amion.com",
+          "qgenda.com",
+          "shiftadmin.com"
+        ]
+      },
+      "yields": [
+        "schedule"
+      ],
+      "handling": "itemize",
+      "division": "me",
+      "notes": "Fills Andrew's missing call calendar once a call schedule exists."
+    },
+    {
+      "id": "clinical-compliance",
+      "silo": "Rotation compliance (MyClinicalExchange, ACEMAPP)",
+      "match": {
+        "from": [
+          "myclinicalexchange.com",
+          "acemapp.org"
+        ]
+      },
+      "yields": [
+        "commitments"
+      ],
+      "handling": "itemize",
+      "division": "me"
+    },
+    {
+      "id": "residency-apps",
+      "silo": "Residency applications (Thalamus, ERAS, ResidencyCAS)",
+      "match": {
+        "from": [
+          "thalamusgme.com",
+          "aamc.org",
+          "liaisoncas.com"
+        ]
+      },
+      "yields": [
+        "commitments",
+        "schedule"
+      ],
+      "handling": "itemize",
+      "division": "me",
+      "notes": "Interview offers and replies-requested are high priority."
+    },
+    {
+      "id": "lms",
+      "silo": "Coursework (Canvas, Blackboard)",
+      "match": {
+        "from": [
+          "instructure.com",
+          "blackboard.com"
+        ]
+      },
+      "yields": [
+        "commitments"
+      ],
+      "handling": "itemize",
+      "division": "me"
+    },
+    {
+      "id": "saem-connected",
+      "silo": "SAEM",
+      "match": {
+        "from": [
+          "ConnectED@saem.org"
+        ]
+      },
+      "yields": [
+        "fyi"
+      ],
+      "handling": "summarize",
+      "division": "me"
+    },
+    {
+      "id": "asa-daily",
+      "silo": "ASA",
+      "match": {
+        "from": [
+          "ASADailyNews@ascendmedia.com",
+          "info@mail.asahq.org"
+        ]
+      },
+      "yields": [
+        "fyi"
+      ],
+      "handling": "summarize",
+      "division": "me"
+    },
+    {
+      "id": "anescalc-beta",
+      "silo": "AnesCalc (own project)",
+      "match": {
+        "subject": [
+          "AnesCalc beta daily summary",
+          "New AnesCalc beta tester"
+        ]
+      },
+      "yields": [
+        "metrics"
+      ],
+      "handling": "metrics",
+      "division": "me"
+    },
+    {
+      "id": "usps-informed-delivery",
+      "silo": "USPS",
+      "match": {
+        "from": [
+          "USPSInformeddelivery@email.informeddelivery.usps.com"
+        ]
+      },
+      "yields": [
+        "fyi"
+      ],
+      "handling": "summarize",
+      "division": "kids",
+      "notes": "Only mention packages or mail that need action."
+    },
+    {
+      "id": "readywhen",
+      "silo": "readywhen (transition only)",
+      "match": {
+        "from": [
+          "noreply@readywhen.ai"
+        ]
+      },
+      "yields": [
+        "commitments"
+      ],
+      "handling": "itemize",
+      "division": "me",
+      "notes": "Parity cross-check only. Remove when readywhen is dropped."
+    },
+    {
+      "id": "dexcom-clarity",
+      "silo": "Health data",
+      "match": {
+        "from": [
+          "noreply@email.clarity.dexcom.com"
+        ]
+      },
+      "yields": [],
+      "handling": "sensitive",
+      "division": "me"
+    }
+  ],
+  "generic": {
+    "subjectHints": [
+      "digest",
+      "summary",
+      "activity",
+      "briefing",
+      "recap",
+      "you missed",
+      "weekly",
+      "daily"
+    ],
+    "handling": "itemize",
+    "proposeAdapter": true
+  }
+}
