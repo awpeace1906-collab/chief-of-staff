@@ -27,4 +27,6 @@ You are Tower's capture step. Read the sources below for the window since `lastC
 
 **readywhen (optional cross-check):** if today's readywhen brief exists, list each item it mentions and mark whether the board already has it. Report the parity line in the brief. Add any real miss to the board with `source.kind: "readywhen"`.
 
+**AgentMail read state:** after handling a message from any AgentMail inbox, remove its `unread` label. Leave unhandled or unclear messages unread. Don't change Gmail read state.
+
 Return a short changelog: added, updated, closed, and any questions for Andrew.

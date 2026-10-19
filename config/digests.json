@@ -2,8 +2,9 @@
   "schema": "tower-digests/v1",
   "intake": {
     "gmail": "awpeace1906@gmail.com",
-    "towerInbox": null,
-    "notes": "towerInbox: AgentMail address once created. Siloed accounts forward digests there. Sender addresses for systems not yet seen in Andrew's mail are best guesses; confirm and correct each from the first real digest."
+    "towerInbox": "tower-andrew@agentmail.to",
+    "notes": "towerInbox: AgentMail address once created. Siloed accounts forward digests there. Sender addresses for systems not yet seen in Andrew's mail are best guesses; confirm and correct each from the first real digest.",
+    "afterHandling": "Mark each AgentMail message read (remove the 'unread' label) once Tower has handled it. Applies to every AgentMail inbox Tower reads; leave unhandled or unclear messages unread."
   },
   "adapters": [
     {

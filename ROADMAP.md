@@ -18,7 +18,7 @@
 - [ ] Voice: try readywhen's WhatsApp beta and Claude app voice mode; decide on Tower's own line
 - [ ] Tiffany contract review: pull her scheduled hours from the calendar as a starting point
 - [x] Digest framework: adapters registry, routing, Roundup section
-- [ ] Create the Tower inbox (AgentMail); set it as `intake.towerInbox`
+- [x] Create the Tower inbox: `tower-andrew@agentmail.to`
 - [ ] burrell.edu Outlook rules: forward Microsoft 365 digests (Viva briefing, Teams, Planner, SharePoint) to the Tower inbox; confirm IT allows external forwarding
 - [ ] Confirm real sender addresses for each adapter from the first digest received
 

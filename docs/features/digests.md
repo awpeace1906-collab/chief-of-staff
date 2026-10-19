@@ -11,9 +11,13 @@ Tower reads digests from one of two places:
 | Intake | How | Best for |
 |---|---|---|
 | **Gmail** | Digests already sent to awpeace1906@gmail.com | Personal services |
-| **Tower inbox** (AgentMail, e.g. `tower-andrew@…`) | Rules in other accounts auto-forward digests here | Siloed work accounts (burrell.edu Microsoft 365) and anything you want kept out of Gmail |
+| **Tower inbox** (`tower-andrew@agentmail.to`) | Rules in other accounts auto-forward digests here | Siloed work accounts (burrell.edu Microsoft 365) and anything you want kept out of Gmail |
 
 A dedicated inbox is the portable choice: the public app gives every user one, and any system that can send or forward email can feed Tower.
+
+### Read state
+
+Once Tower has handled an AgentMail message (captured to the board, routed to the plan or Roundup, or ignored per its adapter), it marks it read. Anything unhandled, failed or waiting on Andrew stays unread, so unread means "Tower hasn't dealt with this". This applies to every AgentMail inbox Tower reads. Gmail read state is left alone.
 
 ### Forwarding from Microsoft 365 (burrell.edu)
 

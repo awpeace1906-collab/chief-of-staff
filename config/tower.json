@@ -1,7 +1,19 @@
 {
-  "assistant": { "name": "Tower", "owner": "Andrew", "email": "awpeace1906@gmail.com" },
+  "assistant": {
+    "name": "Tower",
+    "owner": "Andrew",
+    "email": "awpeace1906@gmail.com",
+    "inbox": "tower-andrew@agentmail.to"
+  },
   "timezone": "America/Denver",
-  "brief": { "time": "08:25", "deliver": ["email", "claude-session"], "subjectPrefix": "Tower:" },
+  "brief": {
+    "time": "08:25",
+    "deliver": [
+      "email",
+      "claude-session"
+    ],
+    "subjectPrefix": "Tower:"
+  },
   "approvals": "propose-only",
   "divisions": {
     "me": {
@@ -27,7 +39,9 @@
         "Family": "family06075562626243028006@group.calendar.google.com",
         "Tiffany Schedule": "e8357bc9ccf690ed8762c48241f1433730406533eb8880dd9a60725daeb5483a@group.calendar.google.com"
       },
-      "coverage": ["Tiffany"],
+      "coverage": [
+        "Tiffany"
+      ],
       "notes": "Tiffany is the nanny."
     }
   },
@@ -38,6 +52,12 @@
     }
   ],
   "openItems": [
-    { "title": "Re-evaluate Tiffany's contract and pay", "due": null }
+    {
+      "title": "Re-evaluate Tiffany's contract and pay",
+      "due": null
+    }
+  ],
+  "mailRules": [
+    "AgentMail: once Tower has handled a message (captured to the board, routed to the plan or Roundup, or ignored per its adapter), mark it read. Leave anything unhandled or needing Andrew unread. Gmail read state is left alone."
   ]
 }
