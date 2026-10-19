@@ -15,7 +15,13 @@
 - [x] Commitment framework drafted: architecture, board schema, capture prompt, board helper
 - [ ] Run capture + board alongside readywhen for 2 weeks; log misses in `docs/capture-misses.md`
 - [ ] Parity reached → drop readywhen from the brief; move brief time if wanted
-- [ ] Voice: try readywhen's WhatsApp beta and Claude app voice mode; decide on Tower's own line
+- [x] Voice and messaging spec; deployment modes (cloud / hybrid / self-hosted)
+- [ ] Choose home hardware for the Tower server
+- [ ] Rent a number (VoIP.ms or Telnyx); start A2P 10DLC registration
+- [ ] Tower server v0: inbound SMS → Claude with Tower's tools → reply; approvals by text
+- [ ] Voice notes with local Whisper
+- [ ] Calls via provider real-time speech; later local speech
+- [ ] Retire readywhen's WhatsApp
 - [ ] Tiffany contract review: pull her scheduled hours from the calendar as a starting point
 - [x] Digest framework: adapters registry, routing, Roundup section
 - [x] Create the Tower inbox: `tower-andrew@agentmail.to`
@@ -31,3 +37,6 @@
 - [ ] Scheduler for the brief and re-plan triggers
 - [ ] One-tap approvals (push / email)
 - [ ] Voice line
+- [ ] Settings → Advanced → Hosting: cloud / hybrid / self-hosted, with telephony, speech, AI endpoint, storage and intake options
+- [ ] Docker image (self-hosted) and one-line installer (hybrid)
+- [ ] Company installs: SSO, per-user assistants, audit log, retention, integration API

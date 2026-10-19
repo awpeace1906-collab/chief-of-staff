@@ -59,5 +59,17 @@
   ],
   "mailRules": [
     "AgentMail: once Tower has handled a message (captured to the board, routed to the plan or Roundup, or ignored per its adapter), mark it read. Leave anything unhandled or needing Andrew unread. Gmail read state is left alone."
-  ]
+  ],
+  "hosting": {
+    "mode": "hybrid",
+    "planned": true,
+    "server": null,
+    "telephony": null,
+    "speech": {
+      "voiceNotes": "local-whisper",
+      "calls": "provider-realtime"
+    },
+    "ai": "anthropic-api",
+    "notes": "Hardware and number not chosen yet."
+  }
 }

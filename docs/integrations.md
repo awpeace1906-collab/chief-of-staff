@@ -7,7 +7,8 @@
 | Brain | Long-term memory (rules, preferences, context) | Private gist `brain-data.json`, `brain/v1`, via `BRAIN_GIST_TOKEN` | Read + write |
 | Tower board | Commitments (replaces readywhen's board) | Private gist `tower-board.json` (`{ tower } board`), same token | Read + write |
 | readywhen | Optional cross-check during transition | Reads its brief email (no public API) | Read |
-| readywhen WhatsApp | Interim voice: call, voice-note or message | Separate; capture lands on readywhen's board, which Tower reads via the brief | — |
+| readywhen WhatsApp | Interim voice until Tower's own line is live | Separate; capture lands on readywhen's board, which Tower reads via the brief | — |
+| Phone number (VoIP.ms / Telnyx) | Tower's own text, voice-note and call line | Webhooks to the Tower server ([features/voice-and-messaging.md](features/voice-and-messaging.md)) | Read + write |
 | Granola | Meeting notes → commitments | Claude connector | Read |
 | Flights | Travel for coverage check | Airline / Expedia emails, TripIt forwards | Read |
 | Tower inbox `tower-andrew@agentmail.to` | Intake for digests forwarded from siloed accounts | AgentMail connector | Read; mark handled messages read |
