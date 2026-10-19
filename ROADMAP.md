@@ -33,7 +33,8 @@
 See [docs/self-contained.md](docs/self-contained.md).
 
 - [x] v0.1 Skeleton: FastAPI app, SQLite store, settings, AI routes, Docker image; import `config/*.json`, Brain and board; portable export ([app/](app/))
-- [ ] v0.2 Google: own OAuth; Calendar + Gmail read; plus-address intake label
+- [x] v0.2 Google: own OAuth (PKCE, read-only); Calendar agenda by division; Gmail search and plus-address intake ([docs/setup/google.md](docs/setup/google.md))
+- [ ] Andrew: create the Google Cloud project and connect (one-time, [docs/setup/google.md](docs/setup/google.md))
 - [ ] v0.3 Core: capture → board → plan with Claude tool use; morning brief by email; token usage logged per route
 - [ ] Optional local AI provider (Ollama / llama.cpp) for any route ([docs/features/ai-providers.md](docs/features/ai-providers.md))
 - [ ] v0.4 Approvals: PWA (brief, board, one-tap approve) + audit log
