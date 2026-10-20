@@ -44,7 +44,9 @@ See [docs/self-contained.md](docs/self-contained.md).
 - [x] v0.4.1 The app's own hourly check (silent unless something fails; then an email to the owner): carries out approved calendar proposals (Calendar write scope; never invites anyone), answers Send messages with tools (list changes directly, everything else as a proposal), turns email to the `+tower` address into messages and replies by email, captures new mail
 - [x] Optional local AI provider (OpenAI-compatible: Ollama, llama.cpp) for structured routes (triage, plan); tool-using routes stay on Claude
 - [x] Brain two-way sync in the app (`BRAIN_GIST_TOKEN`), daily with the first check
-- [ ] v0.5 Channels: carrier webhooks for SMS; approvals by text
+- [x] v0.5 Channels: carrier webhooks for SMS (Telnyx, VoIP.ms); approvals by text; brief by text ([docs/setup/sms.md](docs/setup/sms.md))
+- [x] Settings screen in the web app: connections (Google, Microsoft, Claude, Brain, texting, scheduler) with connect buttons, assistant name, brief time and check hours, "run the check now"
+- [ ] Andrew: rent a number and register A2P 10DLC once the app is hosted
 - [ ] v0.6 Voice notes (faster-whisper); calls via carrier speech; Piper for replies
 - [x] v0.7 Brain sync (two-way, optional); export/backup (moved up into v0.4.1)
 - [ ] Cut over from Claude Code scheduled task, AgentMail and readywhen

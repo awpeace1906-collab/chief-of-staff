@@ -17,7 +17,7 @@ import time
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-from . import agent, brain, brief, store
+from . import agent, brain, brief, sms, store
 from .db import audit
 from .google.api import Google
 from .microsoft import oauth as ms_oauth
@@ -58,8 +58,14 @@ def tick(conn: sqlite3.Connection, lock: threading.Lock, http=None, client=None)
         try:
             ms = Microsoft(conn, http) if ms_oauth.status(conn)["connected"] else None
             result = brief.run(conn, Google(conn, http), client=client, send=True, microsoft=ms)
+            text_error = None
+            if sms.configured(conn) and sms.settings(conn).get("briefByText"):
+                try:
+                    sms.send(conn, sms.brief_text(result, store.get_setting(conn, "appUrl")), http)
+                except Exception as e:
+                    text_error = f"brief text: {e.__class__.__name__}: {e}"
             store.put_setting(conn, "scheduler", store.get_setting(conn, "scheduler", {})
-                              | {"lastBriefDay": result["day"], "lastError": result["sendError"]}, actor="system")
+                              | {"lastBriefDay": result["day"], "lastError": result["sendError"] or text_error}, actor="system")
         except Exception as e:  # record and retry later; never kill the server
             log.exception("scheduled brief failed")
             store.put_setting(conn, "scheduler", store.get_setting(conn, "scheduler", {})

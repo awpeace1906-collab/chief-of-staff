@@ -15,6 +15,12 @@ v0.4: its own web app, plus Microsoft 365. One process, one SQLite file.
   - **Talk:** **Ask** answers right away from the board and brief; **Send** queues a message for the assistant.
 
   Sign-in uses the access key (`COS_API_TOKEN`); the device then stays signed in for 90 days. `cos import --page` brings over the old Claude-hosted page's data.
+- **v0.5:** **texting** through Telnyx or VoIP.ms ([docs/setup/sms.md](../docs/setup/sms.md)). It only answers the owner's number. You can:
+  - text "list", "approve 1, 3" or "decline 2", and approved proposals are carried out right away;
+  - text anything else to reach the assistant, which answers by text;
+  - get the morning brief by text.
+
+  The web app gains a **Settings** tab: connection status with connect buttons, the assistant's name, brief time and check hours, and "run the check now".
 - **v0.4.1:** runs its own **hourly check** (`check` setting; default :45 from 6:45am to 9:45pm). The check is silent unless something fails, and then it emails the owner. It:
   - carries out approved calendar proposals, applying your Change… notes (it never invites anyone);
   - answers Talk messages with tools, editing the list directly and turning anything else into a proposal;
@@ -127,6 +133,8 @@ docker compose exec cos cos import --config /config
 | POST | `/api/ask` | Quick answer from the board, proposals and brief (`chat` route); never acts |
 | POST | `/api/import/page` | Import the old page's export |
 | POST | `/api/check/run` | Run the hourly check now |
+| GET | `/api/status` | Connections, schedule and 30-day AI cost (the Settings screen) |
+| GET/POST | `/hooks/sms/{telnyx\|voipms}/{COS_HOOK_SECRET}` | Inbound texts from the carrier |
 | POST | `/api/brain/sync` | Sync rules with Brain |
 | GET | `/oauth/microsoft/start` | Begin Microsoft sign-in (browser) |
 | GET | `/api/microsoft/status` · `/calendars` · `/agenda?days=7` · `/mail/search?q=` · `/todo` | Microsoft 365 reads |
@@ -159,4 +167,5 @@ pytest
 | `cos/scheduler.py` | Daily brief at `brief.time`; the hourly check; error emails |
 | `cos/agent.py` | Carry out approved proposals; answer messages; email intake; the check |
 | `cos/brain.py` | Two-way Brain sync (brain/v1) |
+| `cos/sms.py` | Texting: providers, owner-only inbound, approve/decline by number, brief text |
 | `cos/cli.py` | `cos serve`, `import`, `export`, `google`, `microsoft`, `agenda`, `mail`, `capture`, `brief`, `usage` |

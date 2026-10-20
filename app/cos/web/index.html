@@ -69,7 +69,7 @@ header.sign .wrap { display: flex; align-items: center; justify-content: space-b
 /* bottom tab bar */
 nav.tabs { position: fixed; inset: auto 0 0 0; z-index: 6; background: var(--sign-bg); padding-bottom: env(safe-area-inset-bottom, 0px); border-top: 1px solid #000; }
 nav.tabs .wrap { display: flex; height: var(--nav-h); }
-nav.tabs button { flex: 1; background: transparent; border: 0; border-top: 3px solid transparent; color: var(--sign-dim); font: 600 1rem var(--font-display); letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; display: grid; place-content: center; gap: 1px; }
+nav.tabs button { flex: 1; min-width: 0; background: transparent; border: 0; border-top: 3px solid transparent; color: var(--sign-dim); font: 600 1rem var(--font-display); letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; display: grid; place-content: center; gap: 1px; }
 nav.tabs button[aria-selected="true"] { color: var(--sign-fg); border-top-color: var(--sign-fg); }
 nav.tabs .badge { font: 500 0.7rem/1 var(--font-mono); min-height: 0.7rem; }
 
@@ -167,6 +167,11 @@ label { display: grid; gap: 3px; font-size: 0.85rem; color: var(--muted); min-wi
 input, select, textarea { font: 16px var(--font-body); color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 9px 10px; min-width: 0; width: 100%; }
 textarea { resize: vertical; min-height: 4.5rem; }
 .status { font: 500 0.8rem var(--font-mono); color: var(--muted); }
+.conn { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; align-items: center; padding: 12px 14px; }
+.conn b { font-weight: 700; }
+.conn .state { font-size: 0.88rem; color: var(--muted); grid-column: 1; overflow-wrap: anywhere; }
+.conn .state.ok { color: var(--ok); } .conn .state.bad { color: var(--warn); }
+.conn .btn { grid-row: 1 / span 2; grid-column: 2; text-decoration: none; display: inline-grid; place-items: center; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
 /* conversation */
@@ -267,6 +272,44 @@ textarea { resize: vertical; min-height: 4.5rem; }
       </div>
     </div>
   </section>
+  <section role="tabpanel" id="more" aria-labelledby="tab-more" hidden>
+    <div class="group">
+      <h2>Connections</h2>
+      <div id="conns" class="group"><p class="empty">Loading…</p></div>
+    </div>
+    <form class="card add" id="nameForm" autocomplete="off">
+      <h2>Your assistant</h2>
+      <label for="agentInput">Name
+        <input id="agentInput" maxlength="40" required>
+      </label>
+      <div class="row"><button class="btn primary" type="submit">Save</button> <span class="status" id="nameStatus"></span></div>
+    </form>
+    <form class="card add" id="schedForm" autocomplete="off">
+      <h2>Schedule</h2>
+      <div class="fields">
+        <label for="briefTime">Morning brief
+          <input id="briefTime" type="time" required>
+        </label>
+        <label for="checkOn">Hourly check
+          <select id="checkOn"><option value="1">On</option><option value="0">Off</option></select>
+        </label>
+        <label for="checkFirst">Checks from
+          <select id="checkFirst"></select>
+        </label>
+        <label for="checkLast">until
+          <select id="checkLast"></select>
+        </label>
+      </div>
+      <p class="note">The check runs at :45 past each hour in that window. It stays quiet unless something fails.</p>
+      <div class="row"><button class="btn primary" type="submit">Save</button> <span class="status" id="schedStatus"></span></div>
+    </form>
+    <div class="card add">
+      <h2>Run now</h2>
+      <p class="note">Carry out approvals, answer messages and read new mail right away.</p>
+      <div class="row"><button class="btn" type="button" id="checkNow">Run the check</button> <span class="status" id="checkStatus"></span></div>
+    </div>
+    <p class="note" id="aboutLine"></p>
+  </section>
 </main>
 
 <nav class="tabs" role="tablist" aria-label="Sections">
@@ -274,6 +317,7 @@ textarea { resize: vertical; min-height: 4.5rem; }
     <button role="tab" id="tab-today" aria-controls="today" aria-selected="true">Today<span class="badge" id="todayBadge"></span></button>
     <button role="tab" id="tab-todo" aria-controls="todo" aria-selected="false">To-do<span class="badge" id="todoBadge"></span></button>
     <button role="tab" id="tab-talk" aria-controls="talk" aria-selected="false">Talk<span class="badge"></span></button>
+    <button role="tab" id="tab-more" aria-controls="more" aria-selected="false">Settings<span class="badge" id="moreBadge"></span></button>
   </div>
 </nav>
 
