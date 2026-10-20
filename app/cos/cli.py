@@ -7,7 +7,7 @@ import sys
 
 import httpx
 
-from . import brief, capture, db, llm
+from . import agent, brain, brief, capture, db, llm
 from .google import oauth
 from .google.api import Google
 from .importer import export_all, import_board, import_brain, import_config, import_page
@@ -49,6 +49,8 @@ def main(argv: list[str] | None = None) -> int:
     m.add_argument("--limit", type=int, default=10)
 
     sub.add_parser("capture", help="read new mail and update the board")
+    sub.add_parser("check", help="the hourly check now: approvals, messages, new mail")
+    sub.add_parser("brain", help="sync rules with Brain (needs BRAIN_GIST_TOKEN)")
 
     b = sub.add_parser("brief", help="capture, then write the morning brief")
     b.add_argument("--send", action="store_true", help="also email it to the owner")
@@ -106,6 +108,11 @@ def main(argv: list[str] | None = None) -> int:
         else:
             msgs = g.intake(limit=args.limit)
         _print([{k: m[k] for k in ("date", "from", "subject", "snippet", "url")} for m in msgs])
+    elif args.cmd == "check":
+        ms = Microsoft(conn) if ms_oauth.status(conn)["connected"] else None
+        _print(agent.check(conn, Google(conn), microsoft=ms))
+    elif args.cmd == "brain":
+        _print(brain.sync(conn))
     elif args.cmd == "capture":
         _print(capture.run(conn, Google(conn)))
     elif args.cmd == "brief":
@@ -128,7 +135,7 @@ def run() -> int:
     """Entry point: friendly one-line errors instead of tracebacks."""
     try:
         return main()
-    except (oauth.GoogleNotConnected, ms_oauth.MicrosoftNotConnected, llm.ModelError, RuntimeError) as e:
+    except (oauth.GoogleNotConnected, ms_oauth.MicrosoftNotConnected, llm.ModelError, RuntimeError) as e:  # BrainUnavailable too
         print(f"cos: {e}", file=sys.stderr)
     except httpx.HTTPError as e:
         print(f"cos: request failed ({e.__class__.__name__}: {e})", file=sys.stderr)

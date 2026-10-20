@@ -19,7 +19,7 @@ Access: `calendar.readonly`, `gmail.readonly`, and `gmail.send`. The send permis
 
 **APIs & Services → OAuth consent screen** (labeled **Google Auth Platform** in newer consoles):
 1. User type **External** → app name `Chief of Staff`, your email as support and developer contact.
-2. **Scopes:** add `.../auth/calendar.readonly`, `.../auth/gmail.readonly` and `.../auth/gmail.send`.
+2. **Scopes:** add `.../auth/calendar.readonly`, `.../auth/calendar.events`, `.../auth/gmail.readonly` and `.../auth/gmail.send`. `calendar.events` is used only to carry out calendar proposals you approved, and never invites anyone.
 3. **Test users:** add awpeace1906@gmail.com.
 
 **Testing vs production.** While the app is in *Testing*, Google expires its sign-in after **7 days**, so you'd reconnect weekly. To avoid that, set the publishing status to **In production**. Gmail read access is a "restricted" scope, so Google will show an "unverified app" warning when you sign in. For a personal app used only by you, click through it (**Advanced → Go to Chief of Staff**). Verification is only needed for apps offered to the public; the public Chief of Staff product will need it, Andrew's own install doesn't. Check the console's current wording; Google adjusts these screens often.
@@ -54,6 +54,10 @@ If you use the server/tunnel redirect, also set it in config (`config/tower.json
 2. Open `http://127.0.0.1:8700/oauth/google/start?token=<COS_API_TOKEN>` in your browser.
 3. Sign in, allow access. You'll see "Google connected."
 4. Check: `cos google status` and `cos agenda --days 7`.
+
+## Already connected before v0.4?
+
+The app now adds the calendar write permission (`calendar.events`), which it uses to carry out approved proposals. `cos google status` shows `"canWriteCalendar": false` until you connect again at `/oauth/google/start`. Until then, approved calendar proposals stay approved and the error notice says so.
 
 ## Already connected before v0.3?
 

@@ -38,14 +38,15 @@ See [docs/self-contained.md](docs/self-contained.md).
 - [x] v0.3 Core: capture → board → plan with Claude (structured output); morning brief by email to the owner; built-in scheduler; token usage and cost per route
 - [ ] Andrew: Anthropic API key in the app's environment; reconnect Google for the send permission
 - [ ] Brief parity with the Claude Code version: flight-email parsing, readywhen parity line, Brain sync
-- [ ] Optional local AI provider (Ollama / llama.cpp) for any route ([docs/features/ai-providers.md](docs/features/ai-providers.md))
 - [x] v0.4 Own web app (installable PWA): Today (brief, proposals with approve / change / decline), To-do (filters, snooze, swipe to finish), Talk (Ask answers instantly; Send queues for the assistant); sign-in by access key; audit log; import from the old Claude-hosted page
 - [x] v0.4 Microsoft 365 via Graph (personal or work accounts, read-only): Outlook mail into capture, Outlook calendar and To Do into the brief ([docs/setup/microsoft.md](docs/setup/microsoft.md))
 - [ ] Andrew: pick a host (Fly.io recommended) and deploy; register the Microsoft app and connect
-- [ ] v0.4.1 The app carries out approved proposals itself (needs Calendar write scope) and answers Send messages with tools; until then the Claude Code check-in does both through the app's API
+- [x] v0.4.1 The app's own hourly check (silent unless something fails; then an email to the owner): carries out approved calendar proposals (Calendar write scope; never invites anyone), answers Send messages with tools (list changes directly, everything else as a proposal), turns email to the `+tower` address into messages and replies by email, captures new mail
+- [x] Optional local AI provider (OpenAI-compatible: Ollama, llama.cpp) for structured routes (triage, plan); tool-using routes stay on Claude
+- [x] Brain two-way sync in the app (`BRAIN_GIST_TOKEN`), daily with the first check
 - [ ] v0.5 Channels: carrier webhooks for SMS; approvals by text
 - [ ] v0.6 Voice notes (faster-whisper); calls via carrier speech; Piper for replies
-- [ ] v0.7 Brain sync (two-way, optional); export/backup
+- [x] v0.7 Brain sync (two-way, optional); export/backup (moved up into v0.4.1)
 - [ ] Cut over from Claude Code scheduled task, AgentMail and readywhen
 
 ## The app: later

@@ -1,4 +1,6 @@
-"""In-process scheduler: runs the morning brief once a day at `brief.time`.
+"""In-process scheduler: the morning brief once a day at `brief.time`, and the hourly check
+(approved proposals, new messages, new mail) at :45 from 6:45am to 9:45pm by default (`check` setting).
+The check stays silent unless something fails; then it emails the owner, at most every 3 hours.
 
 Enabled with COS_SCHEDULER=1. Checks every 30 seconds; if the server was down
 at brief time, it runs as soon as it's back the same day. A failed run is
@@ -8,13 +10,14 @@ not be emailed counts as done for the day.
 """
 
 import logging
+import os
 import sqlite3
 import threading
 import time
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-from . import brief, store
+from . import agent, brain, brief, store
 from .db import audit
 from .google.api import Google
 from .microsoft import oauth as ms_oauth
@@ -65,12 +68,77 @@ def tick(conn: sqlite3.Connection, lock: threading.Lock, http=None, client=None)
             conn.commit()
 
 
+CHECK_DEFAULT = {"enabled": True, "minute": 45, "firstHour": 6, "lastHour": 21}
+ERROR_NOTICE_SECONDS = 3 * 3600
+
+
+def check_slot(conn: sqlite3.Connection, now: datetime | None = None) -> str | None:
+    """The hour slot ('YYYY-MM-DDTHH') the check should run for now, or None."""
+    cfg = CHECK_DEFAULT | (store.get_setting(conn, "check", {}) or {})
+    if not cfg["enabled"]:
+        return None
+    tz = ZoneInfo(store.get_setting(conn, "timezone", "UTC"))
+    now = (now or datetime.now(tz)).astimezone(tz)
+    if not (cfg["firstHour"] <= now.hour <= cfg["lastHour"]) or now.minute < cfg["minute"]:
+        return None
+    slot = now.strftime("%Y-%m-%dT%H")
+    return None if store.get_setting(conn, "scheduler", {}).get("lastCheckSlot") == slot else slot
+
+
+def check_tick(conn: sqlite3.Connection, lock: threading.Lock, http=None, client=None) -> dict | None:
+    with lock:
+        slot = check_slot(conn)
+        if slot is None:
+            return None
+        store.put_setting(conn, "scheduler", store.get_setting(conn, "scheduler", {}) | {"lastCheckSlot": slot}, actor="system")
+        google = Google(conn, http)
+        connected = google_connected(conn)
+        ms = Microsoft(conn, http) if ms_oauth.status(conn)["connected"] else None
+        try:
+            report = agent.check(conn, google, client=client, microsoft=ms, capture_mail=connected) if connected \
+                else {"errors": ["Google isn't connected, so approvals, messages and mail are waiting"]}
+        except Exception as e:  # never kill the server
+            log.exception("hourly check failed")
+            report = {"errors": [f"{e.__class__.__name__}: {e}"]}
+        today = slot[:10]
+        if os.environ.get("BRAIN_GIST_TOKEN") and store.get_setting(conn, "brain", {}).get("lastSync", "")[:10] != today:
+            try:
+                report["brain"] = brain.sync(conn, http)
+            except Exception as e:
+                report["errors"].append(f"brain sync: {e.__class__.__name__}: {e}")
+        if report["errors"]:
+            notify_errors(conn, google, report["errors"])
+        return report
+
+
+def google_connected(conn) -> bool:
+    from .google import oauth
+    return oauth.status(conn)["connected"]
+
+
+def notify_errors(conn: sqlite3.Connection, google: Google, errors: list[str]) -> bool:
+    """Email the owner about failures, at most every 3 hours. Returns whether it sent."""
+    state = store.get_setting(conn, "scheduler", {})
+    if time.time() - state.get("lastErrorNotice", 0) < ERROR_NOTICE_SECONDS:
+        return False
+    name = store.assistant_name(conn)
+    try:
+        google.send_to_owner(f"{name}: something needs a look",
+                             "The hourly check hit a problem:\n\n" + "\n".join(f"- {e}" for e in errors[:10]))
+    except Exception:
+        log.exception("couldn't email the error notice")
+        return False
+    store.put_setting(conn, "scheduler", store.get_setting(conn, "scheduler", {}) | {"lastErrorNotice": time.time()}, actor="system")
+    return True
+
+
 def start(conn: sqlite3.Connection, lock: threading.Lock) -> threading.Event:
     stop = threading.Event()
 
     def loop():
         while not stop.wait(CHECK_SECONDS):
             tick(conn, lock)
+            check_tick(conn, lock)
 
     threading.Thread(target=loop, name="cos-scheduler", daemon=True).start()
     return stop

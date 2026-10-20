@@ -23,6 +23,7 @@ REVOKE_URL = "https://oauth2.googleapis.com/revoke"
 
 SCOPES = [
     "https://www.googleapis.com/auth/calendar.readonly",
+    "https://www.googleapis.com/auth/calendar.events",  # only to carry out proposals the owner approved
     "https://www.googleapis.com/auth/gmail.readonly",
     "https://www.googleapis.com/auth/gmail.send",  # only ever used to email the owner (the brief)
     "openid",
@@ -30,6 +31,7 @@ SCOPES = [
 ]
 
 SEND_SCOPE = "https://www.googleapis.com/auth/gmail.send"
+WRITE_SCOPE = "https://www.googleapis.com/auth/calendar.events"
 
 DEFAULT_REDIRECT = "http://127.0.0.1:8700/oauth/google/callback"
 TOKEN_KEY = "google.tokens"
@@ -136,7 +138,7 @@ def status(conn: sqlite3.Connection) -> dict:
     if not tok:
         return {"connected": False}
     scopes = tok["scope"].split()
-    return {"connected": True, "scopes": scopes, "canSend": SEND_SCOPE in scopes,
+    return {"connected": True, "scopes": scopes, "canSend": SEND_SCOPE in scopes, "canWriteCalendar": WRITE_SCOPE in scopes,
             "connectedAt": tok.get("connected_at")}
 
 

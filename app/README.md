@@ -15,6 +15,14 @@ v0.4: its own web app, plus Microsoft 365. One process, one SQLite file.
   - **Talk:** **Ask** answers right away from the board and brief; **Send** queues a message for the assistant.
 
   Sign-in uses the access key (`COS_API_TOKEN`); the device then stays signed in for 90 days. `cos import --page` brings over the old Claude-hosted page's data.
+- **v0.4.1:** runs its own **hourly check** (`check` setting; default :45 from 6:45am to 9:45pm). The check is silent unless something fails, and then it emails the owner. It:
+  - carries out approved calendar proposals, applying your Change… notes (it never invites anyone);
+  - answers Talk messages with tools, editing the list directly and turning anything else into a proposal;
+  - turns email you send to the `+tower` address into messages, and replies by email too;
+  - captures new mail;
+  - syncs with Brain once a day when `BRAIN_GIST_TOKEN` is set.
+
+  It also supports a **local AI provider** (OpenAI-compatible, e.g. Ollama) for the structured routes.
 - **v0.4:** connects to **Microsoft 365** through Microsoft Graph, with personal or work accounts and read-only access. Outlook mail goes into capture, and the Outlook calendar and To Do go into the brief. Setup: [docs/setup/microsoft.md](../docs/setup/microsoft.md).
 - **v0.3:** captures commitments from new mail with Claude (Haiku), writes the morning brief (Opus), saves it, emails it to the owner, and can run it on a schedule. Logs token use and estimated cost per route.
 - **v0.2:** signs in to Google itself (OAuth with PKCE, read-only Calendar + Gmail), shows the agenda by division, searches Gmail, and reads the digest intake address. Setup: [docs/setup/google.md](../docs/setup/google.md).
@@ -70,6 +78,8 @@ cos capture           # new mail → board
 cos brief             # capture + brief, printed
 cos brief --send      # ... and emailed to you
 cos usage             # tokens and estimated $ per route
+cos check             # the hourly check, now
+cos brain             # sync rules with Brain (BRAIN_GIST_TOKEN)
 COS_SCHEDULER=1 cos serve   # brief every day at brief.time
 ```
 
@@ -116,6 +126,8 @@ docker compose exec cos cos import --config /config
 | PATCH | `/api/messages/{id}` | Mark `handled` |
 | POST | `/api/ask` | Quick answer from the board, proposals and brief (`chat` route); never acts |
 | POST | `/api/import/page` | Import the old page's export |
+| POST | `/api/check/run` | Run the hourly check now |
+| POST | `/api/brain/sync` | Sync rules with Brain |
 | GET | `/oauth/microsoft/start` | Begin Microsoft sign-in (browser) |
 | GET | `/api/microsoft/status` · `/calendars` · `/agenda?days=7` · `/mail/search?q=` · `/todo` | Microsoft 365 reads |
 | POST | `/api/microsoft/disconnect` | Forget the Microsoft tokens |
@@ -144,5 +156,7 @@ pytest
 | `cos/llm.py` | Model calls (structured output, caching, fallbacks), usage log and cost estimate |
 | `cos/capture.py` | New mail → board changes |
 | `cos/brief.py` | The morning brief |
-| `cos/scheduler.py` | Daily brief at `brief.time` |
+| `cos/scheduler.py` | Daily brief at `brief.time`; the hourly check; error emails |
+| `cos/agent.py` | Carry out approved proposals; answer messages; email intake; the check |
+| `cos/brain.py` | Two-way Brain sync (brain/v1) |
 | `cos/cli.py` | `cos serve`, `import`, `export`, `google`, `microsoft`, `agenda`, `mail`, `capture`, `brief`, `usage` |

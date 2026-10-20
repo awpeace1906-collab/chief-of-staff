@@ -61,6 +61,28 @@ class Google:
             if not page:
                 return out
 
+    def _send(self, method: str, url: str, body: dict, **params) -> dict:
+        if not status(self.conn).get("canWriteCalendar"):
+            raise GoogleNotConnected("Google is connected without calendar write permission; reconnect at /oauth/google/start")
+        for attempt in (1, 2):
+            token = access_token(self.conn, self.http)
+            r = self.http.request(method, url, params=params or None, json=body, headers={"Authorization": f"Bearer {token}"})
+            if r.status_code != 401:
+                r.raise_for_status()
+                return r.json()
+            expire(self.conn)
+        raise GoogleNotConnected("Google rejected the stored access; connect again at /oauth/google/start")
+
+    def create_event(self, calendar_id: str, event: dict) -> dict:
+        """Create an event; never invites anyone (sendUpdates=none)."""
+        e = self._send("POST", f"{CAL}/calendars/{quote(calendar_id, safe='')}/events", event, sendUpdates="none")
+        return _event(e, calendar_id)
+
+    def update_event(self, calendar_id: str, event_id: str, patch: dict) -> dict:
+        e = self._send("PATCH", f"{CAL}/calendars/{quote(calendar_id, safe='')}/events/{quote(event_id, safe='')}",
+                       patch, sendUpdates="none")
+        return _event(e, calendar_id)
+
     def agenda(self, days: int = 7, today: date | None = None) -> dict:
         """Events from today through `days` ahead, grouped by division."""
         tz = ZoneInfo(get_setting(self.conn, "timezone", "UTC"))
