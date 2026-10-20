@@ -111,7 +111,7 @@ def run(conn: sqlite3.Connection, google: Google, client=None, since: datetime |
 def _gather(conn: sqlite3.Connection, google: Google, days: int, since: datetime) -> list[dict]:
     blocked = _blocked_senders(conn)
     intake = store.get_setting(conn, "google", {}).get("intakeAddress")
-    queries = [f"in:inbox newer_than:{days}d -category:promotions -category:social",
+    queries = [f"newer_than:{days}d -in:sent -category:promotions -category:social",  # archived mail too
                f"in:sent newer_than:{days}d"]
     if intake:
         queries.append(f"to:{intake} newer_than:{days}d")
