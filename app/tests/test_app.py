@@ -116,3 +116,18 @@ def test_api_token(tmp_path, monkeypatch):
         assert c.get("/api/board").status_code == 401
         assert c.get("/api/board", headers={"Authorization": "Bearer s3cret"}).status_code == 200
         assert c.get("/health").status_code == 200
+
+
+def test_old_database_gets_new_columns(tmp_path):
+    import sqlite3
+    path = tmp_path / "old.db"
+    old = sqlite3.connect(path)  # a v0.4 messages table, before channel/ref existed
+    old.execute("CREATE TABLE messages (id TEXT PRIMARY KEY, at TEXT NOT NULL, sender TEXT NOT NULL, status TEXT NOT NULL, text TEXT NOT NULL)")
+    old.execute("INSERT INTO messages VALUES ('m1', '2026-10-20T00:00:00Z', 'owner', 'new', 'hi')")
+    old.commit()
+    old.close()
+    c = db.connect(path)
+    assert store.list_messages(c)[0]["channel"] == "app"
+    store.add_message(c, "owner", "by text", channel="sms")
+    assert c.execute("PRAGMA user_version").fetchone()[0] == db.SCHEMA_VERSION
+    c.close()

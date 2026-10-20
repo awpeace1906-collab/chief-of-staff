@@ -6,7 +6,7 @@ import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
 
-SCHEMA_VERSION = 4
+SCHEMA_VERSION = 5
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS settings (
@@ -108,8 +108,25 @@ def connect(path: Path | str | None = None) -> sqlite3.Connection:
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode=WAL")
     conn.executescript(SCHEMA)
+    _migrate(conn)
     conn.execute(f"PRAGMA user_version={SCHEMA_VERSION}")
     return conn
+
+
+# Columns added after a table first shipped: (table, column, definition)
+ADDED_COLUMNS = [
+    ("messages", "channel", "TEXT NOT NULL DEFAULT 'app'"),  # v5
+    ("messages", "ref", "TEXT"),                              # v5
+]
+
+
+def _migrate(conn: sqlite3.Connection) -> None:
+    """Bring an older database up to date; CREATE TABLE IF NOT EXISTS never adds columns."""
+    for table, column, definition in ADDED_COLUMNS:
+        have = {r[1] for r in conn.execute(f"PRAGMA table_info({table})")}
+        if column not in have:
+            conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
+    conn.commit()
 
 
 def audit(conn: sqlite3.Connection, actor: str, action: str, **detail) -> None:

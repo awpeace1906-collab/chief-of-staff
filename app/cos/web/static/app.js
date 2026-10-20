@@ -38,12 +38,13 @@
   }
 
   // tabs (remember the last one per device)
-  const tabs = ["today", "todo", "talk"];
+  const tabs = ["today", "todo", "talk", "more"];
   function show(name) {
     for (const t of tabs) { $("tab-" + t).setAttribute("aria-selected", String(t === name)); $(t).hidden = t !== name; }
     try { localStorage.setItem("cos.tab", name); } catch (e) {}
     window.scrollTo(0, 0);
     if (name === "talk") renderThread();
+    if (name === "more") loadStatus();
   }
   for (const t of tabs) $("tab-" + t).addEventListener("click", () => show(t));
   document.querySelectorAll(".stat").forEach((b) => b.addEventListener("click", () => {
@@ -378,6 +379,82 @@
   refresh();
   setInterval(() => { if (!document.hidden) refresh(); }, 30000);
   document.addEventListener("visibilitychange", () => { if (!document.hidden) refresh(); });
+
+  // Settings: connections, name, schedule, run now
+  function conn(title, state, ok, action) {
+    const row = el("div", "card conn");
+    row.append(el("b", null, title), el("span", "state" + (ok === true ? " ok" : ok === false ? " bad" : ""), state));
+    if (action) {
+      const a = el(action.href ? "a" : "button", "btn small", action.label);
+      if (action.href) a.href = action.href; else { a.type = "button"; a.addEventListener("click", action.onClick); }
+      row.append(a);
+    }
+    return row;
+  }
+  const hourLabel = (h) => `${h % 12 || 12}:45 ${h < 12 ? "AM" : "PM"}`;
+  for (const id of ["checkFirst", "checkLast"]) for (let h = 0; h < 24; h++) { const o = el("option", null, hourLabel(h)); o.value = h; $(id).append(o); }
+
+  async function loadStatus() {
+    let st;
+    try { st = await api("/api/status"); } catch (e) { $("conns").textContent = "Couldn't load settings: " + e.message; return; }
+    const box = $("conns"); box.textContent = "";
+    const g = st.google;
+    box.append(conn("Google (Gmail and Calendar)",
+      !g.connected ? "Not connected" : !g.canWriteCalendar ? "Connected, read-only. Reconnect so approved calendar changes can be made." : "Connected",
+      g.connected && g.canWriteCalendar ? true : false, { label: g.connected ? "Reconnect" : "Connect", href: "/oauth/google/start" }));
+    const m = st.microsoft;
+    box.append(conn("Microsoft 365", m.connected ? "Connected" + (m.account ? " as " + m.account : "") : "Not connected",
+      m.connected ? true : null, { label: m.connected ? "Reconnect" : "Connect", href: "/oauth/microsoft/start" }));
+    box.append(conn("Claude (AI)", st.anthropicKey ? `Ready · about $${(st.usage30d || 0).toFixed(2)} in the last 30 days` : "No API key set on the server", st.anthropicKey));
+    box.append(conn("Brain", st.brain.configured ? (st.brain.lastSync ? "Synced " + new Date(st.brain.lastSync).toLocaleString() : "Set up; syncs with the first check") : "Not set up (optional)",
+      st.brain.configured ? true : null, st.brain.configured ? { label: "Sync now", onClick: async (ev) => {
+        ev.target.disabled = true;
+        try { const r = await send("/api/brain/sync", "POST", {}); ev.target.textContent = `+${r.pulled} / ↑${r.pushed}`; } catch (e) { ev.target.textContent = "Failed"; }
+      } } : null));
+    box.append(conn("Texting", st.sms.configured ? `On (${st.sms.provider})` + (st.sms.briefByText ? " · brief by text" : "") : "Not set up (needs a phone number)", st.sms.configured ? true : null));
+    const sch = st.scheduler;
+    box.append(conn("Schedule", !sch.running ? "Not running on this server (set COS_SCHEDULER=1)" : sch.lastError ? "Last problem: " + sch.lastError : "Running", sch.running && !sch.lastError));
+    $("moreBadge").textContent = (!g.connected || !g.canWriteCalendar || !st.anthropicKey || sch.lastError) ? "!" : "";
+    $("agentInput").value = st.assistant.name || state.agent;
+    $("briefTime").value = st.brief.time || "08:25";
+    $("checkOn").value = st.check.enabled ? "1" : "0";
+    $("checkFirst").value = st.check.firstHour; $("checkLast").value = st.check.lastHour;
+    $("aboutLine").textContent = `Chief of Staff v${st.version}`;
+    state.status = st;
+  }
+
+  $("nameForm").addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+    const name = $("agentInput").value.trim();
+    if (!name) return;
+    try {
+      await send("/api/settings/assistant", "PUT", { ...(state.status?.assistant || {}), name });
+      setAgent(name); $("nameStatus").textContent = "Saved.";
+    } catch (e) { $("nameStatus").textContent = "Didn't save: " + e.message; }
+  });
+
+  $("schedForm").addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+    const first = +$("checkFirst").value, last = +$("checkLast").value;
+    if (last < first) { $("schedStatus").textContent = "The window has to end after it starts."; return; }
+    try {
+      await send("/api/settings/brief", "PUT", { ...(state.status?.brief || {}), time: $("briefTime").value });
+      await send("/api/settings/check", "PUT", { ...(state.status?.check || {}), enabled: $("checkOn").value === "1", firstHour: first, lastHour: last });
+      $("schedStatus").textContent = "Saved."; loadStatus();
+    } catch (e) { $("schedStatus").textContent = "Didn't save: " + e.message; }
+  });
+
+  $("checkNow").addEventListener("click", async () => {
+    $("checkNow").disabled = true; $("checkStatus").textContent = "Running…";
+    try {
+      const r = await send("/api/check/run", "POST", {});
+      const n = (k) => (Array.isArray(r[k]) ? r[k].length : r[k]) || 0;
+      $("checkStatus").textContent = r.errors?.length ? "Problem: " + r.errors[0]
+        : `Done: ${n("approvals")} approval(s), ${n("messages")} message(s), ${(r.capture?.added || []).length} new to-do(s).`;
+      refresh();
+    } catch (e) { $("checkStatus").textContent = "Couldn't run: " + e.message; }
+    finally { $("checkNow").disabled = false; }
+  });
 
   if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(() => {});
 })();

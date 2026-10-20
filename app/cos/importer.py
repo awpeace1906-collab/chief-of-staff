@@ -34,7 +34,7 @@ def import_config(conn: sqlite3.Connection, config_dir: Path) -> dict:
         if "assistant" not in cfg:
             continue
         for key in ("assistant", "timezone", "brief", "approvals", "divisions", "hosting", "openItems", "google",
-                    "microsoft"):
+                    "microsoft", "sms", "appUrl", "check"):
             if key in cfg:
                 put_setting(conn, key, cfg[key], actor="system")
                 counts["settings"] += 1

@@ -173,11 +173,13 @@ Standing rules from the owner:
 {rules}"""
 
 
-def execute_approved(conn: sqlite3.Connection, google: Google, client=None) -> list[dict]:
-    """Carry out every approved proposal. Returns [{id, status, result}]."""
+def execute_approved(conn: sqlite3.Connection, google: Google, client=None, only: set[str] | None = None) -> list[dict]:
+    """Carry out every approved proposal (or the ids in `only`). Returns [{id, status, result}]."""
     out = []
     name, tz = store.assistant_name(conn), _tz(conn)
     for p in store.list_proposals(conn, ("approved",)):
+        if only is not None and p["id"] not in only:
+            continue
         try:
             if p.get("kind") not in {"calendar", "board", "list"}:
                 raise RuntimeError(f"{p.get('kind') or 'this kind of'} proposals can't be carried out by the app yet")
@@ -203,12 +205,17 @@ def execute_approved(conn: sqlite3.Connection, google: Google, client=None) -> l
     return out
 
 
-def handle_messages(conn: sqlite3.Connection, google: Google, client=None) -> list[dict]:
-    """Answer the owner's new messages, oldest first. Returns [{id, reply}]."""
+def handle_messages(conn: sqlite3.Connection, google: Google, client=None, only: set[str] | None = None,
+                    http=None) -> list[dict]:
+    """Answer the owner's new messages (all, or the ids in `only`), oldest first. Replies go back on the
+    channel they came in on as well (email, text). Returns [{id, reply}]."""
+    from . import sms
     out = []
     name, tz = store.assistant_name(conn), _tz(conn)
     history = store.list_messages(conn, 12)
     for m in store.list_messages(conn, 50, status="new"):
+        if only is not None and m["id"] not in only:
+            continue
         try:
             result = llm.run_tools(
                 conn, "chat",
@@ -235,6 +242,12 @@ def handle_messages(conn: sqlite3.Connection, google: Google, client=None) -> li
                 google.send_to_owner(f"Re: {m.get('ref') or 'your note'}", text)
             except Exception as e:
                 audit(conn, "assistant", "message.email_reply_failed", id=m["id"], error=str(e))
+                conn.commit()
+        elif m.get("channel") == "sms":
+            try:
+                sms.send(conn, text, http)
+            except Exception as e:
+                audit(conn, "assistant", "message.sms_reply_failed", id=m["id"], error=str(e))
                 conn.commit()
         out.append({"id": m["id"], "reply": text})
     return out

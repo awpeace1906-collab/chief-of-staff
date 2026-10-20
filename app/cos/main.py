@@ -19,7 +19,7 @@ from fastapi import Body, Cookie, Depends, FastAPI, Form, Header, HTTPException,
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
-from . import __version__, agent, ai, brain, brief, capture, db, llm, scheduler, store
+from . import __version__, agent, ai, brain, brief, capture, db, llm, scheduler, sms, store
 from .google import oauth
 from .google.api import Google
 from .importer import export_all, import_page
@@ -37,8 +37,10 @@ def _session_value(token: str) -> str:
     return hashlib.sha256(f"cos-session:{token}".encode()).hexdigest()
 
 
-def create_app(db_path: str | None = None, http: httpx.Client | None = None, client=None) -> FastAPI:
-    """`http` overrides the Google HTTP client and `client` the Anthropic client (tests pass fakes)."""
+def create_app(db_path: str | None = None, http: httpx.Client | None = None, client=None, runner=None) -> FastAPI:
+    """`http` overrides the outbound HTTP client, `client` the Anthropic client, and `runner` how background
+    work is started (default: a thread); tests pass fakes."""
+    runner = runner or (lambda fn: threading.Thread(target=fn, daemon=True).start())
     conn: sqlite3.Connection | None = None
     pending: dict[str, tuple[str, float]] = {}  # OAuth state -> (PKCE verifier, created)
     run_lock = threading.Lock()  # one capture/brief at a time, manual or scheduled
@@ -224,6 +226,77 @@ def create_app(db_path: str | None = None, http: httpx.Client | None = None, cli
     def check_run(c=Depends(get_conn)):
         """Run the hourly check now: approved proposals, new messages, new mail."""
         return exclusive(lambda: agent.check(c, Google(c, http), client=client, microsoft=microsoft_if_connected(c)))
+
+    # Text messaging: inbound webhook, and what happens next
+
+    def after_text(c, result: dict) -> None:
+        """Runs in the background so the provider gets its 200 at once."""
+        try:
+            if result["reply"]:
+                sms.send(c, result["reply"], http)
+            if result["approved"]:
+                with run_lock:
+                    done = agent.execute_approved(c, Google(c, http), client=client, only=set(result["approved"]))
+                lines = [f"{'✓' if r['status'] == 'done' else '·' if r['status'] == 'declined' else '✗'} "
+                         f"{store.get_proposal(c, r['id']).get('title') or r['id']}: {r['result']}" for r in done]
+                if lines:
+                    sms.send(c, "\n".join(lines), http)
+            if result["message"]:
+                with run_lock:
+                    agent.handle_messages(c, Google(c, http), client=client, only={result["message"]}, http=http)
+        except Exception as e:  # never surface to the carrier; the hourly check retries messages
+            db.audit(c, "system", "sms.followup_failed", error=f"{e.__class__.__name__}: {e}")
+            c.commit()
+
+    @app.api_route("/hooks/sms/{provider}/{secret}", methods=["GET", "POST"])
+    async def sms_hook(provider: str, secret: str, request: Request, c=Depends(get_conn)):
+        expected = os.environ.get("COS_HOOK_SECRET")
+        if not expected or not secrets.compare_digest(secret, expected):
+            raise HTTPException(404)
+        if request.method == "POST" and request.headers.get("content-type", "").startswith("application/json"):
+            payload = await request.json()
+        elif request.method == "POST":
+            payload = dict(await request.form())
+        else:
+            payload = dict(request.query_params)
+        try:
+            parsed = sms.parse_inbound(provider, payload)
+        except ValueError:
+            raise HTTPException(404)
+        if parsed:
+            result = sms.handle_inbound(c, *parsed)
+            if result["reply"] or result["approved"] or result["message"]:
+                runner(lambda: after_text(c, result))
+        return {"ok": True}
+
+    @app.get("/api/status", dependencies=api)
+    def status_all(c=Depends(get_conn)):
+        """Everything the Settings screen shows: connections, schedule, costs."""
+        routes = {}
+        for route in ai.ROUTES:
+            try:
+                r = ai.resolve(c, route)
+                routes[route] = {"model": r["model"], "provider": r["provider"], "ready": True}
+            except RuntimeError as e:
+                routes[route] = {"ready": False, "error": str(e)}
+        sched = store.get_setting(c, "scheduler", {}) or {}
+        return {
+            "version": __version__,
+            "assistant": store.get_setting(c, "assistant", {}) or {},
+            "google": oauth.status(c),
+            "microsoft": ms_oauth.status(c),
+            "anthropicKey": bool(os.environ.get("ANTHROPIC_API_KEY")),
+            "ai": routes,
+            "brain": {"configured": bool(os.environ.get("BRAIN_GIST_TOKEN")),
+                      "lastSync": (store.get_setting(c, "brain", {}) or {}).get("lastSync")},
+            "sms": {"configured": sms.configured(c), "provider": sms.settings(c).get("provider"),
+                    "briefByText": bool(sms.settings(c).get("briefByText"))},
+            "scheduler": {"running": os.environ.get("COS_SCHEDULER") == "1", "lastBriefDay": sched.get("lastBriefDay"),
+                          "lastCheckSlot": sched.get("lastCheckSlot"), "lastError": sched.get("lastError")},
+            "brief": store.get_setting(c, "brief", {}) or {},
+            "check": scheduler.CHECK_DEFAULT | (store.get_setting(c, "check", {}) or {}),
+            "usage30d": llm.usage_summary(c, 30)["estimatedUsd"],
+        }
 
     @app.post("/api/brain/sync", dependencies=api)
     def brain_sync(c=Depends(get_conn)):

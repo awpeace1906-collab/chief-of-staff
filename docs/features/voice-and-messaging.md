@@ -1,6 +1,6 @@
 # Voice and messaging
 
-**Status:** spec. Replaces readywhen's WhatsApp assistant. First piece of the self-contained app.
+**Status:** texting is built (v0.5, [setup](../setup/sms.md)): Telnyx or VoIP.ms, owner-only, "list", "approve 1, 3", "decline 2", messages answered by text, and the brief by text. Voice notes and calls are still spec. Replaces readywhen's WhatsApp assistant.
 
 Talk to Tower like a person: text it, send a voice note, or call it.
 
