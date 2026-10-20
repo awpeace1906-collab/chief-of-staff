@@ -19,7 +19,7 @@ from fastapi import Body, Cookie, Depends, FastAPI, Form, Header, HTTPException,
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
-from . import __version__, ai, brief, capture, db, llm, scheduler, store
+from . import __version__, agent, ai, brain, brief, capture, db, llm, scheduler, store
 from .google import oauth
 from .google.api import Google
 from .importer import export_all, import_page
@@ -219,6 +219,20 @@ def create_app(db_path: str | None = None, http: httpx.Client | None = None, cli
     def brief_run(send: bool = False, c=Depends(get_conn)):
         return exclusive(lambda: brief.run(c, Google(c, http), client=client, send=send,
                                            microsoft=microsoft_if_connected(c)))
+
+    @app.post("/api/check/run", dependencies=api)
+    def check_run(c=Depends(get_conn)):
+        """Run the hourly check now: approved proposals, new messages, new mail."""
+        return exclusive(lambda: agent.check(c, Google(c, http), client=client, microsoft=microsoft_if_connected(c)))
+
+    @app.post("/api/brain/sync", dependencies=api)
+    def brain_sync(c=Depends(get_conn)):
+        try:
+            return brain.sync(c, http)
+        except brain.BrainUnavailable as e:
+            raise HTTPException(409, str(e))
+        except httpx.HTTPStatusError as e:
+            raise HTTPException(502, f"GitHub returned {e.response.status_code}")
 
     @app.get("/api/brief/latest", dependencies=api)
     def brief_latest(c=Depends(get_conn)):

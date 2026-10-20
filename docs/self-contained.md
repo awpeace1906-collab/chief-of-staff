@@ -70,7 +70,9 @@ One process, one Docker image, one database file.
 
 ## Transition plan
 
-1. Build v0 alongside the current Claude Code setup; both run.
-2. Switch the brief to the app once a week of briefs matches.
-3. Switch approvals to the PWA and SMS.
-4. Turn off the scheduled task, AgentMail inbox and readywhen.
+1. Build v0 alongside the current Claude Code setup; both run. *(done: v0.1–v0.4)*
+2. Host the app (docs/deployment.md), connect Google (with the calendar write permission) and Microsoft, and import the old page's data (`cos import --page`).
+3. Switch the brief to the app once a week of briefs matches.
+4. Switch approvals and messages to the app's web app. The app's hourly check carries out approvals, answers messages (including email to the `+tower` address) and captures new mail.
+5. Turn off the Claude Code scheduled tasks, the AgentMail inbox, the Claude-hosted page and readywhen.
+6. Later: SMS and voice (v0.5–v0.6).

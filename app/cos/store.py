@@ -158,7 +158,7 @@ def update_proposal(conn: sqlite3.Connection, proposal_id: str, patch: dict, act
     status = patch.get("status", p["status"])
     if status not in PROPOSAL_STATUSES:
         raise ValueError(f"unknown status '{status}'")
-    allowed = {"user": {"approved", "declined"}, "assistant": {"done", "failed", "pending"}}.get(actor, PROPOSAL_STATUSES)
+    allowed = {"user": {"approved", "declined"}, "assistant": {"done", "failed", "declined", "pending"}}.get(actor, PROPOSAL_STATUSES)
     if "status" in patch and status not in allowed:
         raise ValueError(f"{actor} can't set a proposal to '{status}'")
     if actor == "user" and p["status"] != "pending":
@@ -205,16 +205,18 @@ MESSAGE_SENDERS = {"owner", "assistant"}
 
 
 def add_message(conn: sqlite3.Connection, sender: str, text: str, at: str | None = None,
-                status: str | None = None, message_id: str | None = None) -> dict:
+                status: str | None = None, message_id: str | None = None, channel: str = "app",
+                ref: str | None = None) -> dict:
     if sender not in MESSAGE_SENDERS:
         raise ValueError(f"unknown sender '{sender}'")
     text = (text or "").strip()
     if not text:
         raise ValueError("empty message")
     m = {"id": message_id or f"m-{int(time.time() * 1000)}-{_rand4()}", "at": at or now(), "from": sender,
-         "status": status or ("new" if sender == "owner" else "handled"), "text": text[:4000]}
-    conn.execute("INSERT OR IGNORE INTO messages (id, at, sender, status, text) VALUES (?, ?, ?, ?, ?)",
-                 (m["id"], m["at"], sender, m["status"], m["text"]))
+         "status": status or ("new" if sender == "owner" else "handled"), "text": text[:4000],
+         "channel": channel, "ref": ref}
+    conn.execute("INSERT OR IGNORE INTO messages (id, at, sender, status, text, channel, ref) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                 (m["id"], m["at"], sender, m["status"], m["text"], channel, ref))
     conn.commit()
     return m
 
@@ -224,8 +226,8 @@ def list_messages(conn: sqlite3.Connection, limit: int = 40, status: str | None 
     if status:
         sql, args = sql + " WHERE status = ?", [status]
     rows = conn.execute(sql + " ORDER BY at DESC LIMIT ?", args + [limit]).fetchall()
-    return [{"id": r["id"], "at": r["at"], "from": r["sender"], "status": r["status"], "text": r["text"]}
-            for r in reversed(rows)]
+    return [{"id": r["id"], "at": r["at"], "from": r["sender"], "status": r["status"], "text": r["text"],
+             "channel": r["channel"], "ref": r["ref"]} for r in reversed(rows)]
 
 
 def mark_message(conn: sqlite3.Connection, message_id: str, status: str = "handled") -> None:

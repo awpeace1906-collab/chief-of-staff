@@ -1,6 +1,6 @@
 # Propose → approve
 
-**Status:** live. In the app (v0.4), proposals live in its own database and the web app's Today tab is where you approve them.
+**Status:** live. In the app (v0.4), proposals live in its own database and the web app's Today tab is where you approve them. The app's hourly check carries out approved calendar proposals itself. It applies your Change… notes; "hold" means nothing changes. It never invites or notifies anyone. Email proposals stay with you until sending is built.
 
 ## How it works
 
