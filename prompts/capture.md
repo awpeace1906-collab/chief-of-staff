@@ -23,6 +23,8 @@ You are Tower's capture step. Read the sources below for the window since `lastC
 
 **Dedupe** against open items: same source thread → update it; same counterparty + same deliverable → merge.
 
+**Calendar events found in email** (interviews, registrations, appointments, flights): before proposing one, search every division calendar for it: matching title keywords, the same date ±1 day, any time zone, including events Gmail created automatically. If it's already there, don't propose it again. If the existing event's time or details differ from the email, propose a fix to that event instead of a new one. Rule: `calendarRules` in [config/tower.json](../config/tower.json).
+
 **Close** open items when there is evidence: a sent reply on the thread that delivers it, a calendar event booked for it, the requester confirming, or Andrew saying done. Record `evidence`. If unsure, leave it open and ask in the brief.
 
 **readywhen (optional cross-check):** if today's readywhen brief exists, list each item it mentions and mark whether the board already has it. Report the parity line in the brief. Add any real miss to the board with `source.kind: "readywhen"`.

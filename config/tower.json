@@ -148,5 +148,8 @@
   "google": {
     "intakeAddress": "awpeace1906+tower@gmail.com",
     "redirectUri": "http://127.0.0.1:8700/oauth/google/callback"
-  }
+  },
+  "calendarRules": [
+    "Before proposing a calendar event found in email, search all calendars in divisions for the same thing (title keywords, date, ±1 day, any time zone, including Gmail-created events). If it already exists, don't propose a new one. If its time or details differ from the email, propose a fix to the existing event instead."
+  ]
 }
