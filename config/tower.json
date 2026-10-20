@@ -53,8 +53,81 @@
   ],
   "openItems": [
     {
-      "title": "Re-evaluate Tiffany's contract and pay",
-      "due": null
+      "title": "Meal prep tonight: Gouda-stuffed chicken breasts, mango avocado salsa, green beans",
+      "due": "2026-10-20",
+      "division": "me",
+      "source": "Stephanie's texts, Oct 19",
+      "notes": "Stephanie made the meal plan for when Andrew gets home. Lands ELP 2:58pm; check groceries before heading home."
+    },
+    {
+      "title": "Clean out the fridge",
+      "due": "2026-10-20",
+      "division": "kids",
+      "source": "Stephanie's texts, Oct 19",
+      "notes": "Pairs naturally with tonight's meal prep."
+    },
+    {
+      "title": "Re-evaluate Tiffany's contract and give her a raise",
+      "due": "2026-10-24",
+      "division": "kids",
+      "source": "Andrew, Oct 19; Stephanie's texts, Oct 19",
+      "notes": "Stephanie: 'we need to give Tiffany a raise.' Decide the amount together before Andrew leaves for St. Louis on Sun Oct 25. Pull her scheduled hours from the Tiffany Schedule calendar as a starting point."
+    },
+    {
+      "title": "Pumpkin patch with Micah",
+      "due": "2026-10-24",
+      "division": "kids",
+      "source": "Stephanie's texts, Oct 19",
+      "notes": "Stephanie suggested Saturday. Sat Oct 24 is open on Andrew's calendar; he flies out Sun evening."
+    },
+    {
+      "title": "Micah's Halloween costume",
+      "due": "2026-10-24",
+      "division": "kids",
+      "source": "Stephanie's texts, Oct 19",
+      "notes": "Halloween is Sat Oct 31 while Andrew is in St. Louis; settle the costume before he leaves Sun Oct 25."
+    },
+    {
+      "title": "Bring dinner to the Griegos one night",
+      "due": "2026-10-24",
+      "division": "kids",
+      "source": "Stephanie's texts, Oct 19",
+      "notes": "Pick a night before Andrew leaves Sun Oct 25 (Thu has the Socorro lectures)."
+    },
+    {
+      "title": "Decide on family photos (yes/no, when, who)",
+      "due": null,
+      "division": "kids",
+      "source": "Stephanie's texts, Oct 19",
+      "notes": "Stephanie raised it as a question."
+    },
+    {
+      "title": "Plan Micah's baptism",
+      "due": null,
+      "division": "kids",
+      "source": "Stephanie's texts, Oct 19",
+      "notes": "Date, church, who to invite."
+    },
+    {
+      "title": "Finish Micah's book (year 1) and start year 2",
+      "due": null,
+      "division": "kids",
+      "source": "Stephanie's texts, Oct 19",
+      "notes": "Add: Oct 19, Micah helped make pumpkin bread and licked his first spoon."
+    },
+    {
+      "title": "Massage",
+      "due": null,
+      "division": "kids",
+      "source": "Stephanie's texts, Oct 19",
+      "notes": "Unclear from the text whose massage this is; ask Stephanie, then book."
+    },
+    {
+      "title": "Stephanie: finish her September notes",
+      "due": null,
+      "division": "stephanie",
+      "source": "Stephanie's texts, Oct 19",
+      "notes": "Stephanie's own task; shown in her division for awareness, not Andrew's to-do."
     }
   ],
   "mailRules": [
@@ -75,5 +148,8 @@
   "google": {
     "intakeAddress": "awpeace1906+tower@gmail.com",
     "redirectUri": "http://127.0.0.1:8700/oauth/google/callback"
-  }
+  },
+  "calendarRules": [
+    "Before proposing a calendar event found in email, search all calendars in divisions for the same thing (title keywords, date, ±1 day, any time zone, including Gmail-created events). If it already exists, don't propose a new one. If its time or details differ from the email, propose a fix to the existing event instead."
+  ]
 }

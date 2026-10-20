@@ -8,6 +8,10 @@
 2. Andrew replies in the Claude session: `approve 1, 3`, `approve all`, or edits ("approve 2 but make it 7pm").
 3. Only then does Tower create the event, send the email or change the calendar, and confirm what it did.
 
+## No duplicates
+
+A proposal never adds an event that's already on a calendar. Tower checks all division calendars first; when the email and the existing event disagree, it proposes fixing the existing event (see `calendarRules` in config/tower.json).
+
 ## Never without approval
 
 - Creating, moving or deleting calendar events
