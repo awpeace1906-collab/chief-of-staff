@@ -71,5 +71,8 @@
     },
     "ai": "anthropic-api",
     "notes": "No spare machine. Start on a ~$5/mo cloud server; move to a Mac mini M4 (or N100 mini PC for text only) once usage is clear."
-  }
+  },
+  "notificationRules": [
+    "Hourly checks are silent in chat. Results go to the Chief of Staff page. Only report in chat when there's an actual error: a failed tool call or write, an approved proposal that couldn't be done, or a source that couldn't be read."
+  ]
 }
