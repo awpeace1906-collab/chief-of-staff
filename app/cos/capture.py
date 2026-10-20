@@ -115,6 +115,7 @@ def _gather(conn: sqlite3.Connection, google: Google, days: int, since: datetime
                f"in:sent newer_than:{days}d"]
     if intake:
         queries.append(f"to:{intake} newer_than:{days}d")
+    owner = (store.get_setting(conn, "assistant", {}) or {}).get("email", "").lower()
     seen, out = set(), []
     for q in queries:
         for m in google.search(q, MAX_MESSAGES):
@@ -124,6 +125,8 @@ def _gather(conn: sqlite3.Connection, google: Google, days: int, since: datetime
             sender = (m.get("from") or "").lower()
             if any(b in sender for b in blocked):
                 continue
+            if intake and owner and owner in sender and intake.lower() in (m.get("to") or "").lower():
+                continue  # the owner writing to the assistant: a message, handled by the check, not a commitment
             out.append({
                 "id": m["id"], "threadId": m["threadId"], "date": m["date"], "from": m["from"], "to": m["to"],
                 "subject": m["subject"], "sent": "SENT" in m["labels"], "body": m["body"][:BODY_CHARS],

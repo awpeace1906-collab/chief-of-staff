@@ -76,7 +76,9 @@ CREATE TABLE IF NOT EXISTS messages (
     at     TEXT NOT NULL,
     sender TEXT NOT NULL,            -- owner | assistant
     status TEXT NOT NULL,            -- new | handled
-    text   TEXT NOT NULL
+    text   TEXT NOT NULL,
+    channel TEXT NOT NULL DEFAULT 'app',  -- app | email
+    ref    TEXT                      -- e.g. the email's message id, for replies
 );
 
 CREATE TABLE IF NOT EXISTS audit_log (

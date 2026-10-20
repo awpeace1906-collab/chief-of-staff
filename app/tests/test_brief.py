@@ -142,15 +142,28 @@ def test_model_request_shape(env):
     assert plan["fallbacks"] == "default" and plan["betas"] == ["server-side-fallback-2026-07-01"]
 
 
-def test_refusal_and_local_provider_fail_visibly(env):
+def test_refusal_and_local_provider(env):
     with pytest.raises(llm.ModelError, match="declined"):
         llm.complete(env.conn, "plan", "s", "u", brief.SCHEMA, client=FakeClaude(BRIEF, stop_reason="refusal"))
     local = json.loads(json.dumps(ai.DEFAULT_AI))
     local["providers"]["local"]["enabled"] = True
     local["routes"]["triage"] = {"provider": "local", "model": "qwen3:8b"}
     store.put_setting(env.conn, "ai", local)
-    with pytest.raises(llm.ModelError, match="local providers"):
-        llm.complete(env.conn, "triage", "s", "u", capture.SCHEMA, client=FakeClaude())
+    sent = []
+
+    def local_model(request):
+        sent.append(json.loads(request.content))
+        return httpx.Response(200, json={"model": "qwen3:8b", "usage": {"prompt_tokens": 50, "completion_tokens": 9},
+                                         "choices": [{"finish_reason": "stop",
+                                                      "message": {"content": '{"changes": [], "questions": []}'}}]})
+
+    out = llm.complete(env.conn, "triage", "s", "u", capture.SCHEMA, http=httpx.Client(transport=httpx.MockTransport(local_model)))
+    assert out == {"changes": [], "questions": []}
+    assert sent[0]["response_format"]["json_schema"]["schema"] == capture.SCHEMA and sent[0]["messages"][0]["role"] == "system"
+    assert any(r["model"] == "qwen3:8b" and r["estimatedUsd"] is None for r in llm.usage_summary(env.conn)["routes"])
+    down = httpx.Client(transport=httpx.MockTransport(lambda r: (_ for _ in ()).throw(httpx.ConnectError("refused"))))
+    with pytest.raises(llm.ModelError, match="could not reach the local model"):
+        llm.complete(env.conn, "triage", "s", "u", capture.SCHEMA, http=down)
 
 
 def test_brief_stores_sends_only_to_owner_and_logs_usage(env):

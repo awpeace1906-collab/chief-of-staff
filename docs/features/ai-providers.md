@@ -1,6 +1,6 @@
 # AI providers and routing
 
-**Status:** live in v0.3 for the Claude provider (`triage` and `plan` are used by capture and the brief). The local provider is configurable but not wired up yet; a route pointed at it fails visibly.
+**Status:** live. Claude serves every route. Since v0.4.1, a local OpenAI-compatible provider (Ollama, llama.cpp server, vLLM, LM Studio) can serve the structured routes (`triage` for capture, `plan` for the brief), using JSON-schema output. The tool-using routes stay on Claude: `draft` carries out approvals and `chat` answers messages; pointing them at a local model fails visibly. Local usage is logged with no cost estimate.
 
 Every AI task goes through a named **route**, and each route picks a provider and model. Users change them in **Settings → Advanced → AI**.
 
