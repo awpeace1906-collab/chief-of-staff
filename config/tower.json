@@ -154,5 +154,14 @@
   ],
   "notificationRules": [
     "Hourly checks are silent in chat. Results go to the Chief of Staff page. Only report in chat when there's an actual error: a failed tool call or write, an approved proposal that couldn't be done, or a source that couldn't be read."
-  ]
+  ],
+  "microsoft": {
+    "account": "awpeace1906@gmail.com",
+    "note": "Personal Microsoft account. Map Outlook calendars to divisions here after connecting (GET /api/microsoft/calendars); \"default\" is the main calendar.",
+    "divisions": {
+      "me": {
+        "Outlook": "default"
+      }
+    }
+  }
 }

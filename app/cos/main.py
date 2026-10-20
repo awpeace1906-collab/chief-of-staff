@@ -1,24 +1,40 @@
 """HTTP API and status page."""
 
+import hashlib
 import html
+import json
 import os
 import secrets
 import sqlite3
 import threading
 import time
 from contextlib import asynccontextmanager
+from datetime import datetime, timedelta
+from pathlib import Path
 from typing import Any
+from zoneinfo import ZoneInfo
 
 import httpx
-from fastapi import Body, Depends, FastAPI, Header, HTTPException
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi import Body, Cookie, Depends, FastAPI, Form, Header, HTTPException, Request
+from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
 
 from . import __version__, ai, brief, capture, db, llm, scheduler, store
 from .google import oauth
 from .google.api import Google
-from .importer import export_all
+from .importer import export_all, import_page
+from .microsoft import oauth as ms_oauth
+from .microsoft.api import Microsoft
 
 OAUTH_PENDING_TTL = 600
+WEB = Path(__file__).parent / "web"
+SESSION_COOKIE = "cos_session"
+SESSION_DAYS = 90
+
+
+def _session_value(token: str) -> str:
+    """What the sign-in cookie holds: a keyed hash of the API token, never the token itself."""
+    return hashlib.sha256(f"cos-session:{token}".encode()).hexdigest()
 
 
 def create_app(db_path: str | None = None, http: httpx.Client | None = None, client=None) -> FastAPI:
@@ -42,13 +58,22 @@ def create_app(db_path: str | None = None, http: httpx.Client | None = None, cli
     def get_conn() -> sqlite3.Connection:
         return conn
 
-    def require_token(authorization: str | None = Header(default=None)) -> None:
+    def require_token(authorization: str | None = Header(default=None),
+                      cos_session: str | None = Cookie(default=None)) -> None:
+        """API calls carry the token (the scheduled assistant, scripts) or the web app's sign-in cookie."""
         token = os.environ.get("COS_API_TOKEN")
         if not token:
             return
         sent = (authorization or "").removeprefix("Bearer ").strip()
-        if not secrets.compare_digest(sent, token):
-            raise HTTPException(401, "missing or wrong API token")
+        if sent and secrets.compare_digest(sent, token):
+            return
+        if cos_session and secrets.compare_digest(cos_session, _session_value(token)):
+            return
+        raise HTTPException(401, "missing or wrong API token")
+
+    def signed_in(cos_session: str | None) -> bool:
+        token = os.environ.get("COS_API_TOKEN")
+        return not token or bool(cos_session and secrets.compare_digest(cos_session, _session_value(token)))
 
     api = [Depends(require_token)]
 
@@ -125,9 +150,9 @@ def create_app(db_path: str | None = None, http: httpx.Client | None = None, cli
     # Google: connect, status, Calendar, Gmail
 
     @app.get("/oauth/google/start")
-    def google_start(token: str | None = None, c=Depends(get_conn)):
-        # Opened in a browser, so the API token comes as ?token= instead of a header.
-        require_token(f"Bearer {token}" if token else None)
+    def google_start(token: str | None = None, cos_session: str | None = Cookie(default=None), c=Depends(get_conn)):
+        # Opened in a browser: signed in to the web app, or the API token as ?token=.
+        require_token(f"Bearer {token}" if token else None, cos_session)
         url, state, verifier = google_call(lambda: oauth.start(c))
         now_ = time.time()
         for k in [k for k, (_, t) in pending.items() if now_ - t > OAUTH_PENDING_TTL]:
@@ -183,13 +208,17 @@ def create_app(db_path: str | None = None, http: httpx.Client | None = None, cli
         finally:
             run_lock.release()
 
+    def microsoft_if_connected(c):
+        return Microsoft(c, http) if ms_oauth.status(c)["connected"] else None
+
     @app.post("/api/capture/run", dependencies=api)
     def capture_run(c=Depends(get_conn)):
-        return exclusive(lambda: capture.run(c, Google(c, http), client=client))
+        return exclusive(lambda: capture.run(c, Google(c, http), client=client, microsoft=microsoft_if_connected(c)))
 
     @app.post("/api/brief/run", dependencies=api)
     def brief_run(send: bool = False, c=Depends(get_conn)):
-        return exclusive(lambda: brief.run(c, Google(c, http), client=client, send=send))
+        return exclusive(lambda: brief.run(c, Google(c, http), client=client, send=send,
+                                           microsoft=microsoft_if_connected(c)))
 
     @app.get("/api/brief/latest", dependencies=api)
     def brief_latest(c=Depends(get_conn)):
@@ -202,17 +231,203 @@ def create_app(db_path: str | None = None, http: httpx.Client | None = None, cli
     def ai_usage(days: int = 30, c=Depends(get_conn)):
         return llm.usage_summary(c, max(1, min(days, 365)))
 
+    # Proposals, messages, Ask: the web app's data
+
+    @app.get("/api/proposals", dependencies=api)
+    def proposals(status: str | None = None, days: int = 3, c=Depends(get_conn)):
+        since = (datetime.now(_tz(c)) - timedelta(days=max(0, min(days, 365)))).date().isoformat()
+        active = store.list_proposals(c, ("pending", "approved", "failed"))
+        if status:
+            return store.list_proposals(c, tuple(status.split(",")))
+        recent = store.list_proposals(c, ("done", "declined"), since_day=since)
+        return active + recent
+
+    @app.post("/api/proposals", dependencies=api, status_code=201)
+    def add_proposal(proposal: dict, c=Depends(get_conn)):
+        try:
+            return store.add_proposal(c, proposal, actor="assistant")
+        except ValueError as e:
+            raise HTTPException(422, str(e))
+
+    @app.patch("/api/proposals/{proposal_id}", dependencies=api)
+    def patch_proposal(proposal_id: str, patch: dict, as_assistant: bool = False, c=Depends(get_conn)):
+        """The web app approves/declines; the assistant (?as_assistant=1) records done/failed."""
+        try:
+            return store.update_proposal(c, proposal_id, patch, actor="assistant" if as_assistant else "user")
+        except KeyError:
+            raise HTTPException(404, "no such proposal")
+        except ValueError as e:
+            raise HTTPException(409, str(e))
+
+    @app.get("/api/messages", dependencies=api)
+    def messages(limit: int = 40, status: str | None = None, c=Depends(get_conn)):
+        return store.list_messages(c, max(1, min(limit, 200)), status)
+
+    @app.post("/api/messages", dependencies=api, status_code=201)
+    def add_message(body: dict, c=Depends(get_conn)):
+        sender = body.get("from", "owner")
+        try:
+            return store.add_message(c, "assistant" if sender in {"assistant", "tower"} else "owner", body.get("text", ""))
+        except ValueError as e:
+            raise HTTPException(422, str(e))
+
+    @app.patch("/api/messages/{message_id}", dependencies=api)
+    def patch_message(message_id: str, body: dict, c=Depends(get_conn)):
+        try:
+            store.mark_message(c, message_id, body.get("status", "handled"))
+        except KeyError:
+            raise HTTPException(404, "no such message")
+        except ValueError as e:
+            raise HTTPException(422, str(e))
+        return {"ok": True}
+
+    @app.post("/api/ask", dependencies=api)
+    def ask(body: dict, c=Depends(get_conn)):
+        """A quick answer from the board, proposals and latest brief (the `chat` route). Takes no actions."""
+        question = (body.get("question") or "").strip()[:2000]
+        if not question:
+            raise HTTPException(422, "ask needs a question")
+        history = [m for m in body.get("history", [])[-8:] if isinstance(m, dict)]
+        latest = brief.latest(c)
+        name = store.assistant_name(c)
+        system = (f"You are {name}, the owner's chief of staff, answering inside the Chief of Staff app. "
+                  f"Answer briefly and plainly from the data in the message only; if something isn't there, say "
+                  f"you don't know. You can't take actions from here: for anything that needs doing (calendar, "
+                  f"email, changes), tell the owner to tap \"Send to {name}\". Never include clinical or patient details.")
+        user = json.dumps({
+            "now": datetime.now(_tz(c)).isoformat(),
+            "openItems": store.list_items(c),
+            "proposals": store.list_proposals(c, ("pending", "approved")),
+            "brief": {k: latest[k] for k in ("day", "subject", "markdown")} if latest else None,
+            "conversation": [{"from": m.get("from"), "text": str(m.get("text", ""))[:2000]} for m in history],
+            "question": question,
+        }, ensure_ascii=False, default=str)
+        schema = {"type": "object", "properties": {"answer": {"type": "string"}},
+                  "required": ["answer"], "additionalProperties": False}
+        try:
+            return llm.complete(c, "chat", system, user, schema, max_tokens=2000, client=client)
+        except llm.ModelError as e:
+            raise HTTPException(502, str(e))
+        except RuntimeError as e:
+            raise HTTPException(409, str(e))
+
+    @app.post("/api/import/page", dependencies=api)
+    def import_page_data(data: dict, c=Depends(get_conn)):
+        """Move data over from the old Claude-hosted page (items, proposals, messages, brief)."""
+        return import_page(c, data)
+
+    # Microsoft 365: connect, status, Outlook calendar and mail, To Do
+
+    def ms_call(fn):
+        try:
+            return fn()
+        except ms_oauth.MicrosoftNotConnected as e:
+            raise HTTPException(409, str(e))
+        except httpx.HTTPStatusError as e:
+            raise HTTPException(502, f"Microsoft returned {e.response.status_code}")
+        except httpx.HTTPError as e:
+            raise HTTPException(502, f"could not reach Microsoft: {e.__class__.__name__}")
+
+    @app.get("/oauth/microsoft/start")
+    def microsoft_start(token: str | None = None, cos_session: str | None = Cookie(default=None), c=Depends(get_conn)):
+        require_token(f"Bearer {token}" if token else None, cos_session)
+        url, state, verifier = ms_call(lambda: ms_oauth.start(c))
+        now_ = time.time()
+        for k in [k for k, (_, t) in pending.items() if now_ - t > OAUTH_PENDING_TTL]:
+            del pending[k]
+        pending[state] = (verifier, now_)
+        return RedirectResponse(url)
+
+    @app.get("/oauth/microsoft/callback", response_class=HTMLResponse)
+    def microsoft_callback(state: str, code: str | None = None, error: str | None = None,
+                           error_description: str | None = None, c=Depends(get_conn)):
+        entry = pending.pop(state, None)
+        if entry is None or time.time() - entry[1] > OAUTH_PENDING_TTL:
+            raise HTTPException(400, "unknown or expired sign-in attempt; start again")
+        if error or not code:
+            raise HTTPException(400, f"Microsoft sign-in failed: {error_description or error or 'no code'}")
+        ms_call(lambda: ms_oauth.finish(c, code, entry[0], http))
+        account = ms_call(lambda: Microsoft(c, http).me())
+        who = html.escape(account.get("mail") or account.get("userPrincipalName") or "your account")
+        return f"<!doctype html><p>Microsoft 365 connected ({who}). You can close this tab.</p>"
+
+    @app.get("/api/microsoft/status", dependencies=api)
+    def microsoft_status(c=Depends(get_conn)):
+        return ms_oauth.status(c)
+
+    @app.post("/api/microsoft/disconnect", dependencies=api)
+    def microsoft_disconnect(c=Depends(get_conn)):
+        ms_oauth.disconnect(c)
+        return {"ok": True}
+
+    @app.get("/api/microsoft/calendars", dependencies=api)
+    def microsoft_calendars(c=Depends(get_conn)):
+        return ms_call(lambda: Microsoft(c, http).calendars())
+
+    @app.get("/api/microsoft/agenda", dependencies=api)
+    def microsoft_agenda(days: int = 7, c=Depends(get_conn)):
+        return ms_call(lambda: Microsoft(c, http).agenda(max(0, min(days, 31))))
+
+    @app.get("/api/microsoft/mail/search", dependencies=api)
+    def microsoft_mail(q: str, limit: int = 25, c=Depends(get_conn)):
+        return ms_call(lambda: Microsoft(c, http).search(q, max(1, min(limit, 50))))
+
+    @app.get("/api/microsoft/todo", dependencies=api)
+    def microsoft_todo(c=Depends(get_conn)):
+        return ms_call(lambda: Microsoft(c, http).todo())
+
+    # The web app (installable on a phone's home screen)
+
+    @app.get("/login", response_class=HTMLResponse)
+    def login_page(error: str | None = None):
+        page = (WEB / "login.html").read_text()
+        return page.replace("<!--error-->", '<p class="err">That key didn\'t match. Try again.</p>' if error else "")
+
+    @app.post("/login")
+    def login(key: str = Form(...)):
+        token = os.environ.get("COS_API_TOKEN")
+        if token and not secrets.compare_digest(key.strip(), token):
+            return RedirectResponse("/login?error=1", status_code=303)
+        resp = RedirectResponse("/", status_code=303)
+        if token:
+            resp.set_cookie(SESSION_COOKIE, _session_value(token), max_age=SESSION_DAYS * 86400, httponly=True,
+                            samesite="lax", secure=os.environ.get("COS_SECURE_COOKIE", "1") == "1")
+        return resp
+
+    @app.post("/logout")
+    def logout():
+        resp = RedirectResponse("/login", status_code=303)
+        resp.delete_cookie(SESSION_COOKIE)
+        return resp
+
     @app.get("/", response_class=HTMLResponse)
-    def home(c=Depends(get_conn)):
+    def home(cos_session: str | None = Cookie(default=None)):
+        if not signed_in(cos_session):
+            return RedirectResponse("/login", status_code=303)
+        return FileResponse(WEB / "index.html", headers={"Cache-Control": "no-cache"})
+
+    @app.get("/sw.js")
+    def service_worker():
+        # Served from the root so it can cover the whole app.
+        return FileResponse(WEB / "sw.js", media_type="text/javascript", headers={"Cache-Control": "no-cache"})
+
+    app.mount("/static", StaticFiles(directory=WEB / "static"), name="static")
+
+    @app.get("/status", response_class=HTMLResponse, dependencies=api)
+    def status_page(c=Depends(get_conn)):
         name = html.escape(store.assistant_name(c))
         open_items = len(store.list_items(c))
         rules_n = len(store.list_rules(c))
         google = "connected" if oauth.status(c)["connected"] else "not connected"
+        microsoft = "connected" if ms_oauth.status(c)["connected"] else "not connected"
         return f"""<!doctype html><html><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1"><title>Chief of Staff</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>Chief of Staff · status</title>
 <style>body{{font:16px system-ui;margin:2rem auto;max-width:36rem;padding:0 1rem}}</style></head>
 <body><h1>Chief of Staff</h1><p>Assistant: <b>{name}</b> · v{__version__}</p>
-<p>{open_items} open board items · {rules_n} rules · Google {google}</p></body></html>"""
+<p>{open_items} open board items · {rules_n} rules · Google {google} · Microsoft 365 {microsoft}</p></body></html>"""
+
+    def _tz(c) -> ZoneInfo:
+        return ZoneInfo(store.get_setting(c, "timezone", "UTC"))
 
     return app
 

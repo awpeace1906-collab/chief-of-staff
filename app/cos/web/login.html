@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#16191d">
+<link rel="manifest" href="/static/manifest.webmanifest">
+<link rel="icon" href="/static/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/static/icon-180.png">
+<title>Chief of Staff · sign in</title>
+<style>
+:root { --bg: #eef1f4; --surface: #fff; --ink: #15191e; --muted: #5b6672; --line: #d5dbe2; --sign: #16191d; --gold: #f5c400; --warn: #b3261e; --focus: #1f6feb; }
+@media (prefers-color-scheme: dark) { :root { --bg: #0f1215; --surface: #181c21; --ink: #e8ecf0; --muted: #98a3ae; --line: #2a3038; --sign: #050607; --warn: #f2786f; --focus: #79a8ff; } }
+* { box-sizing: border-box; }
+body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--ink); font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; display: grid; place-items: center; padding: 16px; }
+.card { width: 100%; max-width: 24rem; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.top { background: var(--sign); color: var(--gold); padding: 18px 20px; font: 700 1.5rem/1 "Barlow Condensed", "Arial Narrow", system-ui, sans-serif; letter-spacing: 0.08em; text-transform: uppercase; }
+form { display: grid; gap: 12px; padding: 20px; }
+label { display: grid; gap: 4px; color: var(--muted); font-size: 0.9rem; }
+input { font: 16px system-ui; padding: 10px 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--ink); }
+input:focus-visible, button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+button { font: 600 1.05rem "Barlow Condensed", "Arial Narrow", system-ui, sans-serif; letter-spacing: 0.06em; text-transform: uppercase; padding: 11px; border: 0; border-radius: 6px; background: var(--sign); color: var(--gold); cursor: pointer; }
+.err { color: var(--warn); margin: 0; }
+.note { color: var(--muted); font-size: 0.85rem; margin: 0; }
+</style>
+</head>
+<body>
+<main class="card">
+  <div class="top">Chief of Staff</div>
+  <form method="post" action="/login" autocomplete="on">
+    <!--error-->
+    <label for="key">Access key
+      <input id="key" name="key" type="password" autocomplete="current-password" required autofocus>
+    </label>
+    <button type="submit">Sign in</button>
+    <p class="note">This device stays signed in for 90 days.</p>
+  </form>
+</main>
+</body>
+</html>

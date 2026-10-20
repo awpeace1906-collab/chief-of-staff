@@ -40,7 +40,8 @@ Today Tower runs as a Claude Code scheduled task wired to Gmail, Google Calendar
 | Digests from siloed systems (Microsoft 365 etc.) | Framework drafted; Gmail digests live, work account needs forwarding |
 | Brain as long-term memory | In the hosted app. Claude Code cloud sessions can't reach gists, so there Tower's memory is `config/tower.json` |
 | Voice and messaging (own number: text, voice notes, calls) | Spec written; interim is readywhen's WhatsApp beta |
-| Self-contained app | v0.3: writes and emails the morning brief itself ([app/](app/)); approvals next |
+| Self-contained app | v0.4: its own installable web app (Today, To-do, Talk, approvals), Microsoft 365 alongside Google ([app/](app/)); needs a host ([docs/deployment.md](docs/deployment.md#hosting-the-app-today-v04)) |
+| Microsoft 365 (personal account) | Built into the app via Microsoft Graph, read-only ([docs/setup/microsoft.md](docs/setup/microsoft.md)) |
 | AI providers | Claude by default, per-task routes; local models optional ([docs/features/ai-providers.md](docs/features/ai-providers.md)) |
 
 ## Rule for changes

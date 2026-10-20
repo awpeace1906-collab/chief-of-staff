@@ -1,3 +1,3 @@
 """Chief of Staff: a self-contained personal AI chief of staff."""
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"

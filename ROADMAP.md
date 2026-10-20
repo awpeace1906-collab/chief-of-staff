@@ -39,7 +39,10 @@ See [docs/self-contained.md](docs/self-contained.md).
 - [ ] Andrew: Anthropic API key in the app's environment; reconnect Google for the send permission
 - [ ] Brief parity with the Claude Code version: flight-email parsing, readywhen parity line, Brain sync
 - [ ] Optional local AI provider (Ollama / llama.cpp) for any route ([docs/features/ai-providers.md](docs/features/ai-providers.md))
-- [ ] v0.4 Approvals: PWA (brief, board, one-tap approve) + audit log
+- [x] v0.4 Own web app (installable PWA): Today (brief, proposals with approve / change / decline), To-do (filters, snooze, swipe to finish), Talk (Ask answers instantly; Send queues for the assistant); sign-in by access key; audit log; import from the old Claude-hosted page
+- [x] v0.4 Microsoft 365 via Graph (personal or work accounts, read-only): Outlook mail into capture, Outlook calendar and To Do into the brief ([docs/setup/microsoft.md](docs/setup/microsoft.md))
+- [ ] Andrew: pick a host (Fly.io recommended) and deploy; register the Microsoft app and connect
+- [ ] v0.4.1 The app carries out approved proposals itself (needs Calendar write scope) and answers Send messages with tools; until then the Claude Code check-in does both through the app's API
 - [ ] v0.5 Channels: carrier webhooks for SMS; approvals by text
 - [ ] v0.6 Voice notes (faster-whisper); calls via carrier speech; Piper for replies
 - [ ] v0.7 Brain sync (two-way, optional); export/backup
@@ -48,7 +51,7 @@ See [docs/self-contained.md](docs/self-contained.md).
 ## The app: later
 
 - [ ] Configurable assistant name, divisions, coverage people, standing agreements
-- [ ] Google OAuth for Calendar and Gmail; Microsoft Graph as an optional direct source
+- [x] Google OAuth for Calendar and Gmail; Microsoft Graph as an optional direct source
 - [ ] Per-user assistant inbox and a digest adapter library users can extend
 - [ ] Brain (`brain/v1` gist) as the memory store
 - [ ] Scheduler for the brief and re-plan triggers

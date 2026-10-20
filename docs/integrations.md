@@ -12,6 +12,7 @@
 | Granola | Meeting notes → commitments | Claude connector | Read |
 | Flights | Travel for coverage check | Airline / Expedia emails, TripIt forwards | Read |
 | Tower inbox `tower-andrew@agentmail.to` | Intake for digests forwarded from siloed accounts | AgentMail connector | Read; mark handled messages read |
+| Microsoft 365, personal (awpeace1906@gmail.com) | Outlook mail and calendar, To Do, OneDrive | The app connects directly through Microsoft Graph (v0.4, [setup](setup/microsoft.md)); Claude's Microsoft 365 connector only supports work or school accounts | Read |
 | Siloed systems (Microsoft 365 at burrell.edu, MedHub, Amion, Canvas, …) | Commitments, schedule changes, FYIs | Their digest emails, via adapters in `config/digests.json` | Read |
 
 ## Brain contract

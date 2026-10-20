@@ -1,6 +1,6 @@
 # Propose → approve
 
-**Status:** live.
+**Status:** live. In the app (v0.4), proposals live in its own database and the web app's Today tab is where you approve them.
 
 ## How it works
 

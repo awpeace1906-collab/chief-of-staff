@@ -110,7 +110,9 @@
                 "digest",
                 "voice",
                 "manual",
-                "readywhen"
+                "readywhen",
+                "outlook",
+                "microsoft-todo"
               ]
             },
             "ref": {

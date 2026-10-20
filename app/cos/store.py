@@ -125,3 +125,112 @@ def _validate_item(item: dict) -> None:
 
 def _rand4() -> str:
     return "".join(random.choices(string.ascii_lowercase + string.digits, k=4))
+
+
+# Proposals: actions the assistant wants to take, waiting for the owner's OK
+
+PROPOSAL_STATUSES = {"pending", "approved", "declined", "done", "failed"}
+PROPOSAL_FIELDS = ("kind", "division", "calendar", "title", "when", "where", "change", "summary")
+
+
+def add_proposal(conn: sqlite3.Connection, proposal: dict, actor: str = "assistant") -> dict:
+    """Store a pending proposal. Numbered after the day's existing ones unless `n` is given."""
+    day = proposal.get("day") or now()[:10]
+    n = proposal.get("n") or 1 + (conn.execute("SELECT MAX(n) FROM proposals WHERE day = ?", (day,)).fetchone()[0] or 0)
+    p = {k: proposal.get(k) or "" for k in PROPOSAL_FIELDS} | {
+        "id": f"{day}-{n}", "day": day, "n": n, "status": "pending", "createdAt": now()}
+    if not (p["title"] or p["summary"]):
+        raise ValueError("a proposal needs a title or a summary")
+    existing = get_proposal(conn, p["id"])
+    if existing and existing["status"] != "pending":
+        raise ValueError(f"proposal {p['id']} was already {existing['status']}")
+    _write_proposal(conn, p)
+    audit(conn, actor, "proposal.add", id=p["id"])
+    conn.commit()
+    return p
+
+
+def update_proposal(conn: sqlite3.Connection, proposal_id: str, patch: dict, actor: str = "user") -> dict:
+    """The owner approves or declines (optionally with changes); the assistant records done/failed."""
+    p = get_proposal(conn, proposal_id)
+    if p is None:
+        raise KeyError(proposal_id)
+    status = patch.get("status", p["status"])
+    if status not in PROPOSAL_STATUSES:
+        raise ValueError(f"unknown status '{status}'")
+    allowed = {"user": {"approved", "declined"}, "assistant": {"done", "failed", "pending"}}.get(actor, PROPOSAL_STATUSES)
+    if "status" in patch and status not in allowed:
+        raise ValueError(f"{actor} can't set a proposal to '{status}'")
+    if actor == "user" and p["status"] != "pending":
+        raise ValueError(f"proposal {proposal_id} is already {p['status']}")
+    for k in ("changes", "result"):
+        if patch.get(k):
+            p[k] = str(patch[k])[:2000]
+    p["status"] = status
+    p["decidedAt" if actor == "user" else "handledAt"] = now()
+    _write_proposal(conn, p)
+    audit(conn, actor, "proposal.update", id=proposal_id, status=status)
+    conn.commit()
+    return p
+
+
+def get_proposal(conn: sqlite3.Connection, proposal_id: str) -> dict | None:
+    row = conn.execute("SELECT data FROM proposals WHERE id = ?", (proposal_id,)).fetchone()
+    return json.loads(row["data"]) if row else None
+
+
+def list_proposals(conn: sqlite3.Connection, statuses=None, since_day: str | None = None) -> list[dict]:
+    sql, args = "SELECT data FROM proposals WHERE 1=1", []
+    if statuses:
+        sql += f" AND status IN ({','.join('?' * len(statuses))})"
+        args += list(statuses)
+    if since_day:
+        sql += " AND day >= ?"
+        args.append(since_day)
+    return [json.loads(r["data"]) for r in conn.execute(sql + " ORDER BY day DESC, n", args)]
+
+
+def _write_proposal(conn: sqlite3.Connection, p: dict) -> None:
+    conn.execute(
+        """INSERT INTO proposals (id, day, n, status, data, updated_at) VALUES (?, ?, ?, ?, ?, ?)
+           ON CONFLICT(id) DO UPDATE SET status = excluded.status, data = excluded.data,
+             updated_at = excluded.updated_at""",
+        (p["id"], p["day"], p["n"], p["status"], json.dumps(p), now()),
+    )
+
+
+# Messages: the owner's line to the assistant
+
+MESSAGE_SENDERS = {"owner", "assistant"}
+
+
+def add_message(conn: sqlite3.Connection, sender: str, text: str, at: str | None = None,
+                status: str | None = None, message_id: str | None = None) -> dict:
+    if sender not in MESSAGE_SENDERS:
+        raise ValueError(f"unknown sender '{sender}'")
+    text = (text or "").strip()
+    if not text:
+        raise ValueError("empty message")
+    m = {"id": message_id or f"m-{int(time.time() * 1000)}-{_rand4()}", "at": at or now(), "from": sender,
+         "status": status or ("new" if sender == "owner" else "handled"), "text": text[:4000]}
+    conn.execute("INSERT OR IGNORE INTO messages (id, at, sender, status, text) VALUES (?, ?, ?, ?, ?)",
+                 (m["id"], m["at"], sender, m["status"], m["text"]))
+    conn.commit()
+    return m
+
+
+def list_messages(conn: sqlite3.Connection, limit: int = 40, status: str | None = None) -> list[dict]:
+    sql, args = "SELECT * FROM messages", []
+    if status:
+        sql, args = sql + " WHERE status = ?", [status]
+    rows = conn.execute(sql + " ORDER BY at DESC LIMIT ?", args + [limit]).fetchall()
+    return [{"id": r["id"], "at": r["at"], "from": r["sender"], "status": r["status"], "text": r["text"]}
+            for r in reversed(rows)]
+
+
+def mark_message(conn: sqlite3.Connection, message_id: str, status: str = "handled") -> None:
+    if status not in {"new", "handled"}:
+        raise ValueError(f"unknown status '{status}'")
+    if conn.execute("UPDATE messages SET status = ? WHERE id = ?", (status, message_id)).rowcount == 0:
+        raise KeyError(message_id)
+    conn.commit()
