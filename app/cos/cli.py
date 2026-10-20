@@ -1,11 +1,15 @@
-"""Command line: `cos serve`, `cos import ...`, `cos export`."""
+"""Command line: serve, import, export, google, agenda, mail, capture, brief, usage."""
 
 import argparse
 import json
 import os
 import sys
 
-from . import db
+import httpx
+
+from . import brief, capture, db, llm
+from .google import oauth
+from .google.api import Google
 from .importer import export_all, import_board, import_brain, import_config
 
 
@@ -25,6 +29,25 @@ def main(argv: list[str] | None = None) -> int:
     imp.add_argument("--board", help="cos-board/v1 export")
 
     sub.add_parser("export", help="print everything as portable JSON")
+
+    g = sub.add_parser("google", help="Google connection status")
+    g.add_argument("action", choices=["status", "disconnect"])
+
+    ag = sub.add_parser("agenda", help="calendar by division")
+    ag.add_argument("--days", type=int, default=7)
+
+    m = sub.add_parser("mail", help="read Gmail")
+    m.add_argument("action", choices=["search", "intake"])
+    m.add_argument("query", nargs="?", help="Gmail search query (for search)")
+    m.add_argument("--limit", type=int, default=10)
+
+    sub.add_parser("capture", help="read new mail and update the board")
+
+    b = sub.add_parser("brief", help="capture, then write the morning brief")
+    b.add_argument("--send", action="store_true", help="also email it to the owner")
+
+    u = sub.add_parser("usage", help="AI token use and estimated cost")
+    u.add_argument("--days", type=int, default=30)
 
     args = parser.parse_args(argv)
 
@@ -47,10 +70,50 @@ def main(argv: list[str] | None = None) -> int:
         if args.board:
             print("board items:", import_board(conn, args.board))
     elif args.cmd == "export":
-        json.dump(export_all(conn), sys.stdout, indent=2)
-        print()
+        _print(export_all(conn))
+    elif args.cmd == "google":
+        if args.action == "disconnect":
+            oauth.disconnect(conn)
+        _print(oauth.status(conn))
+    elif args.cmd == "agenda":
+        _print(Google(conn).agenda(args.days))
+    elif args.cmd == "mail":
+        g = Google(conn)
+        if args.action == "search":
+            if not args.query:
+                parser.error("mail search needs a query")
+            msgs = g.search(args.query, args.limit)
+        else:
+            msgs = g.intake(limit=args.limit)
+        _print([{k: m[k] for k in ("date", "from", "subject", "snippet", "url")} for m in msgs])
+    elif args.cmd == "capture":
+        _print(capture.run(conn, Google(conn)))
+    elif args.cmd == "brief":
+        result = brief.run(conn, Google(conn), send=args.send)
+        print(result["subject"], "\n")
+        print(result["markdown"])
+        if result["sent"]:
+            print("\n(emailed)")
+    elif args.cmd == "usage":
+        _print(llm.usage_summary(conn, args.days))
     return 0
 
 
+def _print(data) -> None:
+    json.dump(data, sys.stdout, indent=2)
+    print()
+
+
+def run() -> int:
+    """Entry point: friendly one-line errors instead of tracebacks."""
+    try:
+        return main()
+    except (oauth.GoogleNotConnected, llm.ModelError, RuntimeError) as e:
+        print(f"cos: {e}", file=sys.stderr)
+    except httpx.HTTPError as e:
+        print(f"cos: Google request failed ({e.__class__.__name__}: {e})", file=sys.stderr)
+    return 1
+
+
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(run())

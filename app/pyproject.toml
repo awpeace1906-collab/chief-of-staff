@@ -1,18 +1,20 @@
 [project]
 name = "chief-of-staff"
-version = "0.1.0"
+version = "0.3.0"
 description = "Chief of Staff: a self-contained personal AI chief of staff"
 requires-python = ">=3.12"
 dependencies = [
   "fastapi>=0.115",
   "uvicorn[standard]>=0.30",
+  "httpx>=0.27",
+  "anthropic>=1.15",
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8", "httpx>=0.27"]
+dev = ["pytest>=8"]
 
 [project.scripts]
-cos = "cos.cli:main"
+cos = "cos.cli:run"
 
 [build-system]
 requires = ["setuptools>=69"]

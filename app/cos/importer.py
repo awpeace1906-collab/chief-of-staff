@@ -29,7 +29,7 @@ def import_config(conn: sqlite3.Connection, config_dir: Path) -> dict:
         cfg = json.loads(path.read_text())
         if "assistant" not in cfg:
             continue
-        for key in ("assistant", "timezone", "brief", "approvals", "divisions", "hosting", "openItems"):
+        for key in ("assistant", "timezone", "brief", "approvals", "divisions", "hosting", "openItems", "google"):
             if key in cfg:
                 put_setting(conn, key, cfg[key], actor="system")
                 counts["settings"] += 1
