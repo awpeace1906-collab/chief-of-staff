@@ -1,4 +1,4 @@
-"""Command line: serve, import, export, google, agenda, mail, capture, brief, usage."""
+"""Command line: serve, import, export, google, microsoft, agenda, mail, capture, brief, usage."""
 
 import argparse
 import json
@@ -10,7 +10,9 @@ import httpx
 from . import brief, capture, db, llm
 from .google import oauth
 from .google.api import Google
-from .importer import export_all, import_board, import_brain, import_config
+from .importer import export_all, import_board, import_brain, import_config, import_page
+from .microsoft import oauth as ms_oauth
+from .microsoft.api import Microsoft
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -27,11 +29,16 @@ def main(argv: list[str] | None = None) -> int:
     imp.add_argument("--brain", help="brain-data.json export")
     imp.add_argument("--brain-tag", default="tower", help="Brain tag that marks the assistant's entries")
     imp.add_argument("--board", help="cos-board/v1 export")
+    imp.add_argument("--page", help="export of the old Claude-hosted page (items, proposals, messages, brief)")
 
     sub.add_parser("export", help="print everything as portable JSON")
 
     g = sub.add_parser("google", help="Google connection status")
     g.add_argument("action", choices=["status", "disconnect"])
+
+    ms = sub.add_parser("microsoft", help="Microsoft 365: status, calendars, To Do")
+    ms.add_argument("action", choices=["status", "disconnect", "calendars", "agenda", "todo"])
+    ms.add_argument("--days", type=int, default=7)
 
     ag = sub.add_parser("agenda", help="calendar by division")
     ag.add_argument("--days", type=int, default=7)
@@ -61,20 +68,33 @@ def main(argv: list[str] | None = None) -> int:
 
     conn = db.connect(args.db)
     if args.cmd == "import":
-        if not (args.config or args.brain or args.board):
-            parser.error("import needs --config, --brain and/or --board")
+        if not (args.config or args.brain or args.board or args.page):
+            parser.error("import needs --config, --brain, --board and/or --page")
         if args.config:
             print("config:", import_config(conn, args.config))
         if args.brain:
             print("brain entries:", import_brain(conn, args.brain, args.brain_tag))
         if args.board:
             print("board items:", import_board(conn, args.board))
+        if args.page:
+            print("page:", import_page(conn, json.loads(open(args.page).read())))
     elif args.cmd == "export":
         _print(export_all(conn))
     elif args.cmd == "google":
         if args.action == "disconnect":
             oauth.disconnect(conn)
         _print(oauth.status(conn))
+    elif args.cmd == "microsoft":
+        if args.action == "disconnect":
+            ms_oauth.disconnect(conn)
+        if args.action in {"status", "disconnect"}:
+            _print(ms_oauth.status(conn))
+        elif args.action == "calendars":
+            _print(Microsoft(conn).calendars())
+        elif args.action == "agenda":
+            _print(Microsoft(conn).agenda(args.days))
+        else:
+            _print(Microsoft(conn).todo())
     elif args.cmd == "agenda":
         _print(Google(conn).agenda(args.days))
     elif args.cmd == "mail":
@@ -108,10 +128,10 @@ def run() -> int:
     """Entry point: friendly one-line errors instead of tracebacks."""
     try:
         return main()
-    except (oauth.GoogleNotConnected, llm.ModelError, RuntimeError) as e:
+    except (oauth.GoogleNotConnected, ms_oauth.MicrosoftNotConnected, llm.ModelError, RuntimeError) as e:
         print(f"cos: {e}", file=sys.stderr)
     except httpx.HTTPError as e:
-        print(f"cos: Google request failed ({e.__class__.__name__}: {e})", file=sys.stderr)
+        print(f"cos: request failed ({e.__class__.__name__}: {e})", file=sys.stderr)
     return 1
 
 

@@ -72,14 +72,18 @@ SCHEMA = {
 }
 
 
-def run(conn: sqlite3.Connection, google: Google, client=None, since: datetime | None = None) -> dict:
-    """Capture since the last run (default: last 24 hours) and apply the changes."""
+def run(conn: sqlite3.Connection, google: Google, client=None, since: datetime | None = None,
+        microsoft=None) -> dict:
+    """Capture since the last run (default: last 24 hours) and apply the changes.
+    `microsoft` (a cos.microsoft.api.Microsoft) adds Outlook inbox and sent mail."""
     state = store.get_setting(conn, "capture", {})
     started = datetime.now(timezone.utc)
     since = since or _parse(state.get("lastCaptureAt")) or started - timedelta(days=1)
     days = max(1, (started - since).days + 1)  # Gmail's newer_than is day-granular
 
     messages = _gather(conn, google, days, since)
+    if microsoft is not None:
+        messages += _gather_outlook(conn, microsoft, since, MAX_MESSAGES - len(messages))
     if not messages:
         store.put_setting(conn, "capture", state | {"lastCaptureAt": now()}, actor="system")
         return {"messages": 0, "added": [], "updated": [], "closed": [], "questions": [], "skipped": []}
@@ -127,6 +131,22 @@ def _gather(conn: sqlite3.Connection, google: Google, days: int, since: datetime
     return out
 
 
+def _gather_outlook(conn: sqlite3.Connection, microsoft, since: datetime, room: int) -> list[dict]:
+    blocked, out = _blocked_senders(conn), []
+    for folder in ("inbox", "sentitems"):
+        if room - len(out) <= 0:
+            break
+        for m in microsoft.search(folder=folder, since=since, limit=room - len(out)):
+            if any(b in (m.get("from") or "").lower() for b in blocked):
+                continue
+            out.append({
+                "id": m["id"], "threadId": m["threadId"], "date": m["date"], "from": m["from"], "to": m["to"],
+                "subject": m["subject"], "sent": folder == "sentitems", "body": m["body"][:BODY_CHARS],
+                "mailbox": "outlook",
+            })
+    return out
+
+
 def _blocked_senders(conn: sqlite3.Connection) -> set[str]:
     """Senders whose digest adapter says never read (sensitive) or skip (ignore)."""
     adapters = (store.get_setting(conn, "digests", {}) or {}).get("adapters", [])
@@ -148,7 +168,8 @@ def _apply(conn: sqlite3.Connection, changes: list[dict], messages: dict, divisi
                     "title": ch["title"], "direction": ch["direction"], "division": division,
                     "counterparty": ch["counterparty"], "due": ch["due"], "dueConfidence": ch["dueConfidence"],
                     "notes": ch["notes"],
-                    "source": {"kind": "gmail", "ref": msg.get("threadId") or ch["sourceRef"], "url": msg.get("url")},
+                    "source": {"kind": "outlook" if msg.get("mailbox") == "outlook" else "gmail",
+                               "ref": msg.get("threadId") or ch["sourceRef"], "url": msg.get("url")},
                 })
                 added.append({"id": item["id"], "title": item["title"]})
             elif ch["op"] == "update" and ch["itemId"]:

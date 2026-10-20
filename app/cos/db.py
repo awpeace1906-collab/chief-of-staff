@@ -6,7 +6,7 @@ import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
 
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS settings (
@@ -60,6 +60,23 @@ CREATE TABLE IF NOT EXISTS briefs (
     proposals TEXT NOT NULL,         -- JSON list
     capture   TEXT NOT NULL,         -- JSON changelog from the capture step
     sent      INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS proposals (
+    id         TEXT PRIMARY KEY,     -- <day>-<n>, e.g. 2026-10-20-3
+    day        TEXT NOT NULL,
+    n          INTEGER NOT NULL,
+    status     TEXT NOT NULL,        -- pending | approved | declined | done | failed
+    data       TEXT NOT NULL,        -- full proposal as JSON
+    updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS messages (
+    id     TEXT PRIMARY KEY,         -- m-<ms>-<rand4>
+    at     TEXT NOT NULL,
+    sender TEXT NOT NULL,            -- owner | assistant
+    status TEXT NOT NULL,            -- new | handled
+    text   TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS audit_log (

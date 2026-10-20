@@ -14,6 +14,34 @@ People and companies will want different trade-offs between convenience and cont
 | Setup | Sign in | Installer + tunnel | Installer, Docker image, or deployment guide |
 | Upkeep | None | Low | Yours |
 
+## Hosting the app today (v0.4)
+
+The app is one small process with one SQLite file. Phones reach it over HTTPS, and Google and Microsoft sign-in also require HTTPS for anything other than localhost. Without a spare machine, the simplest home for it is a small cloud machine:
+
+| Option | Cost | Notes |
+|---|---|---|
+| **Fly.io** (recommended to start) | about $3–5/month | `app/fly.toml` is ready: Denver region, a 1 GB volume for the database, HTTPS on `<name>.fly.dev`, the scheduler always on |
+| Hetzner or DigitalOcean VPS | about $5–6/month | Docker Compose plus Caddy for HTTPS; more upkeep |
+| Home machine + Cloudflare Tunnel | the hardware | Later, per the hardware guide below; the same Docker image |
+
+Fly.io, from the repo root, the first time:
+
+```bash
+cd app
+fly launch --no-deploy --copy-config          # pick a unique app name; update the two redirect URLs in fly.toml
+fly volumes create cos_data --size 1 --region den
+fly secrets set COS_API_TOKEN=$(openssl rand -hex 24) ANTHROPIC_API_KEY=... \
+  GOOGLE_CLIENT_ID=... GOOGLE_CLIENT_SECRET=... MS_CLIENT_ID=... MS_CLIENT_SECRET=...
+fly deploy
+# load the settings and the old page's data
+fly ssh sftp shell        # put ../config/tower.json /data/tower.json; put ../config/digests.json /data/digests.json; put page.json /data/page.json
+fly ssh console -C "cos import --config /data --page /data/page.json"
+```
+
+Then open `https://<name>.fly.dev`, sign in with the `COS_API_TOKEN` value, and on a phone use **Share → Add to Home Screen**. Connect Google at `/oauth/google/start` and Microsoft at `/oauth/microsoft/start`.
+
+Back up the volume with `cos export` (JSON) or Fly's volume snapshots, which are on by default.
+
 ## Advanced settings (self-hosted and hybrid)
 
 | Setting | Options |

@@ -222,5 +222,7 @@ def test_api_brief_and_usage(env):
         r = c.post("/api/brief/run")
         assert r.status_code == 200 and r.json()["proposals"][0]["n"] == 1 and not r.json()["sent"]
         assert c.get("/api/brief/latest").json()["subject"].startswith("Tower:")
+        posted = c.get("/api/proposals").json()  # the brief's proposals land in the web app
+        assert [(x["n"], x["status"], x["summary"]) for x in posted] == [(1, "pending", "Draft reply to Ross Martinez")]
         assert c.get("/api/ai/usage").json()["estimatedUsd"] > 0
         assert c.get("/api/google/status").json()["canSend"]

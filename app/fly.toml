@@ -1,0 +1,32 @@
+# Fly.io: one small machine plus a 1 GB volume for the SQLite file. See docs/deployment.md.
+app = "chief-of-staff"          # change to a unique name
+primary_region = "den"          # Denver
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  COS_DATA_DIR = "/data"
+  COS_SCHEDULER = "1"
+  COS_GOOGLE_REDIRECT = "https://chief-of-staff.fly.dev/oauth/google/callback"
+  COS_MS_REDIRECT = "https://chief-of-staff.fly.dev/oauth/microsoft/callback"
+
+[mounts]
+  source = "cos_data"
+  destination = "/data"
+
+[http_service]
+  internal_port = 8700
+  force_https = true
+  auto_stop_machines = "off"    # the scheduler needs it running
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [[http_service.checks]]
+    path = "/health"
+    interval = "30s"
+    timeout = "5s"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"

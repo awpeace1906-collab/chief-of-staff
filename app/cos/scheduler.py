@@ -17,6 +17,8 @@ from zoneinfo import ZoneInfo
 from . import brief, store
 from .db import audit
 from .google.api import Google
+from .microsoft import oauth as ms_oauth
+from .microsoft.api import Microsoft
 
 log = logging.getLogger("cos.scheduler")
 CHECK_SECONDS = 30
@@ -51,7 +53,8 @@ def tick(conn: sqlite3.Connection, lock: threading.Lock, http=None, client=None)
         store.put_setting(conn, "scheduler", state | {"lastAttempt": time.time(), "attemptsDay": today,
                                                       "attempts": attempts}, actor="system")
         try:
-            result = brief.run(conn, Google(conn, http), client=client, send=True)
+            ms = Microsoft(conn, http) if ms_oauth.status(conn)["connected"] else None
+            result = brief.run(conn, Google(conn, http), client=client, send=True, microsoft=ms)
             store.put_setting(conn, "scheduler", store.get_setting(conn, "scheduler", {})
                               | {"lastBriefDay": result["day"], "lastError": result["sendError"]}, actor="system")
         except Exception as e:  # record and retry later; never kill the server

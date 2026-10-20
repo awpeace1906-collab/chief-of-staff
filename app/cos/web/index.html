@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#16191d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Chief of Staff">
+<link rel="manifest" href="/static/manifest.webmanifest">
+<link rel="icon" href="/static/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/static/icon-180.png">
+<title>Chief of Staff</title>
+<style>
+/* Chief of Staff: dark signage header, cards on a cool grey field, bottom tab bar for thumbs. Division colors: amber = Andrew, teal = Stephanie, violet = home & kids. */
+:root {
+  --bg: #eef1f4;
+  --surface: #ffffff;
+  --raised: #f6f8fa;
+  --ink: #15191e;
+  --muted: #5b6672;
+  --line: #d5dbe2;
+  --sign-bg: #16191d;
+  --sign-fg: #f5c400;
+  --sign-dim: #aeb5bd;
+  --me: #b86e00;
+  --steph: #13776f;
+  --kids: #6a4bb5;
+  --ok: #217a3c;
+  --warn: #b3261e;
+  --focus: #1f6feb;
+  --font-display: "Barlow Condensed", "Arial Narrow", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --nav-h: 60px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1215; --surface: #181c21; --raised: #1f242a; --ink: #e8ecf0; --muted: #98a3ae; --line: #2a3038;
+    --sign-bg: #050607; --sign-fg: #f5c400; --sign-dim: #8d959e;
+    --me: #f0a23a; --steph: #3fbfb4; --kids: #a98cf0; --ok: #5fc27a; --warn: #f2786f; --focus: #79a8ff;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1215; --surface: #181c21; --raised: #1f242a; --ink: #e8ecf0; --muted: #98a3ae; --line: #2a3038;
+  --sign-bg: #050607; --sign-fg: #f5c400; --sign-dim: #8d959e;
+  --me: #f0a23a; --steph: #3fbfb4; --kids: #a98cf0; --ok: #5fc27a; --warn: #f2786f; --focus: #79a8ff;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 var(--font-body); -webkit-tap-highlight-color: transparent; }
+.wrap { max-width: 44rem; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+button, input, select, textarea { font: inherit; }
+button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+/* header */
+header.sign { position: sticky; top: 0; z-index: 5; background: var(--sign-bg); color: var(--sign-fg); padding-top: env(safe-area-inset-top, 0px); }
+header.sign .wrap { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-block: 10px; }
+.brand { margin: 0; display: grid; line-height: 1; }
+.brand b { font: 700 1.4rem/1 var(--font-display); white-space: nowrap; letter-spacing: 0.08em; text-transform: uppercase; }
+.brand span { font: 500 0.78rem/1.4 var(--font-mono); color: var(--sign-dim); }
+.brand span i { font-style: normal; color: var(--sign-fg); }
+.clock { font: 500 0.8rem/1.3 var(--font-mono); color: var(--sign-dim); text-align: right; }
+.out { display: inline; margin: 0; }
+.out button { background: none; border: 0; padding: 0; color: var(--sign-dim); font: inherit; text-decoration: underline; cursor: pointer; }
+
+/* bottom tab bar */
+nav.tabs { position: fixed; inset: auto 0 0 0; z-index: 6; background: var(--sign-bg); padding-bottom: env(safe-area-inset-bottom, 0px); border-top: 1px solid #000; }
+nav.tabs .wrap { display: flex; height: var(--nav-h); }
+nav.tabs button { flex: 1; background: transparent; border: 0; border-top: 3px solid transparent; color: var(--sign-dim); font: 600 1rem var(--font-display); letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; display: grid; place-content: center; gap: 1px; }
+nav.tabs button[aria-selected="true"] { color: var(--sign-fg); border-top-color: var(--sign-fg); }
+nav.tabs .badge { font: 500 0.7rem/1 var(--font-mono); min-height: 0.7rem; }
+
+main { padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px) + 28px); }
+section[role="tabpanel"] { display: grid; gap: 22px; padding-top: 16px; }
+h2 { font: 700 1rem/1.2 var(--font-display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin: 0; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+h2 small { font: 500 0.75rem var(--font-mono); letter-spacing: 0; text-transform: none; white-space: nowrap; }
+.hint { margin: -4px 0 0; font: 500 0.75rem var(--font-mono); color: var(--muted); }
+.group { display: grid; gap: 8px; min-width: 0; }
+.note { color: var(--muted); font-size: 0.9rem; margin: 0; }
+.empty { border: 1px dashed var(--line); border-radius: 8px; padding: 16px; color: var(--muted); margin: 0; }
+
+/* today summary */
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; text-align: left; cursor: pointer; color: inherit; }
+.stat b { display: block; font: 700 1.9rem/1 var(--font-display); }
+.stat span { font-size: 0.82rem; color: var(--muted); }
+.stat.alert b { color: var(--warn); }
+
+/* proposals */
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; min-width: 0; }
+.proposal { display: grid; grid-template-columns: 5px 1fr; }
+.proposal .band { background: var(--muted); }
+.proposal[data-div="me"] .band { background: var(--me); }
+.proposal[data-div="stephanie"] .band { background: var(--steph); }
+.proposal[data-div="kids"] .band { background: var(--kids); }
+.proposal .inner { padding: 12px 14px; display: grid; gap: 6px; min-width: 0; overflow-wrap: anywhere; }
+.kicker { font: 600 0.8rem var(--font-display); letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); display: flex; gap: 8px; flex-wrap: wrap; }
+.kicker .num { color: var(--ink); }
+.ptitle { font-weight: 700; font-size: 1.05rem; line-height: 1.3; margin: 0; }
+.facts { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; margin: 2px 0 0; font-size: 0.92rem; }
+.facts dt { font: 600 0.78rem/1.6 var(--font-display); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.facts dd { margin: 0; min-width: 0; }
+.why { color: var(--muted); font-size: 0.9rem; margin: 0; }
+.result { font-size: 0.9rem; margin: 0; padding: 8px 10px; background: var(--raised); border-radius: 6px; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.pill { font: 600 0.8rem var(--font-display); letter-spacing: 0.08em; text-transform: uppercase; padding: 2px 9px; border-radius: 999px; border: 1px solid currentColor; }
+.pill.approved { color: var(--focus); } .pill.done { color: var(--ok); } .pill.declined { color: var(--muted); } .pill.failed { color: var(--warn); }
+.btn { font: 600 1rem var(--font-display); letter-spacing: 0.06em; text-transform: uppercase; padding: 9px 16px; min-height: 42px; border-radius: 6px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
+.btn.primary { background: var(--sign-bg); color: var(--sign-fg); border-color: var(--sign-bg); }
+.btn.quiet { border-color: transparent; background: transparent; color: var(--muted); }
+.btn.small { min-height: 34px; padding: 5px 11px; font-size: 0.9rem; }
+.btn:disabled { opacity: 0.5; cursor: default; }
+.changebox { display: grid; gap: 8px; }
+details.older summary { cursor: pointer; color: var(--muted); font-size: 0.9rem; }
+details.older[open] summary { margin-bottom: 8px; }
+
+/* brief */
+.brief { padding: 14px 16px; overflow-wrap: anywhere; }
+.brief h3 { font: 700 1.3rem/1.2 var(--font-display); letter-spacing: 0.02em; margin: 0 0 4px; text-wrap: balance; }
+.brief .md p { margin: 8px 0 0; }
+.brief .md ul { margin: 6px 0 0; padding-left: 1.2em; }
+.brief .md li { margin: 3px 0; }
+.brief.collapsed .md { max-height: 15rem; overflow: hidden; -webkit-mask-image: linear-gradient(#000 70%, transparent); mask-image: linear-gradient(#000 70%, transparent); }
+
+/* filters */
+.chips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
+.chip { flex: none; font: 600 0.92rem var(--font-display); letter-spacing: 0.06em; text-transform: uppercase; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--muted); cursor: pointer; display: inline-flex; gap: 6px; align-items: center; }
+.chip::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--c, var(--muted)); }
+.chip[data-f="all"]::before { display: none; }
+.chip[data-f="me"] { --c: var(--me); } .chip[data-f="stephanie"] { --c: var(--steph); } .chip[data-f="kids"] { --c: var(--kids); }
+.chip[aria-pressed="true"] { background: var(--sign-bg); color: var(--sign-fg); border-color: var(--sign-bg); }
+
+/* to-do strips */
+.strip { position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; min-width: 0; touch-action: pan-y; transition: transform 0.15s ease-out; }
+.strip .main { display: grid; grid-template-columns: 5px 60px 1fr auto; align-items: stretch; min-width: 0; }
+.strip .band { border-radius: 6px 0 0 6px; background: var(--me); }
+.strip[data-div="stephanie"] .band { background: var(--steph); }
+.strip[data-div="kids"] .band { background: var(--kids); }
+.strip .when { border-right: 1px solid var(--line); padding: 8px 4px; display: grid; align-content: center; justify-items: center; text-align: center; }
+.when .day { font: 600 1.02rem/1 var(--font-display); letter-spacing: 0.04em; text-transform: uppercase; }
+.when .date { font: 500 0.7rem/1.5 var(--font-mono); color: var(--muted); }
+.when.overdue .day, .when.overdue .date { color: var(--warn); }
+.strip .body { padding: 8px 10px; min-width: 0; background: none; border: 0; text-align: left; color: inherit; cursor: pointer; display: grid; gap: 1px; }
+.strip .title { font-weight: 700; overflow-wrap: anywhere; line-height: 1.3; }
+.strip .meta { font-size: 0.84rem; color: var(--muted); overflow-wrap: anywhere; }
+.strip .tag { font: 600 0.76rem var(--font-display); letter-spacing: 0.08em; text-transform: uppercase; margin-right: 6px; color: var(--me); }
+.strip[data-div="stephanie"] .tag { color: var(--steph); }
+.strip[data-div="kids"] .tag { color: var(--kids); }
+.strip .src { font: 500 0.7rem var(--font-mono); color: var(--muted); }
+.strip .act { display: grid; place-items: center; padding: 0 10px; border-left: 1px solid var(--line); }
+.strip.done .title { text-decoration: line-through; color: var(--muted); }
+.check { width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--muted); background: transparent; cursor: pointer; display: grid; place-items: center; color: transparent; font: 700 16px var(--font-body); }
+.strip.done .check { background: var(--ok); border-color: var(--ok); color: #fff; }
+.strip .more { border-top: 1px solid var(--line); padding: 10px 12px 12px; display: grid; gap: 10px; background: var(--raised); border-radius: 0 0 6px 6px; }
+.strip .more .notes { margin: 0; font-size: 0.92rem; overflow-wrap: anywhere; }
+.strip .more .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.strip.swiping { transition: none; }
+.strip.swipe-ok { box-shadow: inset 0 0 0 2px var(--ok); }
+
+/* forms */
+form.add { display: grid; gap: 10px; padding: 12px; }
+.fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+label { display: grid; gap: 3px; font-size: 0.85rem; color: var(--muted); min-width: 0; }
+input, select, textarea { font: 16px var(--font-body); color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 9px 10px; min-width: 0; width: 100%; }
+textarea { resize: vertical; min-height: 4.5rem; }
+.status { font: 500 0.8rem var(--font-mono); color: var(--muted); }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* conversation */
+.thread { display: grid; gap: 10px; }
+.msg { max-width: 88%; padding: 10px 12px; border-radius: 12px; overflow-wrap: anywhere; white-space: pre-wrap; }
+.msg.me { justify-self: end; background: var(--sign-bg); color: #f3f4f6; border-bottom-right-radius: 3px; }
+.msg.agent { justify-self: start; background: var(--surface); border: 1px solid var(--line); border-bottom-left-radius: 3px; }
+.msg .who { display: block; font: 600 0.74rem var(--font-display); letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.75; margin-bottom: 2px; white-space: normal; }
+.msg.me .who { color: var(--sign-fg); }
+.msg.queued { outline: 1px dashed var(--sign-fg); outline-offset: 2px; }
+.compose { position: sticky; bottom: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px)); background: var(--bg); padding-block: 8px 4px; display: grid; gap: 8px; }
+.compose textarea { min-height: 3.2rem; }
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+@media (max-width: 420px) { .strip .main { grid-template-columns: 5px 52px 1fr auto; } .fields, .strip .more .fields { grid-template-columns: 1fr; } .stat b { font-size: 1.6rem; } }
+</style>
+
+</head>
+<body>
+<header class="sign">
+  <div class="wrap">
+    <p class="brand"><b>Chief of Staff</b><span>agent: <i class="agentName">Assistant</i></span></p>
+    <span class="clock"><span id="clock"></span><br><form method="post" action="/logout" class="out"><button type="submit">Sign out</button></form></span>
+  </div>
+</header>
+
+<main class="wrap">
+  <p class="empty" id="offline" hidden>Can't reach the server right now. Showing the last thing loaded; it will retry.</p>
+  <section role="tabpanel" id="today" aria-labelledby="tab-today">
+    <div class="stats">
+      <button class="stat" type="button" data-go="today" id="statProps"><b id="nProps">–</b><span>to approve</span></button>
+      <button class="stat" type="button" data-go="todo" id="statDue"><b id="nDue">–</b><span>due today</span></button>
+      <button class="stat" type="button" data-go="todo" id="statOver"><b id="nOver">–</b><span>overdue</span></button>
+    </div>
+    <div class="group" id="propGroup">
+      <h2>Needs your OK</h2>
+      <p class="hint" id="propHint"></p>
+      <div id="proposals" class="group"><p class="empty">Loading…</p></div>
+    </div>
+    <div class="group">
+      <h2>Brief</h2>
+      <div id="brief"><p class="empty">Loading…</p></div>
+    </div>
+    <div class="group">
+      <h2>Due now</h2>
+      <div id="dueToday" class="group"></div>
+    </div>
+  </section>
+
+  <section role="tabpanel" id="todo" aria-labelledby="tab-todo" hidden>
+    <div class="chips" role="group" aria-label="Show to-dos for">
+      <button class="chip" type="button" data-f="all" aria-pressed="true">All</button>
+      <button class="chip" type="button" data-f="me" aria-pressed="false">Andrew</button>
+      <button class="chip" type="button" data-f="stephanie" aria-pressed="false">Stephanie</button>
+      <button class="chip" type="button" data-f="kids" aria-pressed="false">Home &amp; kids</button>
+    </div>
+    <p class="note">Tap a to-do to change its date or snooze it. Swipe right, or tap the circle, to finish it.</p>
+    <div id="todoGroups" class="group"><p class="empty">Loading…</p></div>
+    <form class="add card" id="addForm" autocomplete="off">
+      <h2>Add a to-do</h2>
+      <label for="addTitle">What
+        <input id="addTitle" name="title" required maxlength="140" placeholder="Book Micah's photos">
+      </label>
+      <div class="fields">
+        <label for="addDue">Due
+          <input id="addDue" name="due" type="date">
+        </label>
+        <label for="addDiv">For
+          <select id="addDiv" name="division">
+            <option value="me">Andrew</option>
+            <option value="kids">Home &amp; kids</option>
+            <option value="stephanie">Stephanie</option>
+          </select>
+        </label>
+      </div>
+      <label for="addNotes">Notes
+        <input id="addNotes" name="notes" maxlength="300">
+      </label>
+      <div class="row"><button class="btn primary" type="submit" id="addBtn">Add</button> <span class="status" id="addStatus"></span></div>
+    </form>
+    <details class="older group">
+      <summary>Recently done</summary>
+      <div id="doneList" class="group"></div>
+    </details>
+  </section>
+
+  <section role="tabpanel" id="talk" aria-labelledby="tab-talk" hidden>
+    <p class="note"><b>Ask</b> answers right away from your list and the brief. <b>Send</b> goes to <span class="agentName">Assistant</span> for anything that needs doing (calendar, email, changes). It answers here, usually within the hour.</p>
+    <div class="thread" id="thread"></div>
+    <div class="compose">
+      <label for="say" class="sr">Message</label>
+      <textarea id="say" placeholder="What's left before I fly Sunday?"></textarea>
+      <div class="row">
+        <button class="btn" id="askBtn" type="button">Ask</button>
+        <button class="btn primary" id="sendBtn" type="button">Send to <span class="agentName">Assistant</span></button>
+        <button class="btn quiet" id="stopBtn" type="button" hidden>Stop</button>
+        <span class="status" id="talkStatus"></span>
+      </div>
+    </div>
+  </section>
+</main>
+
+<nav class="tabs" role="tablist" aria-label="Sections">
+  <div class="wrap">
+    <button role="tab" id="tab-today" aria-controls="today" aria-selected="true">Today<span class="badge" id="todayBadge"></span></button>
+    <button role="tab" id="tab-todo" aria-controls="todo" aria-selected="false">To-do<span class="badge" id="todoBadge"></span></button>
+    <button role="tab" id="tab-talk" aria-controls="talk" aria-selected="false">Talk<span class="badge"></span></button>
+  </div>
+</nav>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
