@@ -24,7 +24,7 @@ Full contract: [awpeace1906-collab/Brain INTEGRATION.md](https://github.com/awpe
 - Never re-add an id listed in `deleted`.
 - Helper: [tools/brain_sync.py](../tools/brain_sync.py).
 
-## Environment needs (Claude Code cloud)
+## Where Brain works
 
-- Secret `BRAIN_GIST_TOKEN` (classic PAT, `gist` scope only)
-- Network: `api.github.com` in Allowed domains
+- **Chief of Staff app (hosted):** yes. Set `BRAIN_GIST_TOKEN` (classic PAT, `gist` scope only) in the app's environment.
+- **Claude Code cloud sessions:** no. Their GitHub API access is limited to the session's attached repositories, and `api.github.com/gists` is refused ("sessions are bound to their configured repositories") even with a network secret. In those sessions Tower's memory is this repo: `config/tower.json` (rules, standing agreements, open items). Don't store the gist token as a Claude Code environment secret; nothing there can use it.
