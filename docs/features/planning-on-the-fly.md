@@ -32,7 +32,7 @@ The app watches flights itself, from live data rather than email (`app/cos/fligh
 - **On a change:** the leg's `live` field is updated (the trip card shows it), and the owner gets one message.
   - **Re-plan:** a delay of 30+ minutes, a cancellation, a diversion, or an FAA ground stop or closure files a `replan` message for the arrival day. When Google is connected it's handled straight away, so the **Move:** proposals are waiting when he lands.
   - **Email:** a cancellation, a diversion, or an arrival pushed past midnight also emails the owner a 3-line alert. Nothing else is sent, and nothing is rebooked.
-- **API:** `GET /api/flights` (watched legs with live status); `POST /api/flights/check` (check now).
+- **Background only:** it runs on the app's scheduler with nothing to open or press. Results reach the owner only as the message, the re-plan proposals and, when urgent, the email. The trip card shows the last status it saw.
 - **Not used:** live aircraft position (ADS-B, e.g. OpenSky). It says where the plane is, not whether the schedule changed; the status feed already reports departed, landed and diverted.
 
 ## The app

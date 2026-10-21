@@ -19,7 +19,7 @@ from fastapi import Body, Cookie, Depends, FastAPI, Form, Header, HTTPException,
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
-from . import __version__, agent, ai, brain, brief, capture, db, flights, llm, schedule, scheduler, sms, store
+from . import __version__, agent, ai, brain, brief, capture, db, llm, schedule, scheduler, sms, store
 from .google import oauth
 from .google.api import Google
 from .importer import export_all, import_page
@@ -443,22 +443,6 @@ def create_app(db_path: str | None = None, http: httpx.Client | None = None, cli
             raise HTTPException(409, str(e))
         in_background(c, "decision", lambda: agent.act_on_decisions(c, Google(c, http), client=client, only={decision_id}))
         return d
-
-    @app.get("/api/flights", dependencies=api)
-    def watched_flights(c=Depends(get_conn)):
-        """Every watched leg with its live status, FAA airport events and whether it's in its window."""
-        now_utc, cfg = datetime.now(ZoneInfo("UTC")), flights.settings(c)
-        return [{"trip": t["id"], "leg": i, "flight": leg["flight"], "date": leg["date"], "live": leg.get("live"),
-                 "watching": flights.in_window(leg, now_utc, cfg)} for t, i, leg in flights.legs(c)]
-
-    @app.post("/api/flights/check", dependencies=api)
-    def flights_check(c=Depends(get_conn)):
-        """Check due legs now; a change that needs a re-plan is handled straight away."""
-        google = Google(c, http) if oauth.status(c).get("connected") else None
-        report = flights.check(c, http, google=google)
-        if report["replans"] and google is not None:
-            in_background(c, "replan", lambda: agent.handle_messages(c, google, client=client, only=set(report["replans"]), http=http))
-        return report
 
     @app.post("/api/replan", dependencies=api, status_code=201)
     def replan(body: dict = Body(...), c=Depends(get_conn)):
