@@ -143,6 +143,22 @@
         "updatedAt": {
           "type": "string",
           "format": "date-time"
+        },
+        "promise": {
+          "type": "boolean",
+          "description": "Andrew promised this himself (from sent mail or notes)"
+        },
+        "nudges": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "How many briefs have surfaced this item while open"
+        },
+        "lastSurfaced": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Last brief day (YYYY-MM-DD) that surfaced it"
         }
       }
     }

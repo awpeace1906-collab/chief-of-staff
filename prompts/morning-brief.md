@@ -15,6 +15,8 @@ Tower morning brief. Run the daily brief for Andrew, then email it to Andrew (su
 
 **Step 2: calendars.** Pull today + 7 days from every division calendar. Sections: You owe (from the board: overdue, today, next 7 days, waiting past due), Today (by division), Coverage, Next 7 days (only what matters), Proposals (numbered), Roundup (one line per digest source, only if it matters; see docs/features/digests.md), Closed since yesterday, Parity line (while readywhen runs in parallel).
 
+**Step 2b: accountability.** Follow the accountability loop in [docs/features/commitments.md](../docs/features/commitments.md#accountability-loop). Wake due snoozes. Give every overdue, due-soon, undated-promise and waiting-late item a proposal (time block, reply, new date or nudge), then count the nudge. For items surfaced 3 or more times, ask "do it, move it, or drop it?"
+
 **Step 2c: chief-of-staff duties.** Follow [docs/features/evening-and-week.md](../docs/features/evening-and-week.md):
 - Open decisions go first in the brief (Decide).
 - Draft replies for "reply owed" items and late waiting-on items.

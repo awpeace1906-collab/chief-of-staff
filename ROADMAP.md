@@ -28,15 +28,25 @@
 - [ ] burrell.edu Outlook rules: forward Microsoft 365 digests (Viva briefing, Teams, Planner, SharePoint) to the Tower inbox; confirm IT allows external forwarding
 - [ ] Confirm real sender addresses for each adapter from the first digest received
 
+## Toward the end goal (see [docs/vision.md](docs/vision.md))
+
+- [x] One front end for everything: Today (brief + approvals), Day, To-do, Talk, all driven by the assistant (page live; app has Today, Day, To-do, Talk)
+- [ ] Every source connected: Gmail, Outlook/Microsoft 365 (school), calendars, to-do lists, digests
+- [x] Commitment ledger: every promise or sign-up becomes a tracked item with an owner, a due date and evidence of closure
+- [x] Accountability loop: overdue and at-risk commitments surface daily, propose a time block or a reply, and escalate until resolved
+- [x] Schedule builder (v1): turn open commitments into proposed calendar blocks around fixed events (shifts, call, coverage)
+
 ## From the role frameworks (see [docs/research/role-frameworks.md](docs/research/role-frameworks.md))
 
-- [ ] Decisions first: a Decide section with options, a deadline and a recommendation, turned into dated actions once decided
-- [ ] Tomorrow, tonight: an evening card with tomorrow's first commitment, what to bring, what's due, and coverage
-- [ ] Weekly review (Sunday): look back and ahead, pick the top 3, check promised hours against free hours
-- [ ] Reply drafting for "reply owed" and "waiting on" items (Send proposals)
-- [ ] Interview and meeting kit: prep packet, prep block, thank-you within 24 hours
-- [ ] Rotation binder: one card per rotation, built from intake email
-- [ ] Travel desk, renewals tracker, expense log, protected time, delegation tracking, monthly alignment
+Live on the page and in the scheduled tasks ([docs/features/evening-and-week.md](docs/features/evening-and-week.md)); the app gets them next.
+
+- [x] Decisions first: a Decide section with options, a deadline and a recommendation, turned into dated actions once decided
+- [x] Tomorrow, tonight: an evening card with tomorrow's first commitment, what to bring, what's due, and coverage
+- [x] Weekly review (Sunday): look back and ahead, pick the top 3, check promised hours against free hours
+- [x] Reply drafting for "reply owed" and "waiting on" items (Send proposals)
+- [x] Interview and meeting kit: prep packet, prep block, thank-you within 24 hours
+- [x] Rotation binder: one card per rotation, built from intake email
+- [x] Travel desk, renewals tracker, expense log, protected time, delegation tracking, monthly alignment
 
 ## The app: self-contained Chief of Staff
 

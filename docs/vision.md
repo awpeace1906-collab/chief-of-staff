@@ -2,7 +2,13 @@
 
 ## End goal
 
-A self-contained application that does everything Tower does today: briefs, coverage checks, planning on the fly, commitment tracking, voice, and memory. It should run without Claude Code, readywhen, or any one vendor's assistant.
+A self-contained application with one front end, where the user's assistant (Andrew's is Tower) does the work of a chief of staff:
+
+- **Watches everything the user is on the hook for.** Every email account, calendar, to-do list and digest the user connects.
+- **Creates, summarizes and organizes.** It turns what it finds into a schedule and a task list: briefs, proposed calendar blocks, and to-dos with owners and due dates.
+- **Keeps the user accountable.** Anything the user signed up for, promised or was asked to do becomes a tracked commitment. It stays visible, gets scheduled and gets followed up until it's done, declined or handed off. Nothing quietly drops.
+
+It does everything Tower does today (briefs, coverage checks, planning on the fly, commitment tracking, voice and memory) and runs without Claude Code, readywhen or any one vendor's assistant.
 
 ## Principles
 
@@ -11,6 +17,7 @@ A self-contained application that does everything Tower does today: briefs, cove
 3. **Households, not just people.** Calendars are grouped into divisions (me, partner, kids/coverage) so Tower can reason about who is where and who has the kids.
 4. **Memory lives with the user.** Rules and preferences live in Brain (the user's own gist), not inside the assistant.
 5. **Readable in 60 seconds on a phone.**
+6. **Accountability over reminders.** A commitment is closed only by evidence: a sent reply, a booked event, the user marking it done or declining it. Silence isn't closure. Overdue and at-risk commitments surface in the brief and the front end until they're resolved.
 
 ## Product requirements
 

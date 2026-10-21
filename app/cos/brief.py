@@ -5,7 +5,7 @@ import sqlite3
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-from . import capture, llm, store
+from . import accountability, capture, llm, schedule, store
 from .db import audit, now
 from .google.api import Google
 
@@ -14,7 +14,8 @@ SYSTEM = """You are {name}, the owner's chief of staff. Write their morning brie
 The owner reads it on a phone in about 60 seconds. Lead with what matters today.
 Sections, in this order, leaving out any that are empty:
 1. **You owe**: overdue first, then due today, then the next 7 days, then things others owe
-   the owner that are past due. One line each, with the due date.
+   the owner that are past due. One line each, with the due date. Mark promises the owner made
+   ("you said you'd…") and how many days late anything is.
 2. **Today**: by division ({divisions}), times in {tz} (if the owner is traveling, give local
    and {tz}).
 3. **Coverage**: windows in the next 7 days when every adult in the household is busy or away
@@ -27,7 +28,14 @@ Sections, in this order, leaving out any that are empty:
    when (times in {tz}), where, calendar (by name), division, change ("old → new" for edits),
    summary (one line: why); use "" for fields that don't apply. Don't repeat anything already
    in pendingProposals, and never propose adding an event that's already on a calendar.
-6. **Closed since yesterday**: items the capture step marked done, with the evidence.
+   Accountability: every item in `accountability.overdue`, `dueSoon`, `undatedPromises` and
+   `waitingLate` gets a proposal unless a pending one already covers it: a time block for the
+   work (use the matching `suggestedBlocks` entry, already fitted into free time; otherwise a
+   window from `freeSlots`), a drafted reply, a new date, or for waitingLate a nudge
+   to the other person. For `undatedPromises`, propose a date. For each item in
+   `accountability.stuck`, ask plainly: do it (with a slot), move it (to a date), or drop it.
+6. **Closed since yesterday**: items the capture step marked done, with the evidence. Only
+   evidence or the owner closes an item: never drop one silently.
 7. **Questions**: anything the capture step was unsure about.
 
 Rules:
@@ -84,6 +92,9 @@ def run(conn: sqlite3.Connection, google: Google, client=None, send: bool = Fals
         extra["outlookAgenda"] = microsoft.agenda(7, today=today.date())
         extra["microsoftToDo"] = microsoft.todo()
     divisions = store.get_setting(conn, "divisions", {})
+    acct = accountability.review(conn, today.date())
+    cfg = schedule.settings(conn)
+    slots = schedule.free_slots(agenda, today.date(), cfg, now=today)
 
     system = SYSTEM.format(
         name=name,
@@ -94,6 +105,9 @@ def run(conn: sqlite3.Connection, google: Google, client=None, send: bool = Fals
     user = json.dumps({
         "now": today.isoformat(),
         "board": store.list_items(conn),
+        "accountability": acct,
+        "freeSlots": slots[:40],
+        "suggestedBlocks": schedule.suggest_blocks(acct, slots, cfg),
         "capture": changes,
         "agenda": agenda,
         "openItems": store.get_setting(conn, "openItems", []),
@@ -113,6 +127,7 @@ def run(conn: sqlite3.Connection, google: Google, client=None, send: bool = Fals
     )
     brief_id = cur.lastrowid
     conn.commit()  # the brief is kept even if emailing it fails
+    accountability.mark_surfaced(conn, acct, today.date())
     for p in result["proposals"]:
         try:
             store.add_proposal(conn, p | {"day": today.date().isoformat()})
