@@ -12,6 +12,8 @@ from .store import (
     RECORD_KINDS,
     _write_proposal,
     add_message,
+    assistant_name,
+    division_or_owner,
     get_setting,
     add_item,
     all_settings,
@@ -29,7 +31,7 @@ RULE_KINDS = {"rule", "preference", "context"}
 
 
 def import_config(conn: sqlite3.Connection, config_dir: Path) -> dict:
-    """Load config/tower.json-style assistant config and config/digests.json."""
+    """Load the assistant config (any *.json with an "assistant" key) and config/digests.json."""
     counts = {"settings": 0, "rules": 0}
     config_dir = Path(config_dir)
 
@@ -129,7 +131,7 @@ def import_page(conn: sqlite3.Connection, data: dict) -> dict:
         kind = next((v for k, v in SOURCE_KINDS.items() if k in label.lower()), "manual")
         add_item(conn, {
             "id": item_id, "title": it["title"], "direction": it.get("direction") or "i-owe",
-            "division": it.get("division") if it.get("division") in {"me", "stephanie", "kids"} else "me",
+            "division": division_or_owner(conn, it.get("division")),
             "status": "done" if it.get("status") == "done" else "open",
             "due": it.get("due"), "notes": it.get("notes") or "",
             "source": {"kind": kind, "label": label} if label else {"kind": "manual"},
@@ -149,8 +151,9 @@ def import_page(conn: sqlite3.Connection, data: dict) -> dict:
             row["draft"] = {k: str(p["draft"].get(k) or "") for k in DRAFT_FIELDS}
         _write_proposal(conn, row)
         counts["proposals"] += 1
+    agent = str((data.get("settings") or {}).get("agentName") or assistant_name(conn)).lower()
     for m in data.get("messages", []):
-        sender = "owner" if m.get("from") in {"andrew", "owner"} else "assistant"
+        sender = "assistant" if str(m.get("from") or "").lower() in {"assistant", agent} else "owner"
         if m.get("text") and not conn.execute("SELECT 1 FROM messages WHERE id = ?", (f"page-{m['id']}",)).fetchone():
             add_message(conn, sender, m["text"], at=m.get("createdAt"), status=m.get("status"), message_id=f"page-{m['id']}")
             counts["messages"] += 1

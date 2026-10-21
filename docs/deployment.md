@@ -32,6 +32,8 @@ fly launch --no-deploy --copy-config          # pick a unique app name; update t
 fly volumes create cos_data --size 1 --region den
 fly secrets set COS_API_TOKEN=$(openssl rand -hex 24) ANTHROPIC_API_KEY=... \
   GOOGLE_CLIENT_ID=... GOOGLE_CLIENT_SECRET=... MS_CLIENT_ID=... MS_CLIENT_SECRET=...
+# optional: live flight status (RapidAPI key for AeroDataBox); the FAA airport feed needs no key
+fly secrets set AERODATABOX_KEY=...
 fly deploy
 # load the settings and the old page's data
 fly ssh sftp shell        # put ../config/tower.json /data/tower.json; put ../config/digests.json /data/digests.json; put page.json /data/page.json

@@ -58,11 +58,9 @@
           ]
         },
         "division": {
-          "enum": [
-            "me",
-            "stephanie",
-            "kids"
-          ]
+          "type": "string",
+          "pattern": "^[a-z0-9-]+$",
+          "description": "A key from the owner's divisions setting (e.g. \"me\"); people's names live in the config, not here"
         },
         "counterparty": {
           "type": "string",

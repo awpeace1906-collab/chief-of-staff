@@ -82,7 +82,7 @@ FINISH_PROPOSAL = {
 
 LIST_TOOLS = [
     {"name": "list_items", "description": "Open to-dos (id, title, division, due, notes).", "input_schema": _schema({}, [])},
-    {"name": "add_item", "description": "Add a to-do. division: me, stephanie or kids. due: YYYY-MM-DD or empty.",
+    {"name": "add_item", "description": "Add a to-do. division: a key from `divisions` in the input. due: YYYY-MM-DD or empty.",
      "input_schema": _schema({"title": S, "division": S, "due": S, "notes": S}, ["title", "division"])},
     {"name": "update_item", "description": "Change a to-do: status (open, done, dropped), due, notes, division, title.",
      "input_schema": _schema({"id": S, "status": S, "due": S, "notes": S, "division": S, "title": S}, ["id"])},
@@ -117,7 +117,7 @@ def _handlers(conn, google: Google, allow_write: bool) -> dict:
         "find_events": find_events,
         "list_items": lambda i: [{k: it.get(k) for k in ("id", "title", "division", "due", "notes")} for it in store.list_items(conn)],
         "add_item": lambda i: store.add_item(conn, {"title": i["title"], "direction": "i-owe",
-                                                    "division": i["division"] if i["division"] in {"me", "stephanie", "kids"} else "me",
+                                                    "division": store.division_or_owner(conn, i.get("division")),
                                                     "due": i.get("due") or None, "notes": i.get("notes") or "",
                                                     "source": {"kind": "manual", "label": "your message"}}),
         "update_item": lambda i: store.update_item(conn, i["id"], {k: (v or None) if k == "due" else v for k, v in i.items()
@@ -144,6 +144,10 @@ def _handlers(conn, google: Google, allow_write: bool) -> dict:
         h["create_event"] = lambda i: google.create_event(_calendar_id(conn, i["calendar"]), event_body(i))
         h["update_event"] = lambda i: google.update_event(_calendar_id(conn, i["calendar"]), i["event_id"], event_body(i))
     return h
+
+
+def _division_labels(conn) -> dict:
+    return {k: d.get("label", k) for k, d in store.divisions(conn).items()} or {store.owner_division(conn): "Owner"}
 
 
 def _rules(conn) -> str:
@@ -327,7 +331,7 @@ def handle_messages(conn: sqlite3.Connection, google: Google, client=None, only:
                     conn, "chat",
                     REPLAN_SYSTEM.format(name=name, now=datetime.now(tz).strftime("%a %b %-d, %-I:%M %p"), tz=tz.key,
                                          rules=_rules(conn)),
-                    json.dumps({"request": m["text"], "details": m.get("data") or {},
+                    json.dumps({"request": m["text"], "details": m.get("data") or {}, "divisions": _division_labels(conn),
                                 "openItems": [{k: it.get(k) for k in ("id", "title", "division", "due")} for it in store.list_items(conn)],
                                 "pendingProposals": [{k: p.get(k) for k in ("id", "title", "when")} for p in store.list_proposals(conn, ("pending",))]},
                                ensure_ascii=False),
@@ -339,7 +343,8 @@ def handle_messages(conn: sqlite3.Connection, google: Google, client=None, only:
                     conn, "chat",
                     MESSAGE_SYSTEM.format(name=name, now=datetime.now(tz).strftime("%a %b %-d, %-I:%M %p"), tz=tz.key,
                                           rules=_rules(conn)),
-                    json.dumps({"recentConversation": [{"from": h["from"], "text": h["text"]} for h in history if h["id"] != m["id"]],
+                    json.dumps({"divisions": _division_labels(conn),
+                            "recentConversation": [{"from": h["from"], "text": h["text"]} for h in history if h["id"] != m["id"]],
                                 "openItems": [{k: it.get(k) for k in ("id", "title", "division", "due")} for it in store.list_items(conn)],
                                 "pendingProposals": [{k: p.get(k) for k in ("id", "title", "when")} for p in store.list_proposals(conn, ("pending",))],
                                 "message": m["text"]}, ensure_ascii=False),
@@ -398,7 +403,7 @@ def act_on_decisions(conn: sqlite3.Connection, google: Google, client=None, only
             result = llm.run_tools(
                 conn, "chat",
                 DECISION_SYSTEM.format(name=name, today=datetime.now(tz).date().isoformat(), tz=tz.key, rules=_rules(conn)),
-                json.dumps({"decision": {k: d.get(k) for k in ("title", "context", "deadline", "options", "choice", "choiceLabel", "itemId")},
+                json.dumps({"divisions": _division_labels(conn), "decision": {k: d.get(k) for k in ("title", "context", "deadline", "options", "choice", "choiceLabel", "itemId")},
                             "openItems": [{k: it.get(k) for k in ("id", "title", "division", "due")} for it in store.list_items(conn)]},
                            ensure_ascii=False),
                 LIST_TOOLS + [FINISH_DECISION], _handlers(conn, google, allow_write=False),
@@ -415,7 +420,7 @@ def act_on_decisions(conn: sqlite3.Connection, google: Google, client=None, only
 
 
 def intake_messages(conn: sqlite3.Connection, google: Google, days: int = 2) -> int:
-    """Emails the owner sent to the intake address (e.g. you+tower@gmail.com) become messages to the assistant."""
+    """Emails the owner sent to the intake address (e.g. you+assistant@gmail.com) become messages to the assistant."""
     intake = (store.get_setting(conn, "google", {}) or {}).get("intakeAddress")
     owner = (store.get_setting(conn, "assistant", {}) or {}).get("email")
     if not (intake and owner):

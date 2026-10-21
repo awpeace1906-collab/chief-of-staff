@@ -7,7 +7,7 @@ import sys
 
 import httpx
 
-from . import agent, brain, brief, capture, db, llm
+from . import agent, brain, brief, capture, db, llm, store
 from .google import oauth
 from .google.api import Google
 from .importer import export_all, import_board, import_brain, import_config, import_page
@@ -27,7 +27,7 @@ def main(argv: list[str] | None = None) -> int:
     imp = sub.add_parser("import", help="import existing setup")
     imp.add_argument("--config", help="directory with the assistant config and digests.json")
     imp.add_argument("--brain", help="brain-data.json export")
-    imp.add_argument("--brain-tag", default="tower", help="Brain tag that marks the assistant's entries")
+    imp.add_argument("--brain-tag", help="Brain tag that marks the assistant's entries (default: the assistant's name)")
     imp.add_argument("--board", help="cos-board/v1 export")
     imp.add_argument("--page", help="export of the old Claude-hosted page (items, proposals, messages, brief)")
 
@@ -75,7 +75,7 @@ def main(argv: list[str] | None = None) -> int:
         if args.config:
             print("config:", import_config(conn, args.config))
         if args.brain:
-            print("brain entries:", import_brain(conn, args.brain, args.brain_tag))
+            print("brain entries:", import_brain(conn, args.brain, args.brain_tag or store.assistant_name(conn).lower()))
         if args.board:
             print("board items:", import_board(conn, args.board))
         if args.page:

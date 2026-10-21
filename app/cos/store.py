@@ -36,6 +36,23 @@ def assistant_name(conn: sqlite3.Connection) -> str:
     return get_setting(conn, "assistant", {}).get("name") or "Assistant"
 
 
+# Divisions: who an item is for. Keys and labels are the owner's data (the divisions setting,
+# imported from their config); the code never names a person.
+
+def divisions(conn: sqlite3.Connection) -> dict:
+    return get_setting(conn, "divisions", {}) or {}
+
+
+def owner_division(conn: sqlite3.Connection) -> str:
+    """The owner's own division: schedule.division, else "me" if it exists, else the first one."""
+    keys = list(divisions(conn))
+    return (get_setting(conn, "schedule", {}) or {}).get("division") or ("me" if "me" in keys or not keys else keys[0])
+
+
+def division_or_owner(conn: sqlite3.Connection, key: str | None) -> str:
+    return key if key and key in divisions(conn) else owner_division(conn)
+
+
 # Rules: the assistant's long-term memory (Brain-compatible)
 
 def new_rule_id(conn: sqlite3.Connection) -> str:

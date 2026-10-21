@@ -5,4 +5,5 @@
 - Tower proposes; it acts only on explicit approval. See `docs/features/approvals.md`.
 - Memory is Brain (`brain/v1` gist). Follow `docs/integrations.md` exactly: read-modify-PATCH the whole file, keep others' entries, never re-add a deleted id.
 - The assistant name is configurable in the app; never hard-code "Tower" in app code.
+- No personal names in app code (`app/cos`): people, divisions and their labels live in the agent's memory (`config/tower.json`, Brain), reach the app as settings, and `app/tests/test_divisions.py` guards it.
 - `config/tower.json` holds personal data (calendar IDs, family names). Keep this repo private.

@@ -1,6 +1,8 @@
 // Chief of Staff web app: talks only to this server's /api. No third-party scripts.
 (() => {
-  const DIV = { me: "Andrew", stephanie: "Stephanie", kids: "Home & kids" };
+  // divisions (who an item is for) come from the owner's settings, never from this code:
+  // {key: {label, suggest?}} in the order the owner set; the owner's own is schedule.division ("me")
+  let DIV = { me: "Me" }, DIVS = [{ key: "me", label: "Me" }], OWNER = "me";
   const KIND = { calendar: "Calendar", email: "Email", board: "To-do list", list: "To-do list", other: "Proposal" };
   const SOURCE = { gmail: "Gmail", outlook: "Outlook", calendar: "calendar", manual: "you", readywhen: "readywhen", "microsoft-todo": "Microsoft To Do", digest: "a digest" };
   const state = { items: [], proposals: [], brief: null, messages: [], local: [], canWrite: true, agent: "Assistant",
@@ -8,6 +10,50 @@
                   tz: "America/Denver", open: new Set(), filter: "all", briefOpen: false, loaded: false };
   const $ = (id) => document.getElementById(id);
   const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+
+  const slotOf = (key) => { const i = DIVS.findIndex((d) => d.key === key); return String(i < 0 ? 0 : Math.min(i, 5)); };
+  const tagDiv = (node, key) => { node.dataset.div = key || OWNER; node.dataset.slot = slotOf(key || OWNER); return node; };
+  const suggestFor = (key) => (DIVS.find((d) => d.key === key) || {}).suggest !== false;
+
+  function setDivisions(settings) {
+    const raw = settings.divisions || {}, keys = Object.keys(raw);
+    const owner = settings.schedule?.division || (keys.includes("me") ? "me" : keys[0]) || "me";
+    const list = (keys.length ? keys : ["me"]).map((k) => ({ key: k, label: raw[k]?.label || k, suggest: raw[k]?.suggest }));
+    list.sort((a, b) => (a.key === owner ? -1 : b.key === owner ? 1 : 0));  // the owner's color is always the first
+    const sig = JSON.stringify([owner, list]);
+    if (sig === setDivisions.sig) return false;
+    setDivisions.sig = sig;
+    DIVS = list; OWNER = owner; DIV = Object.fromEntries(list.map((d) => [d.key, d.label]));
+    if (!sched.touched) sched.show = new Set(list.filter((d) => d.key !== OWNER && d.suggest !== false).map((d) => d.key));
+    buildChips();
+    return true;
+  }
+
+  function buildChips() {
+    const tc = $("todoChips"); tc.textContent = "";
+    for (const [f, label] of [["all", "All"], ...DIVS.map((d) => [d.key, d.label])]) {
+      const c = el("button", "chip", label); c.type = "button"; c.dataset.f = f; if (f !== "all") tagDiv(c, f);
+      c.addEventListener("click", () => { state.filter = f; paintChips(); renderItems(); try { localStorage.setItem("cos.filter", f); } catch (e) {} });
+      tc.append(c);
+    }
+    if (state.filter !== "all" && !DIV[state.filter]) state.filter = "all";
+    paintChips();
+    const sc = $("schedChips"); sc.textContent = "";
+    for (const d of DIVS) {
+      const c = el("button", "chip", d.key === OWNER ? "Mine" : d.label); c.type = "button"; c.dataset.f = d.key; tagDiv(c, d.key);
+      c.addEventListener("click", () => {
+        if (d.key === OWNER) return;  // your own calendar always shows: it defines your free time
+        sched.touched = true;
+        sched.show.has(d.key) ? sched.show.delete(d.key) : sched.show.add(d.key);
+        try { localStorage.setItem("cos.schedShow", JSON.stringify([...sched.show])); } catch (e) {}
+        renderDay();
+      });
+      sc.append(c);
+    }
+    const sel = $("addDiv"), cur = sel.value; sel.textContent = "";
+    DIVS.forEach((d) => { const o = el("option", null, d.label); o.value = d.key; sel.append(o); });
+    sel.value = DIV[cur] ? cur : OWNER;
+  }
 
   // server calls; a 401 means the sign-in cookie expired
   async function api(path, opts = {}) {
@@ -57,12 +103,7 @@
   show(tabs.includes(startTab) ? startTab : "today");
 
   // division filter
-  function paintChips() { document.querySelectorAll("#todo .chip").forEach((c) => c.setAttribute("aria-pressed", String(c.dataset.f === state.filter))); }
-  document.querySelectorAll("#todo .chip").forEach((c) => c.addEventListener("click", () => {
-    state.filter = c.dataset.f; paintChips(); renderItems();
-    try { localStorage.setItem("cos.filter", state.filter); } catch (e) {}
-  }));
-  paintChips();
+  function paintChips() { document.querySelectorAll("#todoChips .chip").forEach((c) => c.setAttribute("aria-pressed", String(c.dataset.f === state.filter))); }
 
   // tiny, safe markdown: paragraphs, bullets, **bold**
   function renderMd(text, box) {
@@ -104,12 +145,12 @@
 
   function strip(item, opts = {}) {
     const s = el("div", "strip" + (isDone(item) ? " done" : ""));
-    s.dataset.div = DIV[item.division] ? item.division : "me";
+    tagDiv(s, DIV[item.division] ? item.division : OWNER);
     const main = el("div", "main");
     const body = el("button", "body"); body.type = "button";
     body.setAttribute("aria-expanded", String(state.open.has(item.id)));
     body.append(el("span", "title", item.title || "(untitled)"));
-    const meta = el("span", "meta"); meta.append(el("span", "tag", DIV[item.division] || "Andrew"));
+    const meta = el("span", "meta"); meta.append(el("span", "tag", DIV[item.division] || DIV[OWNER]));
     if (item.top === monday()) meta.append(el("span", "tag", "★ Top 3"));
     const src = [item.direction === "owed-to-me" && item.counterparty ? "waiting on " + item.counterparty : "", sourceLabel(item) ? "from " + sourceLabel(item) : ""].filter(Boolean).join(" · ");
     if (src) meta.append(el("span", "src", src));
@@ -185,7 +226,7 @@
     const t = today(), week = addDays(t, 7);
     const all = state.items;
     const openAll = all.filter((i) => !isDone(i));
-    const pick = (list) => state.filter === "all" ? list : list.filter((i) => (i.division || "me") === state.filter);
+    const pick = (list) => state.filter === "all" ? list : list.filter((i) => (i.division || OWNER) === state.filter);
     const open = pick(openAll);
     const byDue = (a, b) => (a.due || "9999").localeCompare(b.due || "9999") || String(a.title).localeCompare(String(b.title));
     const overdue = openAll.filter((i) => i.due && i.due < t), dueToday = openAll.filter((i) => i.due === t);
@@ -274,6 +315,18 @@
     }
   }
 
+  // a watched flight's live status: provider status, revised time, gate, FAA events at its airports
+  function liveLine(v) {
+    if (!v || !v.checkedAt) return null;
+    const bits = [], hm = (x) => (x ? x.slice(11, 16) : "");
+    if (v.status && v.status !== "Unknown" && v.status !== "Expected") bits.push(v.status === "Canceled" ? "Cancelled" : v.status);
+    if (v.departure && v.departure !== v.scheduledDeparture) bits.push("now " + hm(v.departure) + " local");
+    if (v.gate) bits.push("gate " + v.gate);
+    for (const [code, evs] of Object.entries(v.airports || {})) evs.forEach((e) => bits.push("FAA " + e.kind + " at " + code));
+    const bad = ["Canceled", "Diverted", "Delayed", "CanceledUncertain"].includes(v.status) || bits.some((b) => b.startsWith("FAA"));
+    return { text: (bits.length ? bits.join(" · ") : "On time") + " · checked " + new Date(v.checkedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }), bad };
+  }
+
   // tomorrow, this week, next trip
   function renderCards() {
     const box = $("cards"); box.textContent = "";
@@ -294,7 +347,11 @@
       c.append(k, el("h3", null, trip.title || "Trip"));
       if (trip.note) c.append(el("p", "why", trip.note));
       const ul = el("ul", "legs");
-      (trip.legs || []).forEach((l) => { const li = el("li"); li.append(el("b", null, l.when || ""), document.createTextNode(l.what + (l.detail ? " · " + l.detail : ""))); ul.append(li); });
+      (trip.legs || []).forEach((l) => {
+        const li = el("li"); li.append(el("b", null, l.when || ""), document.createTextNode(l.what + (l.detail ? " · " + l.detail : "")));
+        const live = liveLine(l.live); if (live) li.append(el("span", "live" + (live.bad ? " bad" : ""), live.text));
+        ul.append(li);
+      });
       if (ul.childNodes.length) c.append(ul);
       box.append(c);
     }
@@ -318,7 +375,7 @@
   // proposals
   const PILL = { approved: "Approved · being done", done: "Done", declined: "Declined", failed: "Couldn't do it" };
   function proposalCard(p) {
-    const c = el("div", "card proposal"); c.dataset.div = p.division || "";
+    const c = tagDiv(el("div", "card proposal"), p.division || OWNER);
     const inner = el("div", "inner");
     const k = el("div", "kicker"); k.append(el("span", "num", "#" + (p.n ?? "•")), el("span", null, KIND[p.kind] || p.kind || "Proposal"));
     if (p.calendar) k.append(el("span", null, "· " + p.calendar));
@@ -461,8 +518,8 @@
   // suggestions come from the to-do list here, so ticking one off updates them at once.
   const DEV_TZ = (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone; } catch (e) { return null; } })() || "UTC";
   const HOUR_PX = 56;
-  const sched = { day: null, data: null, error: "", show: new Set(["me", "kids"]), open: null };
-  try { const v = JSON.parse(localStorage.getItem("cos.schedShow") || "null"); if (Array.isArray(v)) sched.show = new Set(v); } catch (e) {}
+  const sched = { day: null, data: null, error: "", show: new Set(), open: null, touched: false };
+  try { const v = JSON.parse(localStorage.getItem("cos.schedShow") || "null"); if (Array.isArray(v)) { sched.show = new Set(v); sched.touched = true; } } catch (e) {}
   function tzOffset(date, tz) {
     const p = Object.fromEntries(new Intl.DateTimeFormat("en-US", { timeZone: tz, hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit" }).formatToParts(date).map((x) => [x.type, x.value]));
     return Date.UTC(+p.year, p.month - 1, +p.day, +p.hour, +p.minute, +p.second) - date.getTime();
@@ -508,7 +565,7 @@
   }
   function ranked(planned) {
     const t = today();
-    return state.items.filter((i) => !isDone(i) && i.status !== "snoozed" && i.division !== "stephanie" && i.direction !== "owed-to-me" && !planned.has(i.id))
+    return state.items.filter((i) => !isDone(i) && i.status !== "snoozed" && suggestFor(i.division || OWNER) && i.direction !== "owed-to-me" && !planned.has(i.id))
       .map((i) => ({ i, u: urgency(i, t) })).sort((a, b) => a.u[0] - b.u[0] || a.u[1].localeCompare(b.u[1]) || String(a.i.title).localeCompare(String(b.i.title))).map((x) => x.i);
   }
   function why(i) {
@@ -543,17 +600,17 @@
     const isToday = sched.day === devToday(), noon = at(sched.day, 720);
     $("dayName").textContent = "";
     $("dayName").append(document.createTextNode((isToday ? "Today · " : "") + dow(sched.day) + " " + md(sched.day)), el("small", null, "Times in " + tzShort(DEV_TZ, noon) + (DEV_TZ !== state.tz ? " (home is " + tzShort(state.tz, noon) + ")" : "")));
-    document.querySelectorAll("#schedChips .chip").forEach((c) => c.setAttribute("aria-pressed", String(c.dataset.f === "me" || sched.show.has(c.dataset.f))));
+    document.querySelectorAll("#schedChips .chip").forEach((c) => c.setAttribute("aria-pressed", String(c.dataset.f === OWNER || sched.show.has(c.dataset.f))));
     const d = sched.data && sched.data.date === sched.day ? sched.data : null;
-    const shown = (d?.events || []).filter((e) => e.division === "me" || sched.show.has(e.division));
+    const shown = (d?.events || []).filter((e) => e.division === OWNER || sched.show.has(e.division));
     const ad = $("allDay"); ad.textContent = "";
-    shown.filter((e) => e.allDay).forEach((e) => { const s = el("span", null, e.title); s.dataset.div = e.division; ad.append(s); });
+    shown.filter((e) => e.allDay).forEach((e) => { ad.append(tagDiv(el("span", null, e.title), e.division)); });
     const timed = shown.filter((e) => !e.allDay).map((e) => ({ ...span(e.start, e.end), title: e.title, where: e.location || "", div: e.division })).filter((e) => e.e > e.s);
-    const planned = (d?.planned || state.proposals.filter((p) => p.start && (p.status === "approved" || p.status === "pending") && local(new Date(p.start)).day === sched.day)).map((p) => ({ ...span(p.start, p.end), title: String(p.title || "").replace(/^Add:\s*/, ""), div: p.division || "me", tent: true, itemId: p.itemId }));
+    const planned = (d?.planned || state.proposals.filter((p) => p.start && (p.status === "approved" || p.status === "pending") && local(new Date(p.start)).day === sched.day)).map((p) => ({ ...span(p.start, p.end), title: String(p.title || "").replace(/^Add:\s*/, ""), div: p.division || OWNER, tent: true, itemId: p.itemId }));
     const wd = new Date(sched.day + "T12:00:00Z").getUTCDay();
     const toM = (s) => { const [h, m] = String(s).split(":").map(Number); return h * 60 + (m || 0); };
-    const prot = d ? (d.protected || []).map((w) => ({ ...span(w.start, w.end), title: w.label, div: "me", prot: true }))
-      : state.protect.filter((w) => !w.days || w.days.includes(wd)).map((w) => ({ s: toM(w.start), e: toM(w.end), title: w.label || "Protected", div: "me", prot: true }));
+    const prot = d ? (d.protected || []).map((w) => ({ ...span(w.start, w.end), title: w.label, div: OWNER, prot: true }))
+      : state.protect.filter((w) => !w.days || w.days.includes(wd)).map((w) => ({ s: toM(w.start), e: toM(w.end), title: w.label || "Protected", div: OWNER, prot: true }));
     const free = d ? d.free.map((g) => ({ ...span(g.start, g.end) })) : without(fallbackFree(), [...planned, ...prot]);
     renderBinder();
     const queue = ranked(new Set(planned.map((p) => p.itemId).filter(Boolean)));
@@ -567,9 +624,9 @@
     const tl = $("timeline"); tl.textContent = ""; tl.style.height = (endH - startH) * HOUR_PX + "px";
     for (let h = startH + 1; h <= endH; h++) { const l = el("span", "hr", h === 24 ? "" : hm(h * 60)); l.style.top = y(h * 60) + "px"; tl.append(l); }
     const body = el("div", "body"); tl.append(body);
-    const split = timed.some((e) => e.div !== "me"), mainW = split ? 70 : 100;
-    lanes(all.filter((e) => e.div === "me" || e.tent || e.prot)).forEach((e) => body.append(evtBox(e, y, 0, mainW)));
-    lanes(timed.filter((e) => e.div !== "me")).forEach((e) => body.append(evtBox(e, y, mainW, 100 - mainW)));
+    const split = timed.some((e) => e.div !== OWNER), mainW = split ? 70 : 100;
+    lanes(all.filter((e) => e.div === OWNER || e.tent || e.prot)).forEach((e) => body.append(evtBox(e, y, 0, mainW)));
+    lanes(timed.filter((e) => e.div !== OWNER)).forEach((e) => body.append(evtBox(e, y, mainW, 100 - mainW)));
 
     let qi = 0;
     for (const g of free) {
@@ -595,7 +652,7 @@
   }
 
   function evtBox(e, y, leftPct, widthPct) {
-    const b = el("div", "evt" + (e.tent ? " tent" : "") + (e.prot ? " prot" : "")); b.dataset.div = e.div;
+    const b = el("div", "evt" + (e.tent ? " tent" : "") + (e.prot ? " prot" : "")); tagDiv(b, e.div);
     const w = widthPct / (e.cols || 1);
     b.style.top = y(e.s) + 1 + "px"; b.style.height = Math.max(20, y(e.e) - y(e.s) - 2) + "px";
     b.style.left = `calc(${leftPct + (e.col || 0) * w}% + 2px)`; b.style.width = `calc(${w}% - 4px)`;
@@ -636,7 +693,7 @@
   });
 
   function sugRow(i, g) {
-    const r = el("div", "sug"); r.dataset.div = i.division || "me";
+    const r = el("div", "sug"); tagDiv(r, i.division || OWNER);
     const c = el("button", "check", "✓"); c.type = "button"; c.setAttribute("aria-label", "Mark done: " + i.title); c.disabled = !state.canWrite;
     c.addEventListener("click", () => { c.disabled = true; patchItem(i, { status: "done" }).then(renderDay); });
     const mid = el("div"); const [txt, late] = why(i);
@@ -658,12 +715,6 @@
   $("dayPrev").addEventListener("click", () => { sched.day = addDays(sched.day || devToday(), -1); sched.open = null; loadDay(); });
   $("dayNext").addEventListener("click", () => { sched.day = addDays(sched.day || devToday(), 1); sched.open = null; loadDay(); });
   $("dayToday").addEventListener("click", () => { sched.day = devToday(); sched.open = null; loadDay(); });
-  document.querySelectorAll("#schedChips .chip").forEach((c) => c.addEventListener("click", () => {
-    if (c.dataset.f === "me") return;  // your own calendar always shows: it defines your free time
-    sched.show.has(c.dataset.f) ? sched.show.delete(c.dataset.f) : sched.show.add(c.dataset.f);
-    try { localStorage.setItem("cos.schedShow", JSON.stringify([...sched.show])); } catch (e) {}
-    renderDay();
-  }));
   setInterval(() => { if (!$("sched").hidden) renderDay(); }, 60000);  // the now-line moves
 
   // load and keep fresh: poll while visible, and reload on return to the app
@@ -683,6 +734,7 @@
         if (records) state.records = { ...state.records, ...records };
         state.protect = settings.schedule?.protect || [];
         state.tz = settings.timezone || state.tz;
+        setDivisions(settings);
         setAgent(settings.assistant?.name);
         Object.assign(state, { items, proposals, messages, brief: latest, loaded: true });
         $("offline").hidden = true;

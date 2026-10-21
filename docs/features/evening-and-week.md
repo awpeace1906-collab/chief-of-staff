@@ -10,7 +10,7 @@
 | 4 | **Reply drafts**: "Send:" proposals with the email shown; Change… edits the text; Send sends it | Today, Needs your OK | Morning brief files them (`proposal.draft`); the on-demand run sends after approval (Gmail, on the thread) |
 | 5 | **Interview kit**: prep item, a prep block the day before, thank-you draft within 24 hours | To-do and Needs your OK | Morning brief |
 | 6 | **Rotation binder**: dates, first day, shifts, phones, people, before-you-leave | Day tab, while the rotation is on | Morning brief, from intake mail (`binders/<slug>`); no passwords stored |
-| 7 | **Next trip**: legs with times, what's missing | Today | Morning brief from flight, hotel and TripIt mail (`trips/<slug>`) |
+| 7 | **Next trip**: legs with times, what's missing, live flight status | Today | Morning brief from flight, hotel and TripIt mail (`trips/<slug>`). Flight legs also carry `flight`, `date`, `from` and `to` so the app can watch them ([planning on the fly](planning-on-the-fly.md#live-flight-status-and-public-atc-data-the-app)). |
 | 8 | **Renewals**: certifications, licenses, immunizations | To-do (`kind: "renewal"`, `expires`) | Morning brief; surfaced at 60, 30 and 7 days |
 | 9 | **Expenses** by trip or rotation, with totals | To-do, Expenses | Evening setup from receipts (`expenses/<slug>`) |
 | 10 | **Protected time**: weekly windows that are never free time | Day tab, hatched | `settings/schedule.protect: [{label, start, end, days?}]`, set by Andrew |

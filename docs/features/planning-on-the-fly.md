@@ -21,8 +21,22 @@
 - **Urgent changes:** only a cancellation or an overnight delay also emails Andrew a 3-line alert, because those need action within hours.
 - **First use:** St. Louis, Sun Oct 25. AA 690 is watched at 2:36pm MT, AA 1445 at 7:55pm MT.
 
+### Live flight status and public ATC data (the app)
+
+The app watches flights itself, from live data rather than email (`app/cos/flights.py`):
+
+- **Sources:**
+  - The FAA's public NAS Status feed (`nasstatus.faa.gov`, no key): ground stops, ground delay programs, departure and arrival delays, and closures at each leg's airports.
+  - Flight status from AeroDataBox (RapidAPI, `AERODATABOX_KEY`): status, revised departure and arrival, gate, cancelled, diverted. Without a key, only the FAA data is used.
+- **What's watched:** trip legs that carry `flight` ("AA 690"), `date` (local departure date) and `from`/`to` (IATA). A leg is checked every 20 minutes from 6 hours before departure until 2 hours after arrival (`flights` setting: `watchHours`, `intervalMinutes`, `provider`).
+- **On a change:** the leg's `live` field is updated (the trip card shows it), and the owner gets one message.
+  - **Re-plan:** a delay of 30+ minutes, a cancellation, a diversion, or an FAA ground stop or closure files a `replan` message for the arrival day. When Google is connected it's handled straight away, so the **Move:** proposals are waiting when he lands.
+  - **Email:** a cancellation, a diversion, or an arrival pushed past midnight also emails the owner a 3-line alert. Nothing else is sent, and nothing is rebooked.
+- **Background only:** it runs on the app's scheduler with nothing to open or press. Results reach the owner only as the message, the re-plan proposals and, when urgent, the email. The trip card shows the last status it saw.
+- **Not used:** live aircraft position (ADS-B, e.g. OpenSky). It says where the plane is, not whether the schedule changed; the status feed already reports departed, landed and diverted.
+
 ## The app
 
 - **Re-plan:** `POST /api/replan {day, at, timeZone, what}`, or **Plans changed?** on the web app's Day tab, stores a `replan` message and handles it straight away. The assistant reads the day (`find_events`, `free_time`), files **Move:** proposals with `propose_move`, and replies with what changed. See [day-view.md](day-view.md#in-the-app).
 - **Move:** an approved proposal with `eventId`, `start` and `end` moves that event to exactly those times, with no model call and nobody notified.
-- **Flight watches** stay with the scheduled tasks until the app has its own run for them.
+- **Flight watches:** the app's own watch uses live status and FAA data (above), so it needs no scheduled one-shot tasks.

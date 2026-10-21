@@ -165,7 +165,7 @@ def _apply(conn: sqlite3.Connection, changes: list[dict], messages: dict, divisi
     added, updated, closed, skipped = [], [], [], []
     for ch in changes:
         msg = messages.get(ch["sourceRef"], {})
-        division = ch["division"] if ch["division"] in divisions else "me"
+        division = ch["division"] if ch["division"] in divisions else store.owner_division(conn)
         try:
             if ch["op"] == "add":
                 if _duplicate(conn, msg.get("threadId"), ch["title"]):
