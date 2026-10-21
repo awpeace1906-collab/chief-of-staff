@@ -15,6 +15,15 @@ Tower morning brief. Run the daily brief for Andrew, then email it to Andrew (su
 
 **Step 2: calendars.** Pull today + 7 days from every division calendar. Sections: You owe (from the board: overdue, today, next 7 days, waiting past due), Today (by division), Coverage, Next 7 days (only what matters), Proposals (numbered), Roundup (one line per digest source, only if it matters; see docs/features/digests.md), Closed since yesterday, Parity line (while readywhen runs in parallel).
 
+**Step 2c: chief-of-staff duties.** Follow [docs/features/evening-and-week.md](../docs/features/evening-and-week.md):
+- Open decisions go first in the brief (Decide).
+- Draft replies for "reply owed" items and late waiting-on items.
+- For interviews and meetings in the next 14 days: prep item, prep block, then a thank-you draft.
+- Keep rotation binders and trips current.
+- Track renewals.
+- Keep the waiting-on-others list.
+- On the 1st of the month, ask the alignment question.
+
 **Step 3: travel.** Check flight emails (airlines, Expedia, TripIt forwards) for changes affecting the next 7 days and feed them into the coverage check.
 
 **Step 4: board hygiene.** Ask about items whose done-evidence is ambiguous; never close silently on a guess.
