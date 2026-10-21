@@ -160,7 +160,7 @@ class Google:
         return r.json()["id"]
 
     def intake(self, since_days: int = 2, limit: int = 50) -> list[dict]:
-        """Mail sent to the intake plus-address (e.g. you+tower@gmail.com)."""
+        """Mail sent to the intake plus-address (e.g. you+assistant@gmail.com)."""
         address = get_setting(self.conn, "google", {}).get("intakeAddress")
         if not address:
             raise RuntimeError("no intake address; set google.intakeAddress in settings")

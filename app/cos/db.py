@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS settings (
 );
 
 CREATE TABLE IF NOT EXISTS rules (
-    id         TEXT PRIMARY KEY,     -- Brain-compatible id, e.g. tower-1760900000000-ab12
+    id         TEXT PRIMARY KEY,     -- Brain-compatible id, e.g. <assistant>-1760900000000-ab12
     kind       TEXT NOT NULL,        -- rule | preference | context
     content    TEXT NOT NULL,
     summary    TEXT NOT NULL DEFAULT '',

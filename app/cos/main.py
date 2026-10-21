@@ -469,7 +469,8 @@ def create_app(db_path: str | None = None, http: httpx.Client | None = None, cli
     def add_message(body: dict, c=Depends(get_conn)):
         sender = body.get("from", "owner")
         try:
-            return store.add_message(c, "assistant" if sender in {"assistant", "tower"} else "owner", body.get("text", ""))
+            mine = str(sender).lower() in {"assistant", store.assistant_name(c).lower()}
+            return store.add_message(c, "assistant" if mine else "owner", body.get("text", ""))
         except ValueError as e:
             raise HTTPException(422, str(e))
 

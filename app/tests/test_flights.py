@@ -104,7 +104,8 @@ def test_a_delay_and_a_ground_stop_message_and_replan(conn):
     assert "delayed" in changes and any(c.startswith("departure now Sun 6:41pm") and "1h 05m late" in c for c in changes)
     assert "gate A12 → A14" in changes and any(c.startswith("FAA ground stop at DFW") for c in changes)
     msgs = store.list_messages(conn)
-    assert msgs[0]["from"] == "assistant" and "re-planning" in msgs[0]["text"]
+    told = [m for m in msgs if m["from"] == "assistant"]
+    assert len(told) == 1 and "re-planning" in told[0]["text"]
     replan = [m for m in msgs if m["kind"] == "replan"]
     assert len(replan) == 1 and replan[0]["id"] == r["replans"][0] and replan[0]["data"]["day"] == "2026-10-25"
     assert owner.sent == []  # still lands the same evening: no email
