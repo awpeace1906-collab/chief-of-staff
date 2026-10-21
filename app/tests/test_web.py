@@ -142,6 +142,9 @@ PAGE = {
     ],
     "messages": [{"id": "welcome", "from": "tower", "text": "Hello", "status": "handled", "createdAt": "2026-10-20T01:30:00Z"}],
     "brief": {"day": "2026-10-20", "subject": "Fly home", "markdown": "**Tue:** fly", "updatedAt": "2026-10-20T01:50:00Z"},
+    "decisions": [{"id": "unm-ca1", "title": "Keep the UNM spot?", "deadline": "2026-10-23", "status": "open",
+                   "options": [{"id": "keep", "label": "Keep it"}, {"id": "release", "label": "Release it"}]}],
+    "tomorrow": {"day": "2026-10-21", "markdown": "First: clinic 8am"},
     "settings": {"agentName": "Tower"},
 }
 
@@ -149,8 +152,10 @@ PAGE = {
 def test_import_page_is_idempotent(tmp_path):
     conn = db.connect(tmp_path / "cos.db")
     first = import_page(conn, PAGE)
-    assert first == {"items": 2, "proposals": 2, "messages": 1, "brief": 1}
-    assert import_page(conn, PAGE) == {"items": 0, "proposals": 0, "messages": 0, "brief": 0}
+    assert first == {"items": 2, "proposals": 2, "messages": 1, "brief": 1, "records": 2}
+    assert import_page(conn, PAGE) == {"items": 0, "proposals": 0, "messages": 0, "brief": 0, "records": 0}
+    assert store.get_record(conn, "decision", "unm-ca1")["status"] == "open"
+    assert store.get_record(conn, "card", "tomorrow")["markdown"] == "First: clinic 8am"
     rx = store.get_item(conn, "page-walgreens-rx")
     assert rx["source"] == {"kind": "gmail", "label": "Gmail"} and rx["direction"] == "i-owe"
     assert store.get_item(conn, "page-meal")["status"] == "done"

@@ -131,7 +131,9 @@ def _rand4() -> str:
 
 PROPOSAL_STATUSES = {"pending", "approved", "declined", "done", "failed"}
 PROPOSAL_FIELDS = ("kind", "division", "calendar", "title", "when", "where", "change", "summary",
-                   "start", "end", "timeZone", "itemId", "source")  # the last five: exact blocks from the day view
+                   "start", "end", "timeZone", "itemId", "source",  # exact blocks from the day view
+                   "eventId")  # Move: the event to change
+DRAFT_FIELDS = ("to", "subject", "body", "threadId")  # Send: the email, shown to the owner before it goes
 
 
 def add_proposal(conn: sqlite3.Connection, proposal: dict, actor: str = "assistant") -> dict:
@@ -142,6 +144,11 @@ def add_proposal(conn: sqlite3.Connection, proposal: dict, actor: str = "assista
         "id": f"{day}-{n}", "day": day, "n": n, "status": "pending", "createdAt": now()}
     if not (p["title"] or p["summary"]):
         raise ValueError("a proposal needs a title or a summary")
+    draft = proposal.get("draft")
+    if draft:
+        if not (isinstance(draft, dict) and draft.get("to") and draft.get("body")):
+            raise ValueError("an email draft needs 'to' and 'body'")
+        p["draft"] = {k: str(draft.get(k) or "") for k in DRAFT_FIELDS}
     existing = get_proposal(conn, p["id"])
     if existing and existing["status"] != "pending":
         raise ValueError(f"proposal {p['id']} was already {existing['status']}")
@@ -167,6 +174,10 @@ def update_proposal(conn: sqlite3.Connection, proposal_id: str, patch: dict, act
     for k in ("changes", "result"):
         if patch.get(k):
             p[k] = str(patch[k])[:2000]
+    if patch.get("draftBody"):
+        if actor != "user" or not p.get("draft"):
+            raise ValueError("only the owner can edit an email draft")
+        p["draftBody"] = str(patch["draftBody"])[:10000]
     p["status"] = status
     p["decidedAt" if actor == "user" else "handledAt"] = now()
     _write_proposal(conn, p)
@@ -203,21 +214,25 @@ def _write_proposal(conn: sqlite3.Connection, p: dict) -> None:
 # Messages: the owner's line to the assistant
 
 MESSAGE_SENDERS = {"owner", "assistant"}
+MESSAGE_KINDS = {"text", "replan"}
 
 
 def add_message(conn: sqlite3.Connection, sender: str, text: str, at: str | None = None,
                 status: str | None = None, message_id: str | None = None, channel: str = "app",
-                ref: str | None = None) -> dict:
+                ref: str | None = None, kind: str = "text", data: dict | None = None) -> dict:
     if sender not in MESSAGE_SENDERS:
         raise ValueError(f"unknown sender '{sender}'")
+    if kind not in MESSAGE_KINDS:
+        raise ValueError(f"unknown message kind '{kind}'")
     text = (text or "").strip()
     if not text:
         raise ValueError("empty message")
     m = {"id": message_id or f"m-{int(time.time() * 1000)}-{_rand4()}", "at": at or now(), "from": sender,
          "status": status or ("new" if sender == "owner" else "handled"), "text": text[:4000],
-         "channel": channel, "ref": ref}
-    conn.execute("INSERT OR IGNORE INTO messages (id, at, sender, status, text, channel, ref) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                 (m["id"], m["at"], sender, m["status"], m["text"], channel, ref))
+         "channel": channel, "ref": ref, "kind": kind, "data": data}
+    conn.execute("INSERT OR IGNORE INTO messages (id, at, sender, status, text, channel, ref, kind, data) "
+                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                 (m["id"], m["at"], sender, m["status"], m["text"], channel, ref, kind, json.dumps(data) if data else None))
     conn.commit()
     return m
 
@@ -228,7 +243,8 @@ def list_messages(conn: sqlite3.Connection, limit: int = 40, status: str | None 
         sql, args = sql + " WHERE status = ?", [status]
     rows = conn.execute(sql + " ORDER BY at DESC LIMIT ?", args + [limit]).fetchall()
     return [{"id": r["id"], "at": r["at"], "from": r["sender"], "status": r["status"], "text": r["text"],
-             "channel": r["channel"], "ref": r["ref"]} for r in reversed(rows)]
+             "channel": r["channel"], "ref": r["ref"], "kind": r["kind"],
+             "data": json.loads(r["data"]) if r["data"] else None} for r in reversed(rows)]
 
 
 def mark_message(conn: sqlite3.Connection, message_id: str, status: str = "handled") -> None:
@@ -237,3 +253,65 @@ def mark_message(conn: sqlite3.Connection, message_id: str, status: str = "handl
     if conn.execute("UPDATE messages SET status = ? WHERE id = ?", (status, message_id)).rowcount == 0:
         raise KeyError(message_id)
     conn.commit()
+
+
+# Records: decisions, trips, binders, expenses and the tomorrow / week cards, one JSON doc per slug
+
+RECORD_KINDS = {"decision", "trip", "binder", "expense", "card"}
+
+
+def put_record(conn: sqlite3.Connection, kind: str, record_id: str, data: dict, actor: str = "assistant") -> dict:
+    """Create or replace a record. A decided decision keeps the owner's choice."""
+    if kind not in RECORD_KINDS:
+        raise ValueError(f"unknown record kind '{kind}'")
+    if not record_id or "/" in record_id:
+        raise ValueError("a record needs a slug id")
+    data = {k: v for k, v in data.items() if k not in {"id", "kind"}}
+    old = get_record(conn, kind, record_id)
+    if kind == "decision":
+        if old and old.get("status") == "decided" and actor != "user":
+            data |= {k: old[k] for k in ("status", "choice", "choiceLabel", "decidedAt") if k in old}
+        data.setdefault("status", "open")
+        if not data.get("title") or not data.get("options"):
+            raise ValueError("a decision needs a title and options")
+    rec = data | {"id": record_id, "kind": kind, "updatedAt": now()}
+    conn.execute(
+        """INSERT INTO records (kind, id, data, updated_at) VALUES (?, ?, ?, ?)
+           ON CONFLICT(kind, id) DO UPDATE SET data = excluded.data, updated_at = excluded.updated_at""",
+        (kind, record_id, json.dumps(rec), rec["updatedAt"]),
+    )
+    audit(conn, actor, "record.put", kind=kind, id=record_id)
+    conn.commit()
+    return rec
+
+
+def get_record(conn: sqlite3.Connection, kind: str, record_id: str) -> dict | None:
+    row = conn.execute("SELECT data FROM records WHERE kind = ? AND id = ?", (kind, record_id)).fetchone()
+    return json.loads(row["data"]) if row else None
+
+
+def list_records(conn: sqlite3.Connection, kind: str) -> list[dict]:
+    rows = conn.execute("SELECT data FROM records WHERE kind = ? ORDER BY updated_at DESC", (kind,))
+    return [json.loads(r["data"]) for r in rows]
+
+
+def delete_record(conn: sqlite3.Connection, kind: str, record_id: str, actor: str = "user") -> None:
+    if conn.execute("DELETE FROM records WHERE kind = ? AND id = ?", (kind, record_id)).rowcount == 0:
+        raise KeyError(record_id)
+    audit(conn, actor, "record.delete", kind=kind, id=record_id)
+    conn.commit()
+
+
+def choose(conn: sqlite3.Connection, decision_id: str, choice: str) -> dict:
+    """The owner picks an option. The assistant turns it into next steps (`actions`) on its next run."""
+    d = get_record(conn, "decision", decision_id)
+    if d is None:
+        raise KeyError(decision_id)
+    if d.get("status") != "open":
+        raise ValueError(f"decision {decision_id} is already {d.get('status')}")
+    option = next((o for o in d["options"] if o.get("id") == choice), None)
+    if option is None:
+        raise ValueError(f"'{choice}' isn't one of the options")
+    return put_record(conn, "decision", decision_id, d | {"status": "decided", "choice": choice,
+                                                          "choiceLabel": option.get("label") or choice,
+                                                          "decidedAt": now()}, actor="user")

@@ -30,3 +30,6 @@ Calendar IDs are personal: they live in the page's data and config/tower.json, n
 - `GET /api/day?date=YYYY-MM-DD&tz=Area/City` returns the day's events in the viewer's zone, the owner's free windows (minus blocks on their way) and the planned blocks. Without Google it returns 409, and the page assumes an empty day.
 - `POST /api/schedule/block {itemId, start, end, timeZone}` stores an approved calendar proposal (`source: "schedule"`). If Google is connected, it puts the block on the calendar right away. Exact blocks need no model call: `agent._add_block` creates the event at exactly that time with no invites, and the to-do stays open.
 - The schedule setting `blockCalendar` picks the calendar. It defaults to the first calendar in the owner's division.
+- `schedule.protect` holds protected windows, in the page's shape. They're never offered as free time, and `/api/day` returns them as `protected`.
+- **Re-plan:** `POST /api/replan {day, at, timeZone, what}` stores a `replan` message and handles it straight away. The assistant reads the day (`find_events`, `free_time`), files **Move:** proposals with `propose_move` (event id and exact times; fixed commitments never move), and replies with what changed.
+- **Move:** an approved proposal with `eventId`, `start` and `end` moves that event to exactly those times, with no model call and nobody notified.

@@ -6,7 +6,9 @@ accountability review surfaced its earliest window before it's due. The brief tu
 into numbered "Add: …" proposals, so nothing reaches a calendar without the owner's OK.
 
 Settings (`schedule`): dayStart / dayEnd ("07:00" / "21:00"), minMinutes (30),
-blockMinutes (30), division ("me"), blockCalendar (where day-view blocks go).
+blockMinutes (30), division ("me"), blockCalendar (where day-view blocks go), and
+protect: weekly windows that are never free time, [{label, start "HH:MM", end, days?}],
+days as 0 = Sunday … 6 = Saturday (every day when absent).
 """
 
 import sqlite3
@@ -16,7 +18,8 @@ from zoneinfo import ZoneInfo
 from . import store
 
 DEFAULTS = {"dayStart": "07:00", "dayEnd": "21:00", "minMinutes": 30, "blockMinutes": 30, "division": "me",
-            "blockCalendar": None}  # None: the first calendar in the owner's division
+            "blockCalendar": None,  # None: the first calendar in the owner's division
+            "protect": []}
 
 
 def settings(conn: sqlite3.Connection) -> dict:
@@ -38,7 +41,8 @@ def free_slots(agenda: dict, today: date, cfg: dict, days: int = 7, now: datetim
         if now and now > lo:
             lo = _round_up(max(lo, now.astimezone(tz)))
         cursor = lo
-        for b_start, b_end in busy:
+        guarded = [(w["start"], w["end"]) for w in protected(cfg, day, tz)]
+        for b_start, b_end in sorted(busy + guarded):
             if b_end <= cursor or b_start >= hi:
                 continue
             if b_start - cursor >= need:
@@ -47,6 +51,22 @@ def free_slots(agenda: dict, today: date, cfg: dict, days: int = 7, now: datetim
         if hi - cursor >= need:
             slots.append(_slot(cursor, hi))
     return slots
+
+
+def protected(cfg: dict, day: date, tz: ZoneInfo) -> list[dict]:
+    """The day's protected windows as datetimes in `tz`."""
+    weekday = (day.weekday() + 1) % 7  # 0 = Sunday, as the page counts
+    out = []
+    for w in cfg.get("protect") or []:
+        if w.get("days") is not None and weekday not in w["days"]:
+            continue
+        try:
+            s, f = datetime.combine(day, _hm(w["start"]), tz), datetime.combine(day, _hm(w["end"]), tz)
+        except (KeyError, ValueError):
+            continue
+        if f > s:
+            out.append({"label": w.get("label") or "Protected", "start": s, "end": f})
+    return out
 
 
 def suggest_blocks(review: dict, slots: list[dict], cfg: dict) -> list[dict]:
@@ -130,6 +150,8 @@ def day(agenda: dict, the_day: date, tz: ZoneInfo, cfg: dict, proposals: list[di
     if now and now.astimezone(tz).date() > the_day:
         free = []
     return {"date": the_day.isoformat(), "timezone": tz.key, "events": events, "free": free,
+            "protected": [{"label": w["label"], "start": w["start"].isoformat(), "end": w["end"].isoformat()}
+                          for w in protected(cfg, the_day, tz)],
             "planned": [{k: p.get(k) for k in ("id", "title", "start", "end", "division", "itemId", "status")} for p in blocks]}
 
 
