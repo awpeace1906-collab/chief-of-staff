@@ -28,6 +28,14 @@
 - [ ] burrell.edu Outlook rules: forward Microsoft 365 digests (Viva briefing, Teams, Planner, SharePoint) to the Tower inbox; confirm IT allows external forwarding
 - [ ] Confirm real sender addresses for each adapter from the first digest received
 
+## Toward the end goal (see [docs/vision.md](docs/vision.md))
+
+- [ ] One front end for everything: Today (brief + approvals), To-do, Schedule, Talk, all driven by the assistant
+- [ ] Every source connected: Gmail, Outlook/Microsoft 365 (school), calendars, to-do lists, digests
+- [ ] Commitment ledger: every promise or sign-up becomes a tracked item with an owner, a due date and evidence of closure
+- [ ] Accountability loop: overdue and at-risk commitments surface daily, propose a time block or a reply, and escalate until resolved
+- [ ] Schedule builder: turn open commitments into proposed calendar blocks around fixed events (shifts, call, coverage)
+
 ## The app: self-contained Chief of Staff
 
 See [docs/self-contained.md](docs/self-contained.md).
