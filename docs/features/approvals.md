@@ -28,10 +28,13 @@ A proposal never adds an event that's already on a calendar. Tower checks all di
 
 ## App notes
 
+- Exact proposals run without a model call: a day-view block (`start`, `end`), a **Move:** (`eventId`, `start`, `end`) and an email draft.
+- An approved email draft is sent only when the `email` setting has `sendApprovedDrafts: true`. It's off until Andrew turns it on; until then an approved draft fails with that reason.
+
 The app needs a one-tap approve on each proposal (push notification or the brief email itself), not just a chat reply.
 
 ## Proposal shape (page)
 
-`proposals/<YYYY-MM-DD>-<n>`: `day`, `n`, `kind` (calendar | email | list | other), `division` (me | stephanie | kids), `calendar` (name), `title` (starts with a verb: "Add: …", "Fix: …", "Move: …", "Send: …"), `when` (Mountain time, plus local when traveling), `where`, `change` (for edits: "old → new"), `summary` (one line: why), `status` (pending | approved | declined | done | failed), `changes` (Andrew's edits when he approves with changes), `result`.
+`proposals/<YYYY-MM-DD>-<n>`: `day`, `n`, `kind` (calendar | email | list | other), `division` (me | stephanie | kids), `calendar` (name), `title` (starts with a verb: "Add: …", "Fix: …", "Move: …", "Send: …"), `when` (Mountain time, plus local when traveling), `where`, `change` (for edits: "old → new"), `summary` (one line: why), `status` (pending | approved | declined | done | failed), `changes` (Andrew's edits when he approves with changes), `result`. Also `draft {to, subject, body, threadId}` and `draftBody` (Andrew's edit) for Send:, and `eventId`, `start`, `end`, `timeZone` for Move: and day-view blocks.
 
 The page shows the agent's name from `settings/profile.agentName`. "Tower" is Andrew's choice, not hard-coded.

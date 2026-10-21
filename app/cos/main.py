@@ -390,6 +390,77 @@ def create_app(db_path: str | None = None, http: httpx.Client | None = None, cli
         except ValueError as e:
             raise HTTPException(409, str(e))
 
+    # Decisions, trips, binders, expenses, cards; re-planning a day
+
+    def record_kind(kind: str) -> str:
+        if kind not in store.RECORD_KINDS:
+            raise HTTPException(404, f"unknown record kind '{kind}'")
+        return kind
+
+    @app.get("/api/records", dependencies=api)
+    def all_records(c=Depends(get_conn)):
+        return {kind: store.list_records(c, kind) for kind in sorted(store.RECORD_KINDS)}
+
+    @app.get("/api/records/{kind}", dependencies=api)
+    def records(kind: str, c=Depends(get_conn)):
+        return store.list_records(c, record_kind(kind))
+
+    @app.put("/api/records/{kind}/{record_id}", dependencies=api)
+    def put_record(kind: str, record_id: str, data: dict = Body(...), c=Depends(get_conn)):
+        """The assistant (or a script) files a record; the web app only reads them and makes decisions."""
+        try:
+            return store.put_record(c, record_kind(kind), record_id, data)
+        except ValueError as e:
+            raise HTTPException(422, str(e))
+
+    @app.delete("/api/records/{kind}/{record_id}", dependencies=api)
+    def delete_record(kind: str, record_id: str, c=Depends(get_conn)):
+        try:
+            store.delete_record(c, record_kind(kind), record_id)
+        except KeyError:
+            raise HTTPException(404, "no such record")
+        return {"ok": True}
+
+    def in_background(c, label: str, fn) -> None:
+        """Do the follow-up now, off the request; on failure the next check picks it up."""
+        def go():
+            try:
+                with run_lock:
+                    fn()
+            except Exception as e:
+                db.audit(c, "system", f"{label}.failed", error=f"{e.__class__.__name__}: {e}")
+                c.commit()
+        runner(go)
+
+    @app.post("/api/decisions/{decision_id}/choose", dependencies=api)
+    def choose(decision_id: str, body: dict = Body(...), c=Depends(get_conn)):
+        """The owner's tap is the decision. The assistant sets up the next steps straight away."""
+        try:
+            d = store.choose(c, decision_id, str(body.get("choice") or ""))
+        except KeyError:
+            raise HTTPException(404, "no such decision")
+        except ValueError as e:
+            raise HTTPException(409, str(e))
+        in_background(c, "decision", lambda: agent.act_on_decisions(c, Google(c, http), client=client, only={decision_id}))
+        return d
+
+    @app.post("/api/replan", dependencies=api, status_code=201)
+    def replan(body: dict = Body(...), c=Depends(get_conn)):
+        """Plans changed: ask the assistant to re-plan a day. Moves come back as proposals."""
+        what = str(body.get("what") or "").strip()[:500]
+        try:
+            day = datetime.fromisoformat(str(body.get("day") or "")).date().isoformat()
+            zone = ZoneInfo(body.get("timeZone") or store.get_setting(c, "timezone", "UTC"))
+        except (ValueError, KeyError) as e:
+            raise HTTPException(422, f"bad day or time zone: {e}")
+        if not what:
+            raise HTTPException(422, "say what changed")
+        at = str(body.get("at") or "")[:5]
+        m = store.add_message(c, "owner", f"Re-plan {day}" + (f" (it's {at})" if at else "") + f": {what}",
+                              kind="replan", data={"day": day, "at": at, "timeZone": zone.key})
+        in_background(c, "replan", lambda: agent.handle_messages(c, Google(c, http), client=client, only={m["id"]}, http=http))
+        return m
+
     @app.get("/api/messages", dependencies=api)
     def messages(limit: int = 40, status: str | None = None, c=Depends(get_conn)):
         return store.list_messages(c, max(1, min(limit, 200)), status)

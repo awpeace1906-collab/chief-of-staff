@@ -15,6 +15,13 @@ v0.4: its own web app, plus Microsoft 365. One process, one SQLite file.
   - **Talk:** **Ask** answers right away from the board and brief; **Send** queues a message for the assistant.
 
   Sign-in uses the access key (`COS_API_TOKEN`); the device then stays signed in for 90 days. `cos import --page` brings over the old Claude-hosted page's data.
+- **Catch-up:** the page's newer features, in the engine and the web app (the runs that file them come next; [docs/features/evening-and-week.md](../docs/features/evening-and-week.md#the-app)):
+  - **Decisions:** filed as records; the owner's choice (`POST /api/decisions/<slug>/choose`) becomes next steps straight away.
+  - **Records** for trips, binders, expenses and the tomorrow and week cards (`/api/records/<kind>`).
+  - **Email drafts:** an approved Send: goes out exactly as shown, from the owner's Gmail, only with `email.sendApprovedDrafts` on.
+  - **Re-plan** (`POST /api/replan`) proposes **Move:**s; an approved Move: changes the event.
+  - **Protected time** (`schedule.protect`), **renewals** at 60/30/7 days, and the week's **top 3** in the accountability review.
+  - **Web app:** Decide, Tomorrow / This week / Next trip cards, draft emails with Send, Top 3 and Waiting on others, Expenses, the day's binder, hatched protected time, and Plans changed?
 - **v0.5:** **texting** through Telnyx or VoIP.ms ([docs/setup/sms.md](../docs/setup/sms.md)). It only answers the owner's number. You can:
   - text "list", "approve 1, 3" or "decline 2", and approved proposals are carried out right away;
   - text anything else to reach the assistant, which answers by text;

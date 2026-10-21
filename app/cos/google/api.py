@@ -138,16 +138,24 @@ class Google:
         owner = get_setting(self.conn, "assistant", {}).get("email")
         if not owner:
             raise RuntimeError("no owner email; set assistant.email in settings")
+        return self.send(owner, subject, text)
+
+    def send(self, to: str, subject: str, text: str, thread_id: str | None = None) -> str:
+        """Send one email from the owner's Gmail. Callers other than send_to_owner must hold the owner's
+        approval of this exact email (an approved Send: proposal). Returns the Gmail message id."""
+        owner = get_setting(self.conn, "assistant", {}).get("email")
         if not status(self.conn).get("canSend"):
             raise GoogleNotConnected("Google is connected without send permission; reconnect at /oauth/google/start")
         msg = EmailMessage()
-        msg["To"] = owner
-        msg["From"] = owner
+        msg["To"] = to
+        if owner:
+            msg["From"] = owner
         msg["Subject"] = subject
         msg.set_content(text)
         raw = base64.urlsafe_b64encode(msg.as_bytes()).decode()
+        body = {"raw": raw} | ({"threadId": thread_id} if thread_id else {})
         token = access_token(self.conn, self.http)
-        r = self.http.post(f"{GMAIL}/messages/send", json={"raw": raw}, headers={"Authorization": f"Bearer {token}"})
+        r = self.http.post(f"{GMAIL}/messages/send", json=body, headers={"Authorization": f"Bearer {token}"})
         r.raise_for_status()
         return r.json()["id"]
 

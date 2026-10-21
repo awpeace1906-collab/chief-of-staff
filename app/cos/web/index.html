@@ -218,6 +218,29 @@ textarea { resize: vertical; min-height: 4.5rem; }
 .nowline { position: absolute; left: -5px; right: 0; height: 2px; background: var(--warn); z-index: 4; pointer-events: none; }
 .nowline::before { content: ""; position: absolute; left: 0; top: -3px; width: 8px; height: 8px; border-radius: 50%; background: var(--warn); }
 
+/* decisions, cards, drafts, binders, protected time, re-plan */
+.pad { padding: 12px 14px; }
+.decision .opts { display: grid; gap: 6px; }
+.decision .opt { text-align: left; display: grid; gap: 2px; padding: 10px 12px; border-radius: 6px; border: 1px solid var(--line); background: var(--raised); color: inherit; cursor: pointer; font: inherit; }
+.decision .opt b { font-weight: 700; }
+.decision .opt small { color: var(--muted); font-size: 0.85rem; }
+.decision .opt.rec { border-color: var(--ok); }
+.decision .opt.rec b::after { content: " · recommended"; font: 600 0.75rem var(--font-display); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ok); }
+.draft { white-space: pre-wrap; font-size: 0.92rem; padding: 10px 12px; background: var(--raised); border-radius: 6px; border-left: 3px solid var(--line); overflow-wrap: anywhere; }
+.legs { display: grid; gap: 4px; margin: 6px 0 0; padding: 0; list-style: none; font-size: 0.92rem; }
+.legs b { font: 500 0.78rem var(--font-mono); color: var(--muted); margin-right: 6px; }
+.binder h3, .tripcard h3 { font: 700 1.1rem/1.2 var(--font-display); margin: 0; }
+.binder details { margin-top: 6px; } .binder summary { cursor: pointer; font-weight: 700; }
+.binder ul { margin: 4px 0 0; padding-left: 1.2em; font-size: 0.92rem; overflow-wrap: anywhere; }
+.evt.prot { z-index: 1; background: repeating-linear-gradient(135deg, var(--raised) 0 6px, transparent 6px 12px); border-style: dashed; border-left: 4px solid var(--muted); }
+.evt.prot b::before { content: "Protected · "; font-weight: 600; color: var(--muted); }
+.replan { display: grid; gap: 8px; }
+.star { background: none; border: 0; cursor: pointer; font-size: 1.1rem; color: var(--muted); padding: 0 4px; }
+.star[aria-pressed="true"] { color: var(--sign-fg); text-shadow: 0 0 1px #000; }
+.strip .meta .exp { color: var(--warn); font-weight: 700; margin-left: 6px; }
+.money { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; font-size: 0.92rem; }
+.money .tot { font-weight: 700; border-top: 1px solid var(--line); padding-top: 2px; }
+
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 @media (max-width: 420px) { .strip .main { grid-template-columns: 5px 52px 1fr auto; } .fields, .strip .more .fields { grid-template-columns: 1fr; } .stat b { font-size: 1.6rem; } }
 </style>
@@ -239,12 +262,18 @@ textarea { resize: vertical; min-height: 4.5rem; }
       <button class="stat" type="button" data-go="todo" id="statDue"><b id="nDue">–</b><span>due today</span></button>
       <button class="stat" type="button" data-go="todo" id="statOver"><b id="nOver">–</b><span>overdue</span></button>
     </div>
+    <div class="group" id="decideGroup" hidden>
+      <h2>Decide</h2>
+      <p class="hint">Pick one. <span class="agentName">Assistant</span> turns your choice into dated next steps.</p>
+      <div id="decisions" class="group"></div>
+    </div>
     <div class="group" id="propGroup">
       <h2>Needs your OK</h2>
       <p class="hint" id="propHint"></p>
       <div id="proposals" class="group"><p class="empty">Loading…</p></div>
     </div>
     <div class="group">
+      <div id="cards" class="group"></div>
       <h2>Brief</h2>
       <div id="brief"><p class="empty">Loading…</p></div>
     </div>
@@ -263,6 +292,7 @@ textarea { resize: vertical; min-height: 4.5rem; }
     </div>
     <p class="note">Tap a to-do to change its date or snooze it. Swipe right, or tap the circle, to finish it.</p>
     <div id="todoGroups" class="group"><p class="empty">Loading…</p></div>
+    <details class="older group card pad" id="expenseBox" hidden><summary>Expenses</summary><div id="expenses" class="group"></div></details>
     <form class="add card" id="addForm" autocomplete="off">
       <h2>Add a to-do</h2>
       <label for="addTitle">What
@@ -304,9 +334,22 @@ textarea { resize: vertical; min-height: 4.5rem; }
       <button class="chip" type="button" data-f="stephanie" aria-pressed="false">Partner</button>
     </div>
     <p class="note">Free time shows the to-dos that most need doing. Tick one off and the list updates. <b>Block</b> puts it on your calendar.</p>
+    <div id="binder"></div>
     <div class="allday" id="allDay"></div>
     <div class="tl" id="timeline"></div>
     <p class="status" id="schedStatus"></p>
+    <div class="card pad replan" id="replan">
+      <h2>Plans changed?</h2>
+      <div class="row" id="replanChips">
+        <button class="btn small" type="button" data-t="Running late">Running late</button>
+        <button class="btn small" type="button" data-t="Ran long">Ran long</button>
+        <button class="btn small" type="button" data-t="Free early">Free early</button>
+        <button class="btn small" type="button" data-t="Flight delayed">Flight delayed</button>
+      </div>
+      <label for="replanText" class="sr">What changed</label>
+      <input id="replanText" maxlength="200" placeholder="Or say what changed: stuck at the hospital till 8">
+      <div class="row"><button class="btn primary" type="button" id="replanBtn">Re-plan this day</button></div>
+    </div>
   </section>
 
   <section role="tabpanel" id="talk" aria-labelledby="tab-talk" hidden>
@@ -352,7 +395,7 @@ textarea { resize: vertical; min-height: 4.5rem; }
         </label>
       </div>
       <p class="note">The check runs at :45 past each hour in that window. It stays quiet unless something fails.</p>
-      <div class="row"><button class="btn primary" type="submit">Save</button> <span class="status" id="schedStatus"></span></div>
+      <div class="row"><button class="btn primary" type="submit">Save</button> <span class="status" id="schedFormStatus"></span></div>
     </form>
     <div class="card add">
       <h2>Run now</h2>

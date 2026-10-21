@@ -6,7 +6,7 @@ import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
 
-SCHEMA_VERSION = 5
+SCHEMA_VERSION = 6
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS settings (
@@ -78,7 +78,17 @@ CREATE TABLE IF NOT EXISTS messages (
     status TEXT NOT NULL,            -- new | handled
     text   TEXT NOT NULL,
     channel TEXT NOT NULL DEFAULT 'app',  -- app | email
-    ref    TEXT                      -- e.g. the email's message id, for replies
+    ref    TEXT,                     -- e.g. the email's message id, for replies
+    kind   TEXT NOT NULL DEFAULT 'text', -- text | replan
+    data   TEXT                      -- JSON extras, e.g. a replan's day and time zone
+);
+
+CREATE TABLE IF NOT EXISTS records (
+    kind       TEXT NOT NULL,        -- decision | trip | binder | expense | card
+    id         TEXT NOT NULL,        -- a slug, e.g. unm-reserved-ca1, or tomorrow / week for cards
+    data       TEXT NOT NULL,        -- JSON
+    updated_at TEXT NOT NULL,
+    PRIMARY KEY (kind, id)
 );
 
 CREATE TABLE IF NOT EXISTS audit_log (
@@ -117,6 +127,8 @@ def connect(path: Path | str | None = None) -> sqlite3.Connection:
 ADDED_COLUMNS = [
     ("messages", "channel", "TEXT NOT NULL DEFAULT 'app'"),  # v5
     ("messages", "ref", "TEXT"),                              # v5
+    ("messages", "kind", "TEXT NOT NULL DEFAULT 'text'"),     # v6
+    ("messages", "data", "TEXT"),                             # v6
 ]
 
 

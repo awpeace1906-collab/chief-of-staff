@@ -7,6 +7,9 @@ No model calls. Each morning, `review` sorts the board into what needs attention
 - waitingLate: something owed to the owner that's past due (time to nudge them)
 - stuck: anything surfaced in three or more briefs without resolution, so the brief asks
   "do it, move it, or drop it?"
+- renewals: licenses, certifications and the like (`kind: "renewal"`) expiring within 60 days;
+  `alert` is true on the 60-, 30- and 7-day marks and once it's 7 days or less
+- top: the owner's top 3 for this week (`top` = this week's Monday)
 
 `mark_surfaced` counts how many briefs have shown each item. Nothing here closes an item.
 Only evidence closes it (capture), or the owner does.
@@ -21,14 +24,25 @@ from .db import audit
 DUE_SOON_DAYS = 2
 UNDATED_AFTER_DAYS = 3
 STUCK_AFTER = 3  # briefs that surfaced the item
+RENEWAL_WINDOW = 60
+RENEWAL_MARKS = (60, 30, 7)
 
 
 def review(conn: sqlite3.Connection, today: date) -> dict:
     """What needs attention today, after waking snoozed items that are due back."""
     woke = _wake_snoozed(conn, today)
     soon = today + timedelta(days=DUE_SOON_DAYS)
-    out = {"overdue": [], "dueSoon": [], "undatedPromises": [], "waitingLate": [], "stuck": [], "woke": woke}
+    out = {"overdue": [], "dueSoon": [], "undatedPromises": [], "waitingLate": [], "stuck": [], "renewals": [],
+           "top": [], "woke": woke}
+    monday = (today - timedelta(days=today.weekday())).isoformat()
     for item in store.list_items(conn):
+        if item.get("top") == monday:
+            out["top"].append(_brief(item, today))
+        expires = _day(item.get("expires"))
+        if item.get("kind") == "renewal" and expires and (expires - today).days <= RENEWAL_WINDOW:
+            left = (expires - today).days
+            out["renewals"].append(_brief(item, today) | {"expires": item["expires"], "daysLeft": left,
+                                                          "alert": left in RENEWAL_MARKS or left <= 7})
         due = _day(item.get("due"))
         waiting = item["direction"] == "owed-to-me" or item["status"] == "waiting"
         if waiting:

@@ -174,7 +174,8 @@
     }
   },
   "emailRules": [
-    "An approved Send: proposal (from the page or 'approve n') is permission to send that one email from Andrew's Gmail to the recipient shown, on the thread. Never email anyone else."
+    "An approved Send: proposal (from the page or 'approve n') is permission to send that one email from Andrew's Gmail to the recipient shown, on the thread. Never email anyone else.",
+    "In the app, sending approved drafts is off until the email setting has sendApprovedDrafts: true."
   ],
   "protectedTime": {
     "note": "Windows that are never free time on the Day view: settings/schedule.protect on the page. Ask Andrew before adding any (e.g. family dinner, sleep before early shifts)."

@@ -7,15 +7,20 @@ from pathlib import Path
 from .db import audit, now
 from .store import (
     BOARD_STATUSES,
+    DRAFT_FIELDS,
     PROPOSAL_FIELDS,
+    RECORD_KINDS,
     _write_proposal,
     add_message,
     get_setting,
     add_item,
     all_settings,
     get_item,
+    get_record,
     list_items,
+    list_records,
     list_rules,
+    put_record,
     put_setting,
     upsert_rule,
 )
@@ -107,13 +112,15 @@ def import_board(conn: sqlite3.Connection, board_file: Path) -> int:
     return n
 
 
+ITEM_EXTRAS = ("promise", "counterparty", "nudges", "lastSurfaced", "top", "kind", "expires")
 SOURCE_KINDS = {"gmail": "gmail", "calendar": "calendar", "readywhen": "readywhen", "you": "manual"}
 
 
 def import_page(conn: sqlite3.Connection, data: dict) -> dict:
-    """Bring over the old Claude-hosted page: to-dos, proposals, messages, the latest brief and the
-    assistant's name. Ids already present are skipped, so running it twice is harmless."""
-    counts = {"items": 0, "proposals": 0, "messages": 0, "brief": 0}
+    """Bring over the old Claude-hosted page: to-dos, proposals, messages, the latest brief, decisions,
+    trips, binders, expenses, the tomorrow and week cards, and the assistant's name. Ids already present
+    are skipped, so running it twice is harmless."""
+    counts = {"items": 0, "proposals": 0, "messages": 0, "brief": 0, "records": 0}
     for it in data.get("items", []):
         item_id = f"page-{it['id']}"
         if get_item(conn, item_id) is not None or not it.get("title"):
@@ -127,7 +134,7 @@ def import_page(conn: sqlite3.Connection, data: dict) -> dict:
             "due": it.get("due"), "notes": it.get("notes") or "",
             "source": {"kind": kind, "label": label} if label else {"kind": "manual"},
             "createdAt": it.get("createdAt") or now(),
-        }, actor="system")
+        } | {k: it[k] for k in ITEM_EXTRAS if it.get(k) not in (None, "")}, actor="system")
         counts["items"] += 1
     for p in data.get("proposals", []):
         if not (p.get("day") and p.get("n")) or conn.execute(
@@ -137,7 +144,9 @@ def import_page(conn: sqlite3.Connection, data: dict) -> dict:
             "id": f"{p['day']}-{p['n']}", "day": p["day"], "n": int(p["n"]),
             "status": p.get("status") if p.get("status") in {"pending", "approved", "declined", "done", "failed"} else "pending",
             "createdAt": p.get("createdAt") or now()}
-        row |= {k: p[k] for k in ("changes", "result", "decidedAt") if p.get(k)}
+        row |= {k: p[k] for k in ("changes", "result", "decidedAt", "draftBody") if p.get(k)}
+        if isinstance(p.get("draft"), dict) and p["draft"].get("to"):
+            row["draft"] = {k: str(p["draft"].get(k) or "") for k in DRAFT_FIELDS}
         _write_proposal(conn, row)
         counts["proposals"] += 1
     for m in data.get("messages", []):
@@ -151,6 +160,19 @@ def import_page(conn: sqlite3.Connection, data: dict) -> dict:
         conn.execute("INSERT INTO briefs (at, day, subject, markdown, proposals, capture) VALUES (?, ?, ?, ?, '[]', '{}')",
                      (b.get("updatedAt") or now(), b.get("day") or now()[:10], b.get("subject") or "Brief", b["markdown"]))
         counts["brief"] = 1
+    for key, kind in (("decisions", "decision"), ("trips", "trip"), ("binders", "binder"), ("expenses", "expense")):
+        for r in data.get(key, []):
+            if r.get("id") and get_record(conn, kind, r["id"]) is None:
+                try:
+                    put_record(conn, kind, r["id"], r, actor="system")
+                    counts["records"] += 1
+                except ValueError:
+                    pass
+    for card in ("tomorrow", "week"):
+        c = data.get(card)
+        if c and c.get("markdown") and get_record(conn, "card", card) is None:
+            put_record(conn, "card", card, c, actor="system")
+            counts["records"] += 1
     name = (data.get("settings") or {}).get("agentName")
     if name:
         put_setting(conn, "assistant", (get_setting(conn, "assistant", {}) or {}) | {"name": name}, actor="system")
@@ -191,4 +213,5 @@ def export_all(conn: sqlite3.Connection) -> dict:
         },
         "proposals": [json.loads(r["data"]) for r in conn.execute("SELECT data FROM proposals ORDER BY day, n")],
         "messages": [dict(r) for r in conn.execute("SELECT * FROM messages ORDER BY at")],
+        "records": {kind: list_records(conn, kind) for kind in sorted(RECORD_KINDS)},
     }

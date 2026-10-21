@@ -25,7 +25,7 @@ SCOPES = [
     "https://www.googleapis.com/auth/calendar.readonly",
     "https://www.googleapis.com/auth/calendar.events",  # only to carry out proposals the owner approved
     "https://www.googleapis.com/auth/gmail.readonly",
-    "https://www.googleapis.com/auth/gmail.send",  # only ever used to email the owner (the brief)
+    "https://www.googleapis.com/auth/gmail.send",  # the owner, plus drafts the owner approved (if email.sendApprovedDrafts)
     "openid",
     "email",
 ]
