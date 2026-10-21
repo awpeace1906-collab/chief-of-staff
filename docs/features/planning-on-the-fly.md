@@ -23,4 +23,6 @@
 
 ## The app
 
-The app's `schedule.py` already finds free windows. A `replan` endpoint and Move: execution in `agent.py` come with the app catch-up.
+- **Re-plan:** `POST /api/replan {day, at, timeZone, what}`, or **Plans changed?** on the web app's Day tab, stores a `replan` message and handles it straight away. The assistant reads the day (`find_events`, `free_time`), files **Move:** proposals with `propose_move`, and replies with what changed. See [day-view.md](day-view.md#in-the-app).
+- **Move:** an approved proposal with `eventId`, `start` and `end` moves that event to exactly those times, with no model call and nobody notified.
+- **Flight watches** stay with the scheduled tasks until the app has its own run for them.
