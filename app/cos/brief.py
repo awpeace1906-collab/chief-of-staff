@@ -5,7 +5,7 @@ import sqlite3
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-from . import accountability, capture, llm, store
+from . import accountability, capture, llm, schedule, store
 from .db import audit, now
 from .google.api import Google
 
@@ -30,7 +30,8 @@ Sections, in this order, leaving out any that are empty:
    in pendingProposals, and never propose adding an event that's already on a calendar.
    Accountability: every item in `accountability.overdue`, `dueSoon`, `undatedPromises` and
    `waitingLate` gets a proposal unless a pending one already covers it: a time block for the
-   work (a free slot from the agenda), a drafted reply, a new date, or for waitingLate a nudge
+   work (use the matching `suggestedBlocks` entry, already fitted into free time; otherwise a
+   window from `freeSlots`), a drafted reply, a new date, or for waitingLate a nudge
    to the other person. For `undatedPromises`, propose a date. For each item in
    `accountability.stuck`, ask plainly: do it (with a slot), move it (to a date), or drop it.
 6. **Closed since yesterday**: items the capture step marked done, with the evidence. Only
@@ -92,6 +93,8 @@ def run(conn: sqlite3.Connection, google: Google, client=None, send: bool = Fals
         extra["microsoftToDo"] = microsoft.todo()
     divisions = store.get_setting(conn, "divisions", {})
     acct = accountability.review(conn, today.date())
+    cfg = schedule.settings(conn)
+    slots = schedule.free_slots(agenda, today.date(), cfg, now=today)
 
     system = SYSTEM.format(
         name=name,
@@ -103,6 +106,8 @@ def run(conn: sqlite3.Connection, google: Google, client=None, send: bool = Fals
         "now": today.isoformat(),
         "board": store.list_items(conn),
         "accountability": acct,
+        "freeSlots": slots[:40],
+        "suggestedBlocks": schedule.suggest_blocks(acct, slots, cfg),
         "capture": changes,
         "agenda": agenda,
         "openItems": store.get_setting(conn, "openItems", []),

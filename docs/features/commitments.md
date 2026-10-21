@@ -59,6 +59,8 @@ When evidence is found, Tower marks it `done` and says so in the next brief ("Cl
 - **Nudges are counted.** Each brief that surfaces an item adds one to `nudges` (at most once a day; `lastSurfaced`).
 - **Escalation:** after 3 briefs, the item is "stuck" and the brief asks plainly: do it (slot), move it (date), or drop it?
 - **Closure needs evidence** (below) or Andrew's say-so. The loop never closes or drops anything by itself.
+- **Schedule builder** (`app/cos/schedule.py`): finds free windows in Andrew's division, around busy events (shifts, interviews; free/"Away" markers don't block), 7am–9pm in his home timezone. Each surfaced item gets the earliest 30-minute window before its due date (late items take the first window). The brief proposes these as "Add: …" blocks, so nothing reaches the calendar without approval. Settings: `schedule.dayStart`, `dayEnd`, `minMinutes`, `blockMinutes`, `division`.
+- **On the page:** the To-do tab shows "You promised <person>", "date guessed", how many briefs have brought an item up, and the do/move/drop question once an item is stuck. **Drop it** closes an item on purpose. Rescheduling resets the count.
 
 ## Brief integration
 
