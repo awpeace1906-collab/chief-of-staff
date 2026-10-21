@@ -159,7 +159,8 @@
     "mode": "on-demand",
     "note": "Hourly checks are paused (Oct 20) to save cost. The page wakes Tower when Andrew approves a proposal or sends a message (one run, then at most one more per 90s). The morning brief does the daily Gmail and calendar sweep.",
     "hourlyCheck": "paused",
-    "morningBrief": "8:25am Mountain"
+    "morningBrief": "8:25am Mountain",
+    "eveningSetup": "6:47pm Mountain (Tomorrow card daily; weekly review on Sundays; expenses)"
   },
   "microsoft": {
     "account": "awpeace1906@gmail.com",
@@ -169,5 +170,11 @@
         "Outlook": "default"
       }
     }
+  },
+  "emailRules": [
+    "An approved Send: proposal (from the page or 'approve n') is permission to send that one email from Andrew's Gmail to the recipient shown, on the thread. Never email anyone else."
+  ],
+  "protectedTime": {
+    "note": "Windows that are never free time on the Day view: settings/schedule.protect on the page. Ask Andrew before adding any (e.g. family dinner, sleep before early shifts)."
   }
 }
