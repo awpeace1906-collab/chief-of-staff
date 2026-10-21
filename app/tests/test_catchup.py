@@ -11,24 +11,24 @@ from cos import accountability, agent, db, schedule, store
 from cos.main import create_app
 from test_agent import DENVER, Calendar, ToolClaude, approved, conn, google  # noqa: F401 (fixture)
 
-DECISION = {"title": "Keep the UNM reserved CA-1 spot?", "deadline": "2026-10-23", "context": "UNM asked by Friday",
+DECISION = {"title": "Keep the Northfield reserved CA-1 spot?", "deadline": "2026-10-23", "context": "Northfield asked by Friday",
             "options": [{"id": "keep", "label": "Keep it"}, {"id": "release", "label": "Release it"}]}
 
 
 # Records and decisions
 
 def test_records_and_a_decision_choice(conn):
-    store.put_record(conn, "decision", "unm-ca1", DECISION)
+    store.put_record(conn, "decision", "northfield-ca1", DECISION)
     assert store.list_records(conn, "decision")[0]["status"] == "open"
     with pytest.raises(ValueError):
-        store.choose(conn, "unm-ca1", "maybe")
-    d = store.choose(conn, "unm-ca1", "release")
+        store.choose(conn, "northfield-ca1", "maybe")
+    d = store.choose(conn, "northfield-ca1", "release")
     assert d["status"] == "decided" and d["choiceLabel"] == "Release it"
     with pytest.raises(ValueError):
-        store.choose(conn, "unm-ca1", "keep")  # decided once
+        store.choose(conn, "northfield-ca1", "keep")  # decided once
     # the assistant refiling the decision (e.g. the next brief) keeps the owner's choice
-    store.put_record(conn, "decision", "unm-ca1", DECISION | {"status": "open"})
-    assert store.get_record(conn, "decision", "unm-ca1")["choice"] == "release"
+    store.put_record(conn, "decision", "northfield-ca1", DECISION | {"status": "open"})
+    assert store.get_record(conn, "decision", "northfield-ca1")["choice"] == "release"
     with pytest.raises(ValueError):
         store.put_record(conn, "nope", "x", {})
     with pytest.raises(ValueError):
@@ -36,15 +36,15 @@ def test_records_and_a_decision_choice(conn):
 
 
 def test_a_decision_becomes_next_steps(conn):
-    store.put_record(conn, "decision", "unm-ca1", DECISION)
-    store.choose(conn, "unm-ca1", "release")
+    store.put_record(conn, "decision", "northfield-ca1", DECISION)
+    store.choose(conn, "northfield-ca1", "release")
     claude = ToolClaude(
-        [("add_item", {"title": "Confirm release with UNM GME", "division": "me", "due": "2026-10-22"})],
-        [("finish", {"actions": "Added a to-do to confirm with UNM GME by Thu."})],
+        [("add_item", {"title": "Confirm release with Northfield GME", "division": "me", "due": "2026-10-22"})],
+        [("finish", {"actions": "Added a to-do to confirm with Northfield GME by Thu."})],
     )
     out = agent.act_on_decisions(conn, google(conn, Calendar()), client=claude)
-    assert out == [{"id": "unm-ca1", "actions": "Added a to-do to confirm with UNM GME by Thu."}]
-    assert store.get_record(conn, "decision", "unm-ca1")["actions"].startswith("Added")
+    assert out == [{"id": "northfield-ca1", "actions": "Added a to-do to confirm with Northfield GME by Thu."}]
+    assert store.get_record(conn, "decision", "northfield-ca1")["actions"].startswith("Added")
     assert "Release it" in claude.calls[0]["messages"][0]["content"]
     assert agent.act_on_decisions(conn, google(conn, Calendar()), client=ToolClaude()) == []  # only once
 
@@ -52,8 +52,8 @@ def test_a_decision_becomes_next_steps(conn):
 # Email drafts
 
 def draft_proposal(conn, **extra):
-    return approved(conn, kind="email", title="Send: reply to Gaby",
-                    draft={"to": "gaby@example.org", "subject": "Re: BEAR", "body": "Done, thanks.", "threadId": "t-9"}, **extra)
+    return approved(conn, kind="email", title="Send: reply to Jordan",
+                    draft={"to": "jordan@example.org", "subject": "Re: Mentor", "body": "Done, thanks.", "threadId": "t-9"}, **extra)
 
 
 def test_an_approved_draft_is_sent_only_when_sending_is_on(conn):
@@ -63,16 +63,16 @@ def test_an_approved_draft_is_sent_only_when_sending_is_on(conn):
     assert out[0]["status"] == "failed" and "sendApprovedDrafts" in out[0]["result"] and cal.sent == []
 
     store.put_setting(conn, "email", {"sendApprovedDrafts": True})
-    p = store.add_proposal(conn, {"day": "2026-10-21", "kind": "email", "title": "Send: reply to Gaby",
-                                  "draft": {"to": "gaby@example.org", "subject": "Re: BEAR", "body": "Done.", "threadId": "t-9"}})
+    p = store.add_proposal(conn, {"day": "2026-10-21", "kind": "email", "title": "Send: reply to Jordan",
+                                  "draft": {"to": "jordan@example.org", "subject": "Re: Mentor", "body": "Done.", "threadId": "t-9"}})
     store.update_proposal(conn, p["id"], {"status": "approved", "draftBody": "Done, signed and sent back."})
     out = agent.execute_approved(conn, google(conn, cal))
-    assert out == [{"id": p["id"], "status": "done", "result": "Sent to gaby@example.org."}]
+    assert out == [{"id": p["id"], "status": "done", "result": "Sent to jordan@example.org."}]
     sent = cal.sent[0]
     assert sent["threadId"] == "t-9"
     import base64
     raw = base64.urlsafe_b64decode(sent["raw"]).decode()
-    assert "To: gaby@example.org" in raw and "Done, signed and sent back." in raw
+    assert "To: jordan@example.org" in raw and "Done, signed and sent back." in raw
 
 
 def test_drafts_are_validated_and_only_the_owner_edits_them(conn):
@@ -150,7 +150,7 @@ def test_renewals_and_the_weeks_top_three(tmp_path):
 def client(tmp_path, monkeypatch):
     monkeypatch.setenv("COS_API_TOKEN", "k")
     monkeypatch.setenv("COS_SECURE_COOKIE", "0")
-    claude = ToolClaude([("finish", {"actions": "Added a to-do to tell UNM."})])
+    claude = ToolClaude([("finish", {"actions": "Added a to-do to tell Northfield."})])
     with TestClient(create_app(str(tmp_path / "cos.db"), client=claude, runner=lambda fn: fn())) as c:
         c.claude = claude
         yield c
@@ -158,18 +158,18 @@ def client(tmp_path, monkeypatch):
 
 def test_api_records_choose_and_replan(client):
     h = {"Authorization": "Bearer k"}
-    assert client.put("/api/records/decision/unm-ca1", headers=h, json=DECISION).status_code == 200
+    assert client.put("/api/records/decision/northfield-ca1", headers=h, json=DECISION).status_code == 200
     assert client.get("/api/records/trip", headers=h).json() == []
-    assert client.get("/api/records", headers=h).json()["decision"][0]["id"] == "unm-ca1"
+    assert client.get("/api/records", headers=h).json()["decision"][0]["id"] == "northfield-ca1"
     assert client.get("/api/records/nope", headers=h).status_code == 404
-    assert client.post("/api/decisions/unm-ca1/choose", headers=h, json={"choice": "maybe"}).status_code == 409
-    d = client.post("/api/decisions/unm-ca1/choose", headers=h, json={"choice": "keep"}).json()
+    assert client.post("/api/decisions/northfield-ca1/choose", headers=h, json={"choice": "maybe"}).status_code == 409
+    d = client.post("/api/decisions/northfield-ca1/choose", headers=h, json={"choice": "keep"}).json()
     assert d["status"] == "decided"
     # the follow-up ran straight away (the test runner is synchronous)
-    assert client.get("/api/records/decision", headers=h).json()[0]["actions"] == "Added a to-do to tell UNM."
+    assert client.get("/api/records/decision", headers=h).json()[0]["actions"] == "Added a to-do to tell Northfield."
     assert client.post("/api/replan", headers=h, json={"day": "2026-10-21", "what": ""}).status_code == 422
     m = client.post("/api/replan", headers=h, json={"day": "2026-10-21", "at": "17:30", "timeZone": "America/Chicago",
                                                     "what": "ran long"}).json()
     assert m["kind"] == "replan" and m["data"] == {"day": "2026-10-21", "at": "17:30", "timeZone": "America/Chicago"}
     assert m["text"] == "Re-plan 2026-10-21 (it's 17:30): ran long"
-    assert client.delete("/api/records/decision/unm-ca1", headers=h).json() == {"ok": True}
+    assert client.delete("/api/records/decision/northfield-ca1", headers=h).json() == {"ok": True}

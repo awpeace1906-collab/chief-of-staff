@@ -67,7 +67,7 @@ class FakeGoogle:
             return httpx.Response(200, json={
                 "id": "m1", "threadId": "t1", "labelIds": ["INBOX"], "snippet": "Please reply &amp; confirm",
                 "payload": {"mimeType": "multipart/alternative", "headers": [
-                    {"name": "From", "value": "Ross <rossela@salud.unm.edu>"},
+                    {"name": "From", "value": "Ross <rossela@salud.northfield.edu>"},
                     {"name": "To", "value": "pat+juno@example.com"},
                     {"name": "Subject", "value": "Reserved CA1 spot"},
                     {"name": "Date", "value": "Mon, 19 Oct 2026 18:34:34 +0000"},

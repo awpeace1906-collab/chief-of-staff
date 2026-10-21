@@ -16,7 +16,7 @@ DENVER, CHICAGO = ZoneInfo("America/Denver"), ZoneInfo("America/Chicago")
 def agenda():
     return {"timezone": "America/Denver", "divisions": {
         "me": {"events": [
-            {"title": "CTICU", "start": "2026-10-27T05:00:00-06:00", "end": "2026-10-27T18:00:00-06:00", "busy": True},
+            {"title": "ICU", "start": "2026-10-27T05:00:00-06:00", "end": "2026-10-27T18:00:00-06:00", "busy": True},
             {"title": "Away", "start": "2026-10-25", "end": "2026-11-22", "allDay": True, "busy": False},
             {"title": "Yesterday", "start": "2026-10-26T09:00:00-06:00", "end": "2026-10-26T10:00:00-06:00", "busy": True}]},
         "kids": {"events": [
@@ -24,11 +24,11 @@ def agenda():
 
 
 def test_day_in_the_viewers_zone_with_planned_blocks():
-    block = {"id": "2026-10-27-1", "title": "Add: BEAR paperwork", "status": "approved", "itemId": "c-1",
+    block = {"id": "2026-10-27-1", "title": "Add: Mentor paperwork", "status": "approved", "itemId": "c-1",
              "start": "2026-10-27T19:00:00-05:00", "end": "2026-10-27T19:30:00-05:00", "division": "me"}
     d = schedule.day(agenda(), date(2026, 10, 27), CHICAGO, schedule.DEFAULTS, [block, {"status": "done", "start": "x"}])
-    assert [e["title"] for e in d["events"]] == ["CTICU", "Away", "Swim"]  # yesterday's event left out
-    # CTICU is 6am-7pm Central; the block takes 7-7:30pm, so the evening starts at 7:30
+    assert [e["title"] for e in d["events"]] == ["ICU", "Away", "Swim"]  # yesterday's event left out
+    # ICU is 6am-7pm Central; the block takes 7-7:30pm, so the evening starts at 7:30
     assert [(s["start"][11:16], s["end"][11:16]) for s in d["free"]] == [("19:30", "21:00")]
     assert d["planned"][0]["id"] == "2026-10-27-1" and d["timezone"] == "America/Chicago"
 
@@ -39,8 +39,8 @@ def test_past_days_have_no_free_time():
 
 
 def test_a_block_goes_on_the_calendar_at_exactly_its_time(conn):
-    item = store.add_item(conn, {"title": "Sign BEAR agreement", "direction": "i-owe", "division": "me", "notes": "Gaby's Oct 1 email"})
-    p = store.add_proposal(conn, {"kind": "calendar", "division": "me", "title": "Add: Sign BEAR agreement",
+    item = store.add_item(conn, {"title": "Sign Mentor agreement", "direction": "i-owe", "division": "me", "notes": "Jordan's Oct 1 email"})
+    p = store.add_proposal(conn, {"kind": "calendar", "division": "me", "title": "Add: Sign Mentor agreement",
                                   "start": "2026-10-27T19:00:00-05:00", "end": "2026-10-27T19:30:00-05:00",
                                   "timeZone": "America/Chicago", "itemId": item["id"], "source": "schedule"}, actor="user")
     store.update_proposal(conn, p["id"], {"status": "approved"})
@@ -48,7 +48,7 @@ def test_a_block_goes_on_the_calendar_at_exactly_its_time(conn):
     out = agent.execute_approved(conn, google(conn, cal), client=None)  # no model: an exact block needs none
     assert out[0]["status"] == "done" and "Pat Work" in out[0]["result"] and "CDT" in out[0]["result"]
     made = cal.created[0]
-    assert made["summary"] == "Sign BEAR agreement" and made["description"] == "Gaby's Oct 1 email"
+    assert made["summary"] == "Sign Mentor agreement" and made["description"] == "Jordan's Oct 1 email"
     assert made["start"] == {"dateTime": "2026-10-27T19:00:00-05:00", "timeZone": "America/Chicago"}
     assert store.get_item(conn, item["id"])["status"] == "open"  # a block isn't proof it's done
 

@@ -74,7 +74,7 @@ def test_brain_import_skips_other_tags_and_deleted(conn, tmp_path):
 
 def test_export_round_trips_board(conn, tmp_path):
     import_config(conn, REPO_CONFIG)
-    store.add_item(conn, {"title": "Reply to UNM", "direction": "i-owe", "division": "me"})
+    store.add_item(conn, {"title": "Reply to Northfield", "direction": "i-owe", "division": "me"})
     out = export_all(conn)
     assert out["brain"]["schema"] == "brain/v1"
     assert all(e["source"] == "juno" for e in out["brain"]["entries"])

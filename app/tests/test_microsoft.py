@@ -58,7 +58,7 @@ class FakeGraph:
             return httpx.Response(200, json={"value": [{
                 "id": "m-sent" if sent else "m-1", "conversationId": "conv-1",
                 "subject": "Re: lunch" if sent else "Lunch Thursday?",
-                "from": {"emailAddress": {"name": "Ryan", "address": "ryan@example.com"}},
+                "from": {"emailAddress": {"name": "Alex", "address": "alex@example.com"}},
                 "toRecipients": [{"emailAddress": {"address": "pat@example.com"}}],
                 "receivedDateTime": "2026-10-20T14:00:00Z", "bodyPreview": "Can you do lunch",
                 "body": {"contentType": "html", "content": "<p>Can you do <b>lunch</b> Thursday?</p><style>x{}</style>"},
@@ -168,7 +168,7 @@ def test_agenda_by_division(conn):
 def test_mail_search_strips_html(conn):
     ms = connected(conn, FakeGraph())
     m = ms.search("lunch")[0]
-    assert m["body"] == "Can you do lunch Thursday?" and m["from"] == "Ryan <ryan@example.com>" and m["threadId"] == "conv-1"
+    assert m["body"] == "Can you do lunch Thursday?" and m["from"] == "Alex <alex@example.com>" and m["threadId"] == "conv-1"
 
 
 def test_todo_follows_pages_and_skips_completed(conn):
@@ -187,8 +187,8 @@ def test_capture_reads_outlook_too(conn, monkeypatch):
 
     def fake_complete(c, route, system, user, schema, client=None, **kw):
         seen["user"] = user
-        return {"changes": [{"op": "add", "itemId": None, "title": "Reply to Ryan about lunch", "direction": "i-owe",
-                             "division": "me", "counterparty": "Ryan", "due": None, "dueConfidence": "none",
+        return {"changes": [{"op": "add", "itemId": None, "title": "Reply to Alex about lunch", "direction": "i-owe",
+                             "division": "me", "counterparty": "Alex", "due": None, "dueConfidence": "none",
                              "notes": "", "evidence": None, "sourceRef": "m-1"}], "questions": []}
 
     monkeypatch.setattr(capture.llm, "complete", fake_complete)

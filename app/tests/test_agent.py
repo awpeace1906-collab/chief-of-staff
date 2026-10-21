@@ -94,10 +94,10 @@ def approved(conn, **p):
 
 def test_executes_an_approved_calendar_proposal(conn):
     cal = Calendar()
-    p = approved(conn, calendar="Pat Work", title="Add: Tucson interview", when="Tue Dec 8, 12:20–3:00pm MT")
+    p = approved(conn, calendar="Pat Work", title="Add: Lakeside interview", when="Tue Dec 8, 12:20–3:00pm MT")
     claude = ToolClaude(
         [("find_events", {"calendar": "Pat Work", "start_date": "2026-12-08", "end_date": "2026-12-08"})],
-        [("create_event", {"calendar": "Pat Work", "title": "Tucson interview", "start": "2026-12-08T12:20",
+        [("create_event", {"calendar": "Pat Work", "title": "Lakeside interview", "start": "2026-12-08T12:20",
                            "end": "2026-12-08T15:00", "all_day": False})],
         [("finish", {"outcome": "done", "result": "Added Tue Dec 8, 12:20–3:00pm on Pat Work."})],
     )
@@ -106,7 +106,7 @@ def test_executes_an_approved_calendar_proposal(conn):
     assert cal.created[0]["start"] == {"dateTime": "2026-12-08T12:20", "timeZone": "America/Denver"}
     assert store.get_proposal(conn, p["id"])["status"] == "done"
     # the model saw the proposal, and the tool results came back to it
-    assert "Tucson interview" in claude.calls[0]["messages"][0]["content"]
+    assert "Lakeside interview" in claude.calls[0]["messages"][0]["content"]
     assert claude.calls[1]["messages"][-1]["content"][0]["type"] == "tool_result"
 
 
@@ -114,7 +114,7 @@ def test_all_day_block_end_is_inclusive(conn):
     cal = Calendar()
     approved(conn, calendar="Pat Work", title="Add: Away block", when="Oct 25 to Nov 21")
     claude = ToolClaude(
-        [("create_event", {"calendar": "Pat Work", "title": "Away: St. Louis", "start": "2026-10-25",
+        [("create_event", {"calendar": "Pat Work", "title": "Away: Rivertown", "start": "2026-10-25",
                            "end": "2026-11-21", "all_day": True})],
         [("finish", {"outcome": "done", "result": "ok"})],
     )
@@ -144,7 +144,7 @@ def test_tool_errors_go_back_to_the_model(conn):
 
 
 def test_email_proposals_are_not_carried_out_yet(conn):
-    approved(conn, title="Send: reply to Ryan", kind="email")
+    approved(conn, title="Send: reply to Alex", kind="email")
     out = agent.execute_approved(conn, google(conn, Calendar()), client=ToolClaude())
     assert out[0]["status"] == "failed" and "can't be carried out" in out[0]["result"]
 

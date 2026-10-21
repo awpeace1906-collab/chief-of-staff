@@ -1,6 +1,6 @@
 # Fly.io: one small machine plus a 1 GB volume for the SQLite file. See docs/deployment.md.
 app = "chief-of-staff"          # change to a unique name
-primary_region = "den"          # Denver
+primary_region = "iad"          # pick the region nearest you (fly platform regions)
 
 [build]
   dockerfile = "Dockerfile"
