@@ -8,7 +8,7 @@ You are Tower's capture step. Read the sources below for the window since `lastC
 
 **Sources**
 1. Gmail, primary and important, **including archived mail** (not only the inbox: filters and phone swipes archive things that still matter), excluding promotions and social. Skip newsletters, receipts and marketing; digests and automated summaries go through source 5 instead.
-2. Andrew's sent mail (promises he made: "I'll…", "will send…", "let me check and get back…").
+2. Andrew's sent mail (promises he made: "I'll…", "will send…", "let me check and get back…"). Each promise is an `i-owe` item with `promise: true` and `counterparty` = the recipient. With no stated date, infer one ("asap" = 2 days, "this week" = Friday) as `dueConfidence: inferred`.
 3. Granola meeting notes (action items assigned to Andrew, or that others owe him).
 4. Calendar events whose titles are deadlines ("… Due", "Complete … Today").
 5. Digests from siloed systems, in Gmail and the Tower inbox, handled per [config/digests.json](../config/digests.json) and [docs/features/digests.md](../docs/features/digests.md): match each email to an adapter; `itemize` splits it into items, `summarize` gives one Roundup line, `metrics` gives one project line, `ignore` skips, `sensitive` is never opened. Route each item: commitment → board, schedule change → plan and coverage, FYI → Roundup, metrics → project line. A digest-shaped email with no adapter goes through the generic adapter, and the brief proposes a new adapter for Andrew to confirm.
