@@ -153,14 +153,16 @@
     "Before proposing a calendar event found in email, search all calendars in divisions for the same thing (title keywords, date, ±1 day, any time zone, including Gmail-created events). If it already exists, don't propose a new one. If its time or details differ from the email, propose a fix to the existing event instead."
   ],
   "notificationRules": [
-    "Scheduled and on-demand runs are silent in chat. Results go to the Chief of Staff page. Only report in chat when there's an actual error: a failed tool call or write, an approved proposal that couldn't be done, or a source that couldn't be read."
+    "Scheduled and on-demand runs are silent in chat. Results go to the Chief of Staff page. Only report in chat when there's an actual error: a failed tool call or write, an approved proposal that couldn't be done, or a source that couldn't be read.",
+    "Exception: a cancelled flight or an overnight delay emails Andrew a 3-line alert right away, because it needs action within hours."
   ],
   "checkCadence": {
     "mode": "on-demand",
     "note": "Hourly checks are paused (Oct 20) to save cost. The page wakes Tower when Andrew approves a proposal or sends a message (one run, then at most one more per 90s). The morning brief does the daily Gmail and calendar sweep.",
     "hourlyCheck": "paused",
     "morningBrief": "8:25am Mountain",
-    "eveningSetup": "6:47pm Mountain (Tomorrow card daily; weekly review on Sundays; expenses)"
+    "eveningSetup": "6:47pm Mountain (Tomorrow card daily; weekly review on Sundays; expenses)",
+    "flightWatch": "One-shot checks 3h before a first leg and 1h before each connection, scheduled by the evening setup; silent unless the flight changed"
   },
   "microsoft": {
     "account": "awpeace1906@gmail.com",

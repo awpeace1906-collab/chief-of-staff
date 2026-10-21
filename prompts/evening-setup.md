@@ -17,4 +17,6 @@ Source of truth for the Claude Code scheduled task "Chief of Staff · Tower even
    - Suggested top 3
 3. **Expenses**: travel and rotation receipts from the last 2 days go to `expenses/<slug>`, with no duplicates.
 
-Read only, except the page. Silent: reply "·" unless something failed.
+4. **Flight watches** for tomorrow's flights (see [docs/features/planning-on-the-fly.md](../docs/features/planning-on-the-fly.md)).
+
+Read only, except the page and the flight-watch tasks. Silent: reply "·" unless something failed.

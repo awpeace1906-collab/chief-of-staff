@@ -11,7 +11,7 @@
 ## Next
 
 - [ ] Connect Brain (needs `BRAIN_GIST_TOKEN` + `api.github.com` access); seed Tower's rules into it
-- [ ] Planning on the fly: when something changes (delay, cancellation, new deadline), re-plan the day and propose the moves
+- [x] Planning on the fly: Re-plan this day on the Day tab, plus flight watches on travel days (page and scheduled tasks; app next)
 - [x] Commitment framework drafted: architecture, board schema, capture prompt, board helper
 - [ ] Run capture + board alongside readywhen for 2 weeks; log misses in `docs/capture-misses.md`
 - [ ] Parity reached → drop readywhen from the brief; move brief time if wanted
