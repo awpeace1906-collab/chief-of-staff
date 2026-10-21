@@ -181,6 +181,11 @@ def execute_approved(conn: sqlite3.Connection, google: Google, client=None, only
         if only is not None and p["id"] not in only:
             continue
         try:
+            if p.get("kind") == "calendar" and p.get("start") and p.get("end"):
+                status, text = "done", _add_block(conn, google, p, tz)  # exact time from the day view: no model needed
+                store.update_proposal(conn, p["id"], {"status": status, "result": text}, actor="assistant")
+                out.append({"id": p["id"], "status": status, "result": text})
+                continue
             if p.get("kind") not in {"calendar", "board", "list"}:
                 raise RuntimeError(f"{p.get('kind') or 'this kind of'} proposals can't be carried out by the app yet")
             result = llm.run_tools(
@@ -203,6 +208,30 @@ def execute_approved(conn: sqlite3.Connection, google: Google, client=None, only
         store.update_proposal(conn, p["id"], {"status": status, "result": text[:500]}, actor="assistant")
         out.append({"id": p["id"], "status": status, "result": text})
     return out
+
+
+def _add_block(conn: sqlite3.Connection, google: Google, p: dict, tz: ZoneInfo) -> str:
+    """Put a day-view block on the calendar at exactly its time. The to-do stays open: a block is
+    time to do it, not proof it's done."""
+    from . import schedule
+    calendar = p.get("calendar") or schedule.settings(conn).get("blockCalendar") or _owner_calendar(conn)
+    item = store.get_item(conn, p["itemId"]) if p.get("itemId") else None
+    title = (p.get("title") or "").removeprefix("Add: ").strip() or (item or {}).get("title") or "Block"
+    zone = p.get("timeZone") or tz.key
+    body = {"summary": title, "description": (item or {}).get("notes") or "",
+            "start": {"dateTime": p["start"], "timeZone": zone}, "end": {"dateTime": p["end"], "timeZone": zone}}
+    google.create_event(_calendar_id(conn, calendar), body)
+    start = datetime.fromisoformat(p["start"].replace("Z", "+00:00")).astimezone(ZoneInfo(zone))
+    return f"Added to {calendar}: {start.strftime('%a %b %-d, %-I:%M %p')} {start.tzname()}."
+
+
+def _owner_calendar(conn: sqlite3.Connection) -> str:
+    from . import schedule
+    div = store.get_setting(conn, "divisions", {}).get(schedule.settings(conn)["division"], {})
+    names = list(div.get("calendars", {}))
+    if not names:
+        raise RuntimeError("no calendar for blocks; set schedule.blockCalendar")
+    return names[0]
 
 
 def handle_messages(conn: sqlite3.Connection, google: Google, client=None, only: set[str] | None = None,

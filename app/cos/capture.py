@@ -24,6 +24,10 @@ For each email decide whether it creates, updates or completes a commitment.
 - A commitment needs an owner, a deliverable, and a reason to act. Newsletters, receipts,
   marketing, shipping notices and FYIs with no ask are not commitments: skip them.
 - Digest emails (summaries from other systems) can hold several items; handle each.
+- Sent mail ("sent": true) is the owner's own words. Any promise in it ("I'll send…",
+  "I will complete the paperwork", "let me get back to you") is an i-owe commitment to the
+  recipient (counterparty). Infer a due date from the wording ("asap" = 2 days, "this week"
+  = Friday) and mark it "inferred". A sent reply can also close an open item it delivers.
 - "add": a new commitment not already on the board. Title is imperative, under 12 words.
 - "update": an open board item changed (new due date, new detail). Give its itemId.
 - "close": an open board item is done, with evidence in the mail (the owner sent the
@@ -171,6 +175,7 @@ def _apply(conn: sqlite3.Connection, changes: list[dict], messages: dict, divisi
                     "title": ch["title"], "direction": ch["direction"], "division": division,
                     "counterparty": ch["counterparty"], "due": ch["due"], "dueConfidence": ch["dueConfidence"],
                     "notes": ch["notes"],
+                    "promise": bool(msg.get("sent")) and ch["direction"] == "i-owe",
                     "source": {"kind": "outlook" if msg.get("mailbox") == "outlook" else "gmail",
                                "ref": msg.get("threadId") or ch["sourceRef"], "url": msg.get("url")},
                 })
