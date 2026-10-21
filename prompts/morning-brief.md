@@ -21,7 +21,7 @@ Tower morning brief. Run the daily brief for Andrew, then email it to Andrew (su
 - Open decisions go first in the brief (Decide).
 - Draft replies for "reply owed" items and late waiting-on items.
 - For interviews and meetings in the next 14 days: prep item, prep block, then a thank-you draft.
-- Keep rotation binders and trips current.
+- Keep rotation binders and trips current. Each flight leg carries `flight` ("AA 690"), `date` (local departure date, YYYY-MM-DD), `from` and `to` (IATA), so the app can watch it live.
 - Track renewals.
 - Keep the waiting-on-others list.
 - On the 1st of the month, ask the alignment question.

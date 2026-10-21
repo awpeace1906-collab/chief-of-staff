@@ -15,6 +15,7 @@ v0.4: its own web app, plus Microsoft 365. One process, one SQLite file.
   - **Talk:** **Ask** answers right away from the board and brief; **Send** queues a message for the assistant.
 
   Sign-in uses the access key (`COS_API_TOKEN`); the device then stays signed in for 90 days. `cos import --page` brings over the old Claude-hosted page's data.
+- **Flight watch:** live flight status (AeroDataBox, `AERODATABOX_KEY`) and the FAA's public airport status feed (ground stops, delays, closures), checked every 20 minutes from 6 hours before each trip leg. A real change messages the owner and files a re-plan; a cancellation or an overnight delay also emails a 3-line alert ([docs](../docs/features/planning-on-the-fly.md#live-flight-status-and-public-atc-data-the-app)). `GET /api/flights`, `POST /api/flights/check`.
 - **Catch-up:** the page's newer features, in the engine and the web app (the runs that file them come next; [docs/features/evening-and-week.md](../docs/features/evening-and-week.md#the-app)):
   - **Decisions:** filed as records; the owner's choice (`POST /api/decisions/<slug>/choose`) becomes next steps straight away.
   - **Records** for trips, binders, expenses and the tomorrow and week cards (`/api/records/<kind>`).

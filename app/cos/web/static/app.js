@@ -274,6 +274,18 @@
     }
   }
 
+  // a watched flight's live status: provider status, revised time, gate, FAA events at its airports
+  function liveLine(v) {
+    if (!v || !v.checkedAt) return null;
+    const bits = [], hm = (x) => (x ? x.slice(11, 16) : "");
+    if (v.status && v.status !== "Unknown" && v.status !== "Expected") bits.push(v.status === "Canceled" ? "Cancelled" : v.status);
+    if (v.departure && v.departure !== v.scheduledDeparture) bits.push("now " + hm(v.departure) + " local");
+    if (v.gate) bits.push("gate " + v.gate);
+    for (const [code, evs] of Object.entries(v.airports || {})) evs.forEach((e) => bits.push("FAA " + e.kind + " at " + code));
+    const bad = ["Canceled", "Diverted", "Delayed", "CanceledUncertain"].includes(v.status) || bits.some((b) => b.startsWith("FAA"));
+    return { text: (bits.length ? bits.join(" · ") : "On time") + " · checked " + new Date(v.checkedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }), bad };
+  }
+
   // tomorrow, this week, next trip
   function renderCards() {
     const box = $("cards"); box.textContent = "";
@@ -294,7 +306,11 @@
       c.append(k, el("h3", null, trip.title || "Trip"));
       if (trip.note) c.append(el("p", "why", trip.note));
       const ul = el("ul", "legs");
-      (trip.legs || []).forEach((l) => { const li = el("li"); li.append(el("b", null, l.when || ""), document.createTextNode(l.what + (l.detail ? " · " + l.detail : ""))); ul.append(li); });
+      (trip.legs || []).forEach((l) => {
+        const li = el("li"); li.append(el("b", null, l.when || ""), document.createTextNode(l.what + (l.detail ? " · " + l.detail : "")));
+        const live = liveLine(l.live); if (live) li.append(el("span", "live" + (live.bad ? " bad" : ""), live.text));
+        ul.append(li);
+      });
       if (ul.childNodes.length) c.append(ul);
       box.append(c);
     }

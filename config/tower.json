@@ -162,7 +162,7 @@
     "hourlyCheck": "paused",
     "morningBrief": "8:25am Mountain",
     "eveningSetup": "6:47pm Mountain (Tomorrow card daily; weekly review on Sundays; expenses)",
-    "flightWatch": "One-shot checks 3h before a first leg and 1h before each connection, scheduled by the evening setup; silent unless the flight changed"
+    "flightWatch": "One-shot checks 3h before a first leg and 1h before each connection, scheduled by the evening setup; silent unless the flight changed. In the app: live status (AeroDataBox) plus FAA NAS Status every 20 min from 6h before departure; see docs/features/planning-on-the-fly.md"
   },
   "microsoft": {
     "account": "awpeace1906@gmail.com",
