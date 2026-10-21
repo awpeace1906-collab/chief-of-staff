@@ -58,7 +58,7 @@ def legs(conn: sqlite3.Connection) -> list[tuple[dict, int, dict]]:
 
 
 def normalize(text: str) -> str:
-    """'AA 690', 'aa690' or 'AA 690 El Paso to Dallas' -> 'AA690'."""
+    """'XY 123', 'xy123' or 'XY 123 Denver to Dallas' -> 'XY123'."""
     m = FLIGHT_RE.search(text.upper())
     return f"{m.group(1)}{m.group(2)}" if m else ""
 

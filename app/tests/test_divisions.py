@@ -1,12 +1,12 @@
 """Divisions are the owner's data: the code never names a person."""
 
 import pathlib
-import re
 
 from cos import db, store
 from cos.importer import import_page
 
-CORE = pathlib.Path(__file__).resolve().parents[1] / "cos"
+REPO = pathlib.Path(__file__).resolve().parents[2]
+CORE = REPO / "app" / "cos"
 
 
 def test_owner_division_and_fallback(tmp_path):
@@ -32,7 +32,28 @@ def test_page_import_uses_the_configured_names(tmp_path):
 
 
 def test_no_personal_names_in_the_core_code():
-    names = re.compile(r"\b(andrew|stephanie|micah|tiffany|tower)\b", re.I)
-    hits = [f"{p.relative_to(CORE)}:{i}" for p in CORE.rglob("*") if p.suffix in {".py", ".js", ".html"}
-            for i, line in enumerate(p.read_text().splitlines(), 1) if names.search(line)]
-    assert hits == []
+    """The core code holds nobody's information: run the guard over app/cos with the example memory's
+    names (and, when COS_MEMORY_DIR points at a real memory, over the whole repo with that one)."""
+    import json
+    import os
+    import sys
+    sys.path.insert(0, str(REPO / "tools"))
+    import check_core
+
+    example = json.loads((REPO / "examples" / "memory" / "memory.json").read_text())
+    assert check_core.scan(CORE, check_core.personal_terms(example)) == []
+    real = os.environ.get("COS_MEMORY_DIR")
+    if real:
+        terms = check_core.personal_terms(json.loads((pathlib.Path(real) / "memory.json").read_text()))
+        assert check_core.scan(REPO, terms, {pathlib.Path(real).resolve()}) == []
+
+
+def test_the_guard_finds_what_memory_names(tmp_path):
+    import sys
+    sys.path.insert(0, str(REPO / "tools"))
+    import check_core
+
+    (tmp_path / "a.md").write_text("Ask Alex about it.\nMail alex@example.org\nNothing here.\n")
+    terms = check_core.personal_terms({"assistant": {"name": "Juno", "email": "alex@example.org"},
+                                       "people": [{"name": "Alex Doe"}]})
+    assert check_core.scan(tmp_path, terms) == ["a.md:1: Alex", "a.md:2: alex@example.org"]

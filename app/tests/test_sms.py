@@ -45,7 +45,7 @@ def app(tmp_path, monkeypatch):
     c = db.connect(path)
     store.put_setting(c, "timezone", "America/Denver")
     store.put_setting(c, "sms", {"provider": "telnyx", "number": "+15755550199", "ownerNumber": "(575) 555-0100"})
-    store.put_setting(c, "divisions", {"me": {"calendars": {"Andrew Work": "work@group"}}})
+    store.put_setting(c, "divisions", {"me": {"calendars": {"Pat Work": "work@group"}}})
     put_secret(c, oauth.TOKEN_KEY, {"access_token": "at-1", "refresh_token": "rt", "expires_at": time.time() + 3600,
                                     "scope": " ".join(oauth.SCOPES)})
     c.commit()
@@ -77,7 +77,7 @@ def test_strangers_are_ignored(app):
 def test_list_and_approve_by_number(app):
     build, carrier, path = app
     claude = ToolClaude(
-        [("create_event", {"calendar": "Andrew Work", "title": "Interview", "start": "2026-12-08T12:20",
+        [("create_event", {"calendar": "Pat Work", "title": "Interview", "start": "2026-12-08T12:20",
                            "end": "2026-12-08T15:00", "all_day": False})],
         [("finish", {"outcome": "done", "result": "Added Dec 8."})],
     )
@@ -122,8 +122,8 @@ def test_only_texts_the_owner(tmp_path):
 
 
 def test_brief_text():
-    text = sms.brief_text({"subject": "Tower: fly home", "proposals": [{"n": 1, "title": "Add: Away block"}]}, "https://cos.example")
-    assert text.splitlines() == ["Tower: fly home", "1. Add: Away block", 'Reply "approve 1, 3" or "decline 2".', "https://cos.example"]
+    text = sms.brief_text({"subject": "Juno: fly home", "proposals": [{"n": 1, "title": "Add: Away block"}]}, "https://cos.example")
+    assert text.splitlines() == ["Juno: fly home", "1. Add: Away block", 'Reply "approve 1, 3" or "decline 2".', "https://cos.example"]
 
 
 def test_status_endpoint(app):

@@ -1,34 +1,34 @@
 # Digests from siloed systems
 
-**Status:** framework drafted.
+**Status:** live (Gmail digests and the agent's inbox); the app reads them in capture.
 
-Many systems Tower can't log into still send email: Microsoft 365, residency and school platforms, scheduling tools. Their digest and notification emails are the integration point. Tower reads them, splits them into items, and routes each item to the right place.
+Many systems the agent can't log into still send email: Microsoft 365, residency and school platforms, scheduling tools. Their digest and notification emails are the integration point. The agent reads them, splits them into items, and routes each item to the right place.
 
 ## Intake
 
-Tower reads digests from one of two places:
+The agent reads digests from one of two places:
 
 | Intake | How | Best for |
 |---|---|---|
-| **Gmail** | Digests already sent to awpeace1906@gmail.com | Personal services |
-| **Tower inbox** (`tower-andrew@agentmail.to`) | Rules in other accounts auto-forward digests here | Siloed work accounts (burrell.edu Microsoft 365) and anything you want kept out of Gmail |
+| **Gmail** | Digests already sent to the owner's Gmail | Personal services |
+| **The agent's inbox** (e.g. an AgentMail address) | Rules in other accounts auto-forward digests here | Siloed work or school accounts (an organization's Microsoft 365) and anything kept out of Gmail |
 
-A dedicated inbox is the portable choice: the public app gives every user one, and any system that can send or forward email can feed Tower.
+A dedicated inbox is the portable choice: the public app gives every user one, and any system that can send or forward email can feed the agent.
 
 ### Read state
 
-Once Tower has handled an AgentMail message (captured to the board, routed to the plan or Roundup, or ignored per its adapter), it marks it read. Anything unhandled, failed or waiting on Andrew stays unread, so unread means "Tower hasn't dealt with this". This applies to every AgentMail inbox Tower reads. Gmail read state is left alone.
+Once the agent has handled a message in its inbox (captured to the board, routed to the plan or Roundup, or ignored per its adapter), it marks it read. Anything unhandled, failed or waiting on the owner stays unread, so unread means "the agent hasn't dealt with this". This applies to every agent inbox it reads. Gmail read state is left alone.
 
-### Forwarding from Microsoft 365 (burrell.edu)
+### Forwarding from a work or school Microsoft 365
 
-Outlook → Settings → Mail → Rules → new rule: *From* contains the senders in [config/digests.json](../../config/digests.json) → *Forward to* the Tower inbox.
+Outlook → Settings → Mail → Rules → new rule: *From* contains the senders in `<agent>-memory/digests.json` → *Forward to* the agent's inbox.
 
-- Many organizations block automatic forwarding to outside addresses. If the rule silently does nothing, IT has blocked it. Fallbacks: forward by hand, or have Tower read a weekly export.
+- Many organizations block automatic forwarding to outside addresses. If the rule silently does nothing, IT has blocked it. Fallbacks: forward by hand, or have the agent read a weekly export.
 - **Forward digests only, never all mail.** School and hospital accounts can contain protected health information. Only forward systems listed in the registry, and never patient-facing systems (Epic In Basket, secure messaging).
 
 ## Adapters
 
-Each known sender has an adapter in [config/digests.json](../../config/digests.json):
+Each known sender has an adapter in `<agent>-memory/digests.json` (example: [examples/memory/digests.json](../../examples/memory/digests.json)):
 
 | Field | Meaning |
 |---|---|
@@ -38,7 +38,7 @@ Each known sender has an adapter in [config/digests.json](../../config/digests.j
 | `handling` | `itemize` (split into items), `summarize` (one line), `metrics` (numbers only), `ignore`, `sensitive` (never read content) |
 | `division` | Default division for its items |
 
-Unknown senders whose email looks like a digest (a list of items; subject has digest, summary, activity, briefing, recap, "you missed") are handled by the **generic adapter**: itemize, classify, and propose a new adapter in the brief so Andrew can confirm it.
+Unknown senders whose email looks like a digest (a list of items; subject has digest, summary, activity, briefing, recap, "you missed") are handled by the **generic adapter**: itemize, classify, and propose a new adapter in the brief so the owner can confirm it.
 
 ## Routing each item
 
@@ -46,8 +46,8 @@ Unknown senders whose email looks like a digest (a list of items; subject has di
 |---|---|---|
 | **Commitment** | Board ([commitments.md](commitments.md)) | Viva briefing: "You said you'd send the deck to Dr. X" · MedHub: "3 evaluations due" |
 | **Schedule** | Plan + coverage check | Amion/QGenda: call swap · Teams invite moved |
-| **FYI** | Roundup section of the brief, one line per source | SAEM digest: abstract deadline open · ASA news |
-| **Metrics** | Project line in the brief | AnesCalc beta: 0 new sign-ups |
+| **FYI** | Roundup section of the brief, one line per source | Professional society digest: abstract deadline open |
+| **Metrics** | Project line in the brief | Side project beta: 0 new sign-ups |
 
 ## Brief: Roundup section
 
@@ -57,12 +57,12 @@ After Proposals, at most one line per digest source, most important first. Silen
 Roundup
 · Microsoft 365: 2 Teams mentions (Peds clerkship chat), 1 Planner task due Thu → board
 · MedHub: 3 evaluations due Fri → board
-· SAEM: SAEM27 abstract submissions open
-· AnesCalc beta: 0 new sign-ups, 0 feedback (3rd day flat)
+· Society digest: abstract submissions open
+· Side project beta: 0 new sign-ups, 0 feedback (3rd day flat)
 ```
 
 ## Privacy rules
 
-- `sensitive` adapters (health data, e.g. Dexcom Clarity) are never read. Tower only notes that one arrived, if asked.
+- `sensitive` adapters (health data, e.g. a glucose-monitor report) are never read. The agent only notes that one arrived, if asked.
 - No clinical or patient details on the board, in the brief, or in Brain.
-- Work-account content stays in the brief and board. It never goes into Brain unless Andrew turns it into a rule.
+- Work-account content stays in the brief and board. It never goes into Brain unless the owner turns it into a rule.

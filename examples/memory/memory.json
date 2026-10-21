@@ -1,0 +1,114 @@
+{
+  "assistant": {
+    "id": "juno",
+    "name": "Juno",
+    "owner": "Pat",
+    "email": "pat@example.com",
+    "inbox": "juno-pat@agentmail.example",
+    "formerNames": []
+  },
+  "people": [
+    {
+      "name": "Pat Rivera",
+      "role": "owner"
+    },
+    {
+      "name": "Sam",
+      "role": "partner",
+      "division": "sam"
+    },
+    {
+      "name": "Robin",
+      "role": "child",
+      "division": "kids"
+    },
+    {
+      "name": "Casey",
+      "role": "nanny",
+      "division": "kids"
+    }
+  ],
+  "timezone": "America/Denver",
+  "brief": {
+    "time": "08:25",
+    "deliver": [
+      "email"
+    ],
+    "subjectPrefix": "Juno:"
+  },
+  "approvals": "propose-only",
+  "divisions": {
+    "me": {
+      "label": "Me",
+      "calendars": {
+        "Pat's Calendar": "pat@example.com",
+        "Pat Work": "work-calendar-id@group.calendar.google.com"
+      }
+    },
+    "sam": {
+      "label": "Sam",
+      "suggest": false,
+      "calendars": {
+        "Sam": "sam@example.com",
+        "Sam Call": "sam-call-id@group.calendar.google.com"
+      },
+      "notes": "Sam Call is Sam's call schedule."
+    },
+    "kids": {
+      "label": "Kids & coverage",
+      "calendars": {
+        "Family": "family-id@group.calendar.google.com",
+        "Casey Schedule": "casey-id@group.calendar.google.com"
+      },
+      "coverage": [
+        "Casey"
+      ],
+      "notes": "Casey is the nanny."
+    }
+  },
+  "standingAgreements": [
+    {
+      "who": "Dr. Lee",
+      "rule": "When Pat is out of town, Dr. Lee appointments go remote. Propose switching to remote; don't flag as a conflict."
+    }
+  ],
+  "openItems": [],
+  "mailRules": [
+    "AgentMail: once the agent has handled a message (captured to the board, routed to the plan or Roundup, or ignored per its adapter), mark it read. Leave anything unhandled or needing the owner unread. Gmail read state is left alone."
+  ],
+  "calendarRules": [
+    "Before proposing a calendar event found in email, search all calendars in divisions for the same thing (title keywords, date, ±1 day, any time zone, including Gmail-created events). If it already exists, don't propose a new one. If its time or details differ from the email, propose a fix to the existing event instead."
+  ],
+  "notificationRules": [
+    "Scheduled and on-demand runs are silent in chat. Results go to the Chief of Staff page. Only report in chat when there's an actual error: a failed tool call or write, an approved proposal that couldn't be done, or a source that couldn't be read.",
+    "Exception: a cancelled flight or an overnight delay emails the owner a 3-line alert right away, because it needs action within hours."
+  ],
+  "emailRules": [
+    "An approved Send: proposal is permission to send that one email from the owner's Gmail to the recipient shown, on the thread. Never email anyone else.",
+    "In the app, sending approved drafts is off until the email setting has sendApprovedDrafts: true."
+  ],
+  "checkCadence": {
+    "mode": "on-demand",
+    "morningBrief": "daily at brief.time",
+    "eveningSetup": "daily, evening"
+  },
+  "protectedTime": {
+    "note": "Windows that are never free time on the Day view (schedule.protect). Ask the owner before adding any."
+  },
+  "hosting": {
+    "mode": "cloud",
+    "ai": "anthropic-api"
+  },
+  "google": {
+    "intakeAddress": "pat+juno@example.com",
+    "redirectUri": "http://127.0.0.1:8700/oauth/google/callback"
+  },
+  "microsoft": {
+    "account": "pat@example.com",
+    "divisions": {
+      "me": {
+        "Outlook": "default"
+      }
+    }
+  }
+}

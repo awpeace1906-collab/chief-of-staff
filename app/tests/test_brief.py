@@ -23,7 +23,7 @@ DENVER = ZoneInfo("America/Denver")
 def gmail_message(mid, sender, subject, body, labels=("INBOX",)):
     return {"id": mid, "threadId": f"t-{mid}", "labelIds": list(labels), "snippet": body[:40],
             "payload": {"mimeType": "text/plain", "body": {"data": b64(body)}, "headers": [
-                {"name": "From", "value": sender}, {"name": "To", "value": "awpeace1906@gmail.com"},
+                {"name": "From", "value": sender}, {"name": "To", "value": "pat@example.com"},
                 {"name": "Subject", "value": subject}, {"name": "Date", "value": "Mon, 19 Oct 2026 18:34:34 +0000"}]}}
 
 
@@ -73,11 +73,11 @@ class FakeClaude:
 
 def change(op, title, source="m1", item_id=None, evidence=None, division="me"):
     return {"op": op, "itemId": item_id, "title": title, "direction": "i-owe", "division": division,
-            "counterparty": "UNM", "due": "2026-10-21", "dueConfidence": "explicit", "notes": "",
+            "counterparty": "Northfield", "due": "2026-10-21", "dueConfidence": "explicit", "notes": "",
             "evidence": evidence, "sourceRef": source}
 
 
-BRIEF = {"subject": "UNM reply due, coverage fine", "markdown": "**You owe**\n- Reply to UNM", "proposals": [
+BRIEF = {"subject": "Northfield reply due, coverage fine", "markdown": "**You owe**\n- Reply to Northfield", "proposals": [
     {"n": 1, "kind": "email", "summary": "Draft reply to Ross Martinez"}]}
 
 
@@ -89,7 +89,7 @@ def env(tmp_path, monkeypatch):
     conn = db.connect(tmp_path / "cos.db")
     import_config(conn, REPO_CONFIG)
     fake = MailboxGoogle([
-        gmail_message("m1", "Ross <rossela@salud.unm.edu>", "Reserved CA1 spot", "Please reply if interested."),
+        gmail_message("m1", "Ross <rossela@salud.northfield.edu>", "Reserved CA1 spot", "Please reply if interested."),
         gmail_message("m2", "Dexcom <noreply@email.clarity.dexcom.com>", "Weekly glucose", "health data"),
     ])
     connect_google(conn, fake)
@@ -99,16 +99,16 @@ def env(tmp_path, monkeypatch):
 
 
 def test_capture_adds_dedupes_and_never_sends_health_mail(env):
-    claude = FakeClaude({"changes": [change("add", "Reply to UNM about reserved CA1 spot")], "questions": []},
-                        {"changes": [change("add", "Reply to UNM about reserved CA1 spot")], "questions": []})
+    claude = FakeClaude({"changes": [change("add", "Reply to Northfield about reserved CA1 spot")], "questions": []},
+                        {"changes": [change("add", "Reply to Northfield about reserved CA1 spot")], "questions": []})
     first = capture.run(env.conn, env.google, client=claude)
-    assert [a["title"] for a in first["added"]] == ["Reply to UNM about reserved CA1 spot"]
+    assert [a["title"] for a in first["added"]] == ["Reply to Northfield about reserved CA1 spot"]
     sent_to_model = json.loads(claude.calls[0]["messages"][0]["content"])
     assert [m["id"] for m in sent_to_model["emails"]] == ["m1"]  # Dexcom (sensitive adapter) never sent
     assert "health data" not in claude.calls[0]["messages"][0]["content"]
 
     second = capture.run(env.conn, env.google, client=claude)
-    assert second["added"] == [] and second["skipped"] == ["Reply to UNM about reserved CA1 spot"]
+    assert second["added"] == [] and second["skipped"] == ["Reply to Northfield about reserved CA1 spot"]
     assert len(store.list_items(env.conn)) == 1
 
 
@@ -134,7 +134,7 @@ def test_model_request_shape(env):
     assert triage["output_config"]["effort"] == "low"
     assert triage["output_config"]["format"]["type"] == "json_schema"
     assert triage["system"][0]["cache_control"] == {"type": "ephemeral"}
-    assert "Jason Wyatt" in triage["system"][0]["text"]  # standing rules reach the model
+    assert "Dr. Lee" in triage["system"][0]["text"]  # standing rules reach the model
 
     llm.complete(env.conn, "plan", "s", "u", brief.SCHEMA, client=claude)
     plan = claude.calls[1]
@@ -170,12 +170,12 @@ def test_brief_stores_sends_only_to_owner_and_logs_usage(env):
     claude = FakeClaude({"changes": [], "questions": []}, BRIEF)
     result = brief.run(env.conn, env.google, client=claude, send=True,
                        today=datetime(2026, 10, 20, 8, 25, tzinfo=DENVER))
-    assert result["subject"] == "Tower: UNM reply due, coverage fine"
+    assert result["subject"] == "Juno: Northfield reply due, coverage fine"
     assert result["sent"] and len(env.fake.sent) == 1
-    assert "To: awpeace1906@gmail.com" in env.fake.sent[0] and "Reply to UNM" in env.fake.sent[0]
+    assert "To: pat@example.com" in env.fake.sent[0] and "Reply to Northfield" in env.fake.sent[0]
     plan_input = json.loads(claude.calls[1]["messages"][0]["content"])
-    assert set(plan_input["agenda"]["divisions"]) == {"me", "stephanie", "kids"}
-    assert plan_input["coveragePeople"] == {"kids": ["Tiffany"]}
+    assert set(plan_input["agenda"]["divisions"]) == {"me", "sam", "kids"}
+    assert plan_input["coveragePeople"] == {"kids": ["Casey"]}
     assert brief.latest(env.conn)["sent"]
 
     usage = llm.usage_summary(env.conn)
@@ -213,7 +213,7 @@ def test_send_failure_keeps_brief_and_counts_as_done(env, monkeypatch):
     scheduler.tick(env.conn, threading.Lock(), http=env.google.http, client=claude)
     state = store.get_setting(env.conn, "scheduler")
     assert state["lastBriefDay"] and "send permission" in state["lastError"]
-    assert brief.latest(env.conn)["subject"].startswith("Tower:") and not brief.latest(env.conn)["sent"]
+    assert brief.latest(env.conn)["subject"].startswith("Juno:") and not brief.latest(env.conn)["sent"]
     assert env.fake.sent == [] and len(claude.calls) == 2  # one capture + one plan, no re-run
 
 
@@ -228,13 +228,13 @@ def test_scheduler_caps_attempts_per_day(env, monkeypatch):
 
 
 def test_api_brief_and_usage(env):
-    claude = FakeClaude({"changes": [change("add", "Reply to UNM")], "questions": []}, BRIEF)
+    claude = FakeClaude({"changes": [change("add", "Reply to Northfield")], "questions": []}, BRIEF)
     app = create_app(str(env.tmp / "cos.db"), http=env.google.http, client=claude)
     with TestClient(app) as c:
         assert c.get("/api/brief/latest").status_code == 404
         r = c.post("/api/brief/run")
         assert r.status_code == 200 and r.json()["proposals"][0]["n"] == 1 and not r.json()["sent"]
-        assert c.get("/api/brief/latest").json()["subject"].startswith("Tower:")
+        assert c.get("/api/brief/latest").json()["subject"].startswith("Juno:")
         posted = c.get("/api/proposals").json()  # the brief's proposals land in the web app
         assert [(x["n"], x["status"], x["summary"]) for x in posted] == [(1, "pending", "Draft reply to Ross Martinez")]
         assert c.get("/api/ai/usage").json()["estimatedUsd"] > 0

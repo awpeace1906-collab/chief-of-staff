@@ -144,7 +144,7 @@
         },
         "promise": {
           "type": "boolean",
-          "description": "Andrew promised this himself (from sent mail or notes)"
+          "description": "The owner promised this themselves (from sent mail or notes)"
         },
         "nudges": {
           "type": "integer",

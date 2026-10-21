@@ -50,8 +50,8 @@ def test_sign_in_sets_cookie_and_opens_app(client):
 
 def test_proposal_flow(client):
     p = client.post("/api/proposals", headers=auth(), json={
-        "day": "2026-10-20", "kind": "calendar", "division": "me", "calendar": "Andrew Work",
-        "title": "Add: Tucson interview", "when": "Tue Dec 8, 12:20–3:00pm", "summary": "Not on any calendar"}).json()
+        "day": "2026-10-20", "kind": "calendar", "division": "me", "calendar": "Pat Work",
+        "title": "Add: Lakeside interview", "when": "Tue Dec 8, 12:20–3:00pm", "summary": "Not on any calendar"}).json()
     assert p["id"] == "2026-10-20-1" and p["status"] == "pending"
     second = client.post("/api/proposals", headers=auth(), json={"day": "2026-10-20", "summary": "Fix the time"}).json()
     assert second["n"] == 2  # numbered after the day's existing ones
@@ -71,8 +71,8 @@ def test_proposal_flow(client):
 
 
 def test_messages(client):
-    m = client.post("/api/messages", headers=auth(), json={"text": "  Move Jason to remote  "}).json()
-    assert m["from"] == "owner" and m["status"] == "new" and m["text"] == "Move Jason to remote"
+    m = client.post("/api/messages", headers=auth(), json={"text": "  Move Lee to remote  "}).json()
+    assert m["from"] == "owner" and m["status"] == "new" and m["text"] == "Move Lee to remote"
     client.post("/api/messages", headers=auth(), json={"from": "assistant", "text": "Done."})
     assert [x["id"] for x in client.get("/api/messages?status=new", headers=auth()).json()] == [m["id"]]
     client.patch(f"/api/messages/{m['id']}", headers=auth(), json={"status": "handled"})
@@ -133,19 +133,19 @@ PAGE = {
     "items": [
         {"id": "walgreens-rx", "title": "Pick up prescription", "due": "2026-10-21", "division": "me",
          "notes": "Ready since Oct 16", "status": "open", "source": "Gmail"},
-        {"id": "meal", "title": "Meal prep", "division": "kids", "status": "done", "source": "Added in Tower"},
+        {"id": "meal", "title": "Meal prep", "division": "kids", "status": "done", "source": "Added in Juno"},
     ],
     "proposals": [
-        {"day": "2026-10-20", "n": 1, "kind": "calendar", "status": "done", "summary": "Jason remote", "result": "8 updated"},
-        {"day": "2026-10-20", "n": 3, "kind": "calendar", "status": "pending", "title": "Add: Tucson interview",
-         "when": "Tue Dec 8", "calendar": "Andrew Work", "division": "me"},
+        {"day": "2026-10-20", "n": 1, "kind": "calendar", "status": "done", "summary": "Lee remote", "result": "8 updated"},
+        {"day": "2026-10-20", "n": 3, "kind": "calendar", "status": "pending", "title": "Add: Lakeside interview",
+         "when": "Tue Dec 8", "calendar": "Pat Work", "division": "me"},
     ],
-    "messages": [{"id": "welcome", "from": "tower", "text": "Hello", "status": "handled", "createdAt": "2026-10-20T01:30:00Z"}],
+    "messages": [{"id": "welcome", "from": "juno", "text": "Hello", "status": "handled", "createdAt": "2026-10-20T01:30:00Z"}],
     "brief": {"day": "2026-10-20", "subject": "Fly home", "markdown": "**Tue:** fly", "updatedAt": "2026-10-20T01:50:00Z"},
-    "decisions": [{"id": "unm-ca1", "title": "Keep the UNM spot?", "deadline": "2026-10-23", "status": "open",
+    "decisions": [{"id": "northfield-ca1", "title": "Keep the Northfield spot?", "deadline": "2026-10-23", "status": "open",
                    "options": [{"id": "keep", "label": "Keep it"}, {"id": "release", "label": "Release it"}]}],
     "tomorrow": {"day": "2026-10-21", "markdown": "First: clinic 8am"},
-    "settings": {"agentName": "Tower"},
+    "settings": {"agentName": "Juno"},
 }
 
 
@@ -154,13 +154,13 @@ def test_import_page_is_idempotent(tmp_path):
     first = import_page(conn, PAGE)
     assert first == {"items": 2, "proposals": 2, "messages": 1, "brief": 1, "records": 2}
     assert import_page(conn, PAGE) == {"items": 0, "proposals": 0, "messages": 0, "brief": 0, "records": 0}
-    assert store.get_record(conn, "decision", "unm-ca1")["status"] == "open"
+    assert store.get_record(conn, "decision", "northfield-ca1")["status"] == "open"
     assert store.get_record(conn, "card", "tomorrow")["markdown"] == "First: clinic 8am"
     rx = store.get_item(conn, "page-walgreens-rx")
     assert rx["source"] == {"kind": "gmail", "label": "Gmail"} and rx["direction"] == "i-owe"
     assert store.get_item(conn, "page-meal")["status"] == "done"
-    assert store.get_proposal(conn, "2026-10-20-3")["title"] == "Add: Tucson interview"
-    assert store.assistant_name(conn) == "Tower"
+    assert store.get_proposal(conn, "2026-10-20-3")["title"] == "Add: Lakeside interview"
+    assert store.assistant_name(conn) == "Juno"
     # new proposals that day number after the imported ones
     assert store.add_proposal(conn, {"day": "2026-10-20", "summary": "x"})["n"] == 4
     conn.close()

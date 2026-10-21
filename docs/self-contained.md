@@ -1,13 +1,13 @@
 # Self-contained Chief of Staff
 
-Goal: one Chief of Staff app that does everything itself (Andrew's assistant inside it is Tower). The only outside resources are the ones that can't sensibly be owned:
+Goal: one Chief of Staff app that does everything itself, with the owner's agent inside it. The only outside resources are the ones that can't sensibly be owned:
 
 | Allowed outside resource | Why it stays outside |
 |---|---|
 | **Hosting** (cloud server now, home box later) | Something has to be always on |
 | **Telephony** (VoIP.ms / Telnyx number, SMS, call audio) | Only carriers can connect to the phone network |
-| **AI processing** (Claude API) | Reasoning quality; local models aren't good enough for Tower's job |
-| **Google** (Calendar, Gmail) | Not a dependency so much as where Andrew's data lives; Tower talks to it directly |
+| **AI processing** (Claude API) | Reasoning quality; local models aren't good enough for the agent's job |
+| **Google** (Calendar, Gmail) | Not a dependency so much as where the owner's data lives; the agent talks to it directly |
 
 Everything else moves inside the app.
 
@@ -16,19 +16,19 @@ Everything else moves inside the app.
 | Job | Today | Self-contained | Outside? |
 |---|---|---|---|
 | Run the brief every morning | Claude Code scheduled task | Built-in scheduler | No |
-| Read/write Calendar and Gmail | Claude connectors | Direct Google APIs with Tower's own OAuth | Google only |
+| Read/write Calendar and Gmail | Claude connectors | Direct Google APIs with the app's own OAuth | Google only |
 | Meeting notes | Granola connector | Optional connector; off by default | Optional |
 | Commitments board | Gist (`cos-board.json`) | Local database (SQLite) | No |
-| Rules, preferences, context | Brain gist | Local database; **Brain sync** as an optional two-way connector so the Brain app still shows Tower's memory | Optional |
-| Digest intake | Gmail + AgentMail inbox | Gmail label via plus-address (`awpeace1906+tower@gmail.com` → label `Tower/Intake`), read through the Gmail API. Self-hosted companies can point Tower at any IMAP mailbox instead | No (uses Gmail) |
-| Commitment tracking | readywhen | Built-in capture + board | No |
-| Voice and texting | readywhen WhatsApp | Built-in: carrier webhooks into Tower | Carrier only |
+| Rules, preferences, context | Brain gist | Local database; **Brain sync** as an optional two-way connector so the Brain app still shows the agent's memory | Optional |
+| Digest intake | Gmail + AgentMail inbox | Gmail label via plus-address (`you+<agent>@gmail.com` → label `<Agent>/Intake`), read through the Gmail API. Self-hosted companies can point the agent at any IMAP mailbox instead | No (uses Gmail) |
+| Commitment tracking | A brief service, if any | Built-in capture + board | No |
+| Voice and texting | A third-party voice beta, if any | Built-in: carrier webhooks into the app | Carrier only |
 | Speech-to-text / text-to-speech | — | Local Whisper (faster-whisper) and Piper, inside the app | No |
-| Approvals | Reply in a Claude chat | Tower's own web app (installable PWA) + "approve 2" by text | No |
+| Approvals | The page, or a reply in a Claude chat | The app's own web app (installable PWA) + "approve 2" by text | No |
 | Notifications | Email from Claude session | Email via Gmail API, SMS via carrier, Web Push from the PWA | Carrier for SMS |
-| Spec and config | GitHub repo | Repo stays the source; the app reads config from its database, editable in Settings | No |
+| Spec and config | Core repo + the owner's memory repo | The core repo stays the source of the app; memory (`<agent>-memory`) is imported into the app's database and editable in Settings | No |
 
-Removed entirely: readywhen, AgentMail, Claude Code scheduled tasks, Claude connectors, the board gist.
+Removed entirely: AgentMail, Claude Code scheduled tasks, Claude connectors, the board gist, and any third-party brief service.
 
 ## Shape of the app
 
@@ -64,15 +64,38 @@ One process, one Docker image, one database file.
 
 ## Data and migration
 
-- Import from the current setup on first run: `config/tower.json`, `config/digests.json`, Tower entries from Brain, and any board items.
+- Import from the current setup on first run: the agent's memory (`cos import --memory`, which finds `<agent>-memory`), the agent's entries from Brain, and any board items.
 - Export at any time: one JSON file in `brain/v1` + `cos-board/v1` formats, so nothing is locked in.
 - Backups: nightly copy of the SQLite file to wherever the user chooses (local disk, S3-compatible bucket).
 
 ## Transition plan
 
-1. Build v0 alongside the current Claude Code setup; both run. *(done: v0.1–v0.4)*
-2. Host the app (docs/deployment.md), connect Google (with the calendar write permission) and Microsoft, and import the old page's data (`cos import --page`).
-3. Switch the brief to the app once a week of briefs matches.
-4. Switch approvals and messages to the app's web app. The app's hourly check carries out approvals, answers messages (including email to the `+tower` address) and captures new mail.
-5. Turn off the Claude Code scheduled tasks, the AgentMail inbox, the Claude-hosted page and readywhen.
-6. Later: SMS and voice (v0.5–v0.6).
+The core never changes between stages. What moves is where memory lives, where secrets are kept and which AI each route calls. Each stage can be rolled back.
+
+| Stage | Runs on | AI | Memory | Done when |
+|---|---|---|---|---|
+| 0. Today | Claude Code scheduled tasks + the Claude-hosted page; the app not yet hosted | Claude (Claude Code session) | `<agent>-memory` repo, read by the tasks; the page's database | — |
+| 1. Host the app | A cloud server (docs/deployment.md) | Claude API (own key) | `<agent>-memory` cloned on the server, pulled on a schedule; the app's database is the working copy | Two weeks of matching briefs, side by side |
+| 2. Memory writes back | Same | Same | Lasting changes the agent learns (a rule, a person, a renamed division) are committed back to `<agent>-memory` with a key scoped to that one repo; Brain keeps rules, keyed by the agent's id | The owner can read every memory change in its history |
+| 3. AI of the owner's choice | Same | Routes switch one at a time to another provider or a local model; Claude stays the fallback | Same | Each route passes an eval built from real past briefs and approvals |
+| 4. Own hardware and channels | A home or office server (Mac mini, mini PC) | Same | Same; only the hosting settings in memory change | Backups and remote access verified |
+
+### Stage 1 checklist
+
+1. Host the app, connect Google (with calendar write) and Microsoft, set the secrets (Anthropic key, access key, optional AERODATABOX_KEY).
+2. Clone `<agent>-memory` beside the app (or set `COS_MEMORY_DIR`), `cos import --memory`, then `cos import --page` for the page's data.
+3. Run both for two weeks. Compare each morning's brief, as the parity line does.
+4. Switch approvals, messages and the flight watch to the app. The app's scheduler replaces the scheduled tasks.
+5. Move what is Claude-specific:
+   - The scheduled tasks' instructions become the app's prompts (generic) plus memory (personal).
+   - The Gmail and Calendar connectors become the app's own Google sign-in.
+   - The agent inbox becomes a forwarding address read by the app.
+6. Turn off the scheduled tasks, the agent inbox, the Claude-hosted page and any third-party brief service.
+
+### Before stage 3: gaps to close
+
+- **Tool use beyond Claude:** `llm.run_tools` (approvals, re-plans, messages, decisions) only supports the Claude API today. A local or other provider needs OpenAI-compatible function calling in that loop before those routes can move.
+- **Evals:** a fixed set of real past inputs per route (capture, plan, draft, chat) with the approved outcomes, so a new model is judged on the owner's actual work before it takes over.
+- **Structured output:** routes that return JSON need a provider that can follow the schema, or a validate-and-retry step.
+
+Later: SMS and voice (v0.5–v0.6) slot into stage 1 or 4.

@@ -21,12 +21,12 @@ TELNYX_API_KEY=...                          # Telnyx
 VOIPMS_USER=... VOIPMS_PASSWORD=...         # VoIP.ms API user and API password
 ```
 
-Settings (`config/tower.json` → `sms`, or `PUT /api/settings/sms`):
+Settings (memory's `memory.json` → `sms`, or `PUT /api/settings/sms`):
 
 ```json
 "sms": {
   "provider": "telnyx",
-  "number": "+15755550199",
+  "number": "+15555550199",
   "ownerNumber": "+1XXXXXXXXXX",
   "briefByText": true
 }
@@ -48,7 +48,7 @@ Only `ownerNumber` is ever answered or texted. Texts from anyone else are ignore
 | `decline 2` | Declines it |
 | anything else | A message to your assistant. It answers by text, and the exchange also shows in the app's Talk tab |
 
-With `briefByText` on, the 8:25am brief also arrives as a short text: the subject, the numbered proposals and how to approve. Set `appUrl` in settings to include a link to the app.
+With `briefByText` on, the morning brief also arrives as a short text: the subject, the numbered proposals and how to approve. Set `appUrl` in settings to include a link to the app.
 
 ## Not yet
 

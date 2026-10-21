@@ -74,8 +74,8 @@ class ToolClaude:
 def conn(tmp_path):
     c = db.connect(tmp_path / "cos.db")
     store.put_setting(c, "timezone", "America/Denver")
-    store.put_setting(c, "assistant", {"name": "Tower", "email": "awpeace1906@gmail.com"})
-    store.put_setting(c, "divisions", {"me": {"label": "Me", "calendars": {"Andrew Work": "work@group", "Andrew's Calendar": "me@gmail"}}})
+    store.put_setting(c, "assistant", {"name": "Juno", "email": "pat@example.com"})
+    store.put_setting(c, "divisions", {"me": {"label": "Me", "calendars": {"Pat Work": "work@group", "Pat's Calendar": "me@gmail"}}})
     put_secret(c, oauth.TOKEN_KEY, {"access_token": "at-1", "refresh_token": "rt", "expires_at": time.time() + 3600,
                                     "scope": SCOPES})
     c.commit()
@@ -94,27 +94,27 @@ def approved(conn, **p):
 
 def test_executes_an_approved_calendar_proposal(conn):
     cal = Calendar()
-    p = approved(conn, calendar="Andrew Work", title="Add: Tucson interview", when="Tue Dec 8, 12:20–3:00pm MT")
+    p = approved(conn, calendar="Pat Work", title="Add: Lakeside interview", when="Tue Dec 8, 12:20–3:00pm MT")
     claude = ToolClaude(
-        [("find_events", {"calendar": "Andrew Work", "start_date": "2026-12-08", "end_date": "2026-12-08"})],
-        [("create_event", {"calendar": "Andrew Work", "title": "Tucson interview", "start": "2026-12-08T12:20",
+        [("find_events", {"calendar": "Pat Work", "start_date": "2026-12-08", "end_date": "2026-12-08"})],
+        [("create_event", {"calendar": "Pat Work", "title": "Lakeside interview", "start": "2026-12-08T12:20",
                            "end": "2026-12-08T15:00", "all_day": False})],
-        [("finish", {"outcome": "done", "result": "Added Tue Dec 8, 12:20–3:00pm on Andrew Work."})],
+        [("finish", {"outcome": "done", "result": "Added Tue Dec 8, 12:20–3:00pm on Pat Work."})],
     )
     out = agent.execute_approved(conn, google(conn, cal), client=claude)
-    assert out == [{"id": p["id"], "status": "done", "result": "Added Tue Dec 8, 12:20–3:00pm on Andrew Work."}]
+    assert out == [{"id": p["id"], "status": "done", "result": "Added Tue Dec 8, 12:20–3:00pm on Pat Work."}]
     assert cal.created[0]["start"] == {"dateTime": "2026-12-08T12:20", "timeZone": "America/Denver"}
     assert store.get_proposal(conn, p["id"])["status"] == "done"
     # the model saw the proposal, and the tool results came back to it
-    assert "Tucson interview" in claude.calls[0]["messages"][0]["content"]
+    assert "Lakeside interview" in claude.calls[0]["messages"][0]["content"]
     assert claude.calls[1]["messages"][-1]["content"][0]["type"] == "tool_result"
 
 
 def test_all_day_block_end_is_inclusive(conn):
     cal = Calendar()
-    approved(conn, calendar="Andrew Work", title="Add: Away block", when="Oct 25 to Nov 21")
+    approved(conn, calendar="Pat Work", title="Add: Away block", when="Oct 25 to Nov 21")
     claude = ToolClaude(
-        [("create_event", {"calendar": "Andrew Work", "title": "Away: St. Louis", "start": "2026-10-25",
+        [("create_event", {"calendar": "Pat Work", "title": "Away: Rivertown", "start": "2026-10-25",
                            "end": "2026-11-21", "all_day": True})],
         [("finish", {"outcome": "done", "result": "ok"})],
     )
@@ -123,7 +123,7 @@ def test_all_day_block_end_is_inclusive(conn):
 
 
 def test_held_by_the_owners_changes(conn):
-    p = approved(conn, calendar="Andrew's Calendar", title="Fix: Sumulong time", changes="Hold this")
+    p = approved(conn, calendar="Pat's Calendar", title="Fix: Sumulong time", changes="Hold this")
     claude = ToolClaude([("finish", {"outcome": "held", "result": "Held, per your note. Nothing changed."})])
     agent.execute_approved(conn, google(conn, Calendar()), client=claude)
     after = store.get_proposal(conn, p["id"])
@@ -144,7 +144,7 @@ def test_tool_errors_go_back_to_the_model(conn):
 
 
 def test_email_proposals_are_not_carried_out_yet(conn):
-    approved(conn, title="Send: reply to Ryan", kind="email")
+    approved(conn, title="Send: reply to Alex", kind="email")
     out = agent.execute_approved(conn, google(conn, Calendar()), client=ToolClaude())
     assert out[0]["status"] == "failed" and "can't be carried out" in out[0]["result"]
 
@@ -153,9 +153,9 @@ def test_without_calendar_write_permission_proposals_stay_approved(conn):
     put_secret(conn, oauth.TOKEN_KEY, {"access_token": "at-1", "refresh_token": "rt", "expires_at": time.time() + 3600,
                                        "scope": SCOPES.replace("https://www.googleapis.com/auth/calendar.events", "")})
     conn.commit()
-    p = approved(conn, calendar="Andrew Work", title="Add: x")
+    p = approved(conn, calendar="Pat Work", title="Add: x")
     claude = ToolClaude(
-        [("create_event", {"calendar": "Andrew Work", "title": "x", "start": "2026-10-21T10:00", "end": "2026-10-21T11:00", "all_day": False})],
+        [("create_event", {"calendar": "Pat Work", "title": "x", "start": "2026-10-21T10:00", "end": "2026-10-21T11:00", "all_day": False})],
         [("finish", {"outcome": "failed", "result": "no permission"})],
     )
     agent.execute_approved(conn, google(conn, Calendar()), client=claude)
@@ -166,17 +166,17 @@ def test_without_calendar_write_permission_proposals_stay_approved(conn):
 
 def test_message_can_edit_the_list_and_proposes_the_rest(conn):
     store.add_item(conn, {"id": "c-rx", "title": "Pick up prescription", "direction": "i-owe", "division": "me"})
-    m = store.add_message(conn, "owner", "Got the Rx. Also put Micah's dentist on the family calendar Friday 3pm")
+    m = store.add_message(conn, "owner", "Got the Rx. Also put Robin's dentist on the family calendar Friday 3pm")
     claude = ToolClaude(
         [("update_item", {"id": "c-rx", "status": "done"}),
-         ("add_proposal", {"kind": "calendar", "division": "kids", "calendar": "Family", "title": "Add: Micah dentist",
+         ("add_proposal", {"kind": "calendar", "division": "kids", "calendar": "Family", "title": "Add: Robin dentist",
                            "when": "Fri Oct 23, 3:00pm", "summary": "You asked"})],
         [("reply", {"text": "Marked the Rx done. The dentist is waiting for your OK on the Today tab."})],
     )
     out = agent.handle_messages(conn, google(conn, Calendar()), client=claude)
     assert out[0]["reply"].startswith("Marked the Rx done")
     assert store.get_item(conn, "c-rx")["status"] == "done"
-    assert store.list_proposals(conn, ("pending",))[0]["title"] == "Add: Micah dentist"
+    assert store.list_proposals(conn, ("pending",))[0]["title"] == "Add: Robin dentist"
     thread = store.list_messages(conn)
     assert [(x["from"], x["status"]) for x in thread] == [("owner", "handled"), ("assistant", "handled")]
     # the message agent has no calendar-writing tools
@@ -229,27 +229,27 @@ def test_check_endpoint(tmp_path, monkeypatch):
 
 
 def test_email_to_the_intake_address_becomes_a_message_and_gets_an_emailed_reply(conn):
-    store.put_setting(conn, "google", {"intakeAddress": "awpeace1906+tower@gmail.com"})
+    store.put_setting(conn, "google", {"intakeAddress": "pat+juno@example.com"})
 
     class Mailbox(Calendar):
         def __call__(self, request):
             p = request.url.path
             if p.endswith("/messages") and request.method == "GET":
-                assert "from:awpeace1906@gmail.com" in request.url.params["q"]
+                assert "from:pat@example.com" in request.url.params["q"]
                 return httpx.Response(200, json={"messages": [{"id": "g1"}]})
             if p.endswith("/messages/g1"):
                 import base64
-                body = base64.urlsafe_b64encode(b"Is Micah covered Nov 7?").decode()
+                body = base64.urlsafe_b64encode(b"Is Robin covered Nov 7?").decode()
                 return httpx.Response(200, json={"id": "g1", "threadId": "t1", "labelIds": ["INBOX"], "snippet": "",
                     "payload": {"mimeType": "text/plain", "body": {"data": body}, "headers": [
-                        {"name": "From", "value": "awpeace1906@gmail.com"}, {"name": "Subject", "value": "Coverage"}]}})
+                        {"name": "From", "value": "pat@example.com"}, {"name": "Subject", "value": "Coverage"}]}})
             return super().__call__(request)
 
     box = Mailbox()
     g = google(conn, box)
     assert agent.intake_messages(conn, g) == 1
     assert agent.intake_messages(conn, g) == 0  # seen once only
-    claude = ToolClaude([("reply", {"text": "Not yet: no Tiffany on Nov 7."})])
+    claude = ToolClaude([("reply", {"text": "Not yet: no Casey on Nov 7."})])
     agent.handle_messages(conn, g, client=claude)
     assert len(box.sent) == 1  # the reply went back by email too
     import base64
@@ -260,10 +260,10 @@ def test_brain_sync_pulls_pushes_and_respects_deleted(conn, monkeypatch):
     from cos import brain
     monkeypatch.setenv("BRAIN_GIST_TOKEN", "t")
     gist = {"entries": [
-        {"id": "tower-1-aaaa", "content": "Jason goes remote on rotation", "tags": ["tower", "rule"], "timestamp": "2026-10-19T00:00:00Z"},
-        {"id": "note-1", "content": "Andrew's own note", "tags": ["personal"], "timestamp": "2026-10-19T00:00:00Z"},
-        {"id": "tower-2-bbbb", "content": "deleted one", "tags": ["tower", "rule"], "timestamp": "2026-10-19T00:00:00Z"},
-    ], "deleted": ["tower-2-bbbb", "tower-9-dead"]}
+        {"id": "juno-1-aaaa", "content": "Lee goes remote on rotation", "tags": ["juno", "rule"], "timestamp": "2026-10-19T00:00:00Z"},
+        {"id": "note-1", "content": "Pat's own note", "tags": ["personal"], "timestamp": "2026-10-19T00:00:00Z"},
+        {"id": "juno-2-bbbb", "content": "deleted one", "tags": ["juno", "rule"], "timestamp": "2026-10-19T00:00:00Z"},
+    ], "deleted": ["juno-2-bbbb", "juno-9-dead"]}
     patched = []
 
     def github(request):
@@ -274,13 +274,13 @@ def test_brain_sync_pulls_pushes_and_respects_deleted(conn, monkeypatch):
             return httpx.Response(200, json={})
         return httpx.Response(200, json={"files": {"brain-data.json": {"content": json.dumps(gist)}}})
 
-    store.upsert_rule(conn, {"id": "tower-3-cccc", "kind": "preference", "content": "Silent hourly checks"})
-    store.upsert_rule(conn, {"id": "tower-9-dead", "kind": "rule", "content": "was deleted in Brain"})
+    store.upsert_rule(conn, {"id": "juno-3-cccc", "kind": "preference", "content": "Silent hourly checks"})
+    store.upsert_rule(conn, {"id": "juno-9-dead", "kind": "rule", "content": "was deleted in Brain"})
     conn.commit()
     http = httpx.Client(transport=httpx.MockTransport(github))
     assert brain.sync(conn, http) == {"pulled": 1, "pushed": 1}
     after = patched[0]
-    assert [e["id"] for e in after["entries"]] == ["tower-1-aaaa", "note-1", "tower-2-bbbb", "tower-3-cccc"]  # nothing dropped
-    assert after["deleted"] == gist["deleted"] and after["entries"][3]["source"] == "tower"
+    assert [e["id"] for e in after["entries"]] == ["juno-1-aaaa", "note-1", "juno-2-bbbb", "juno-3-cccc"]  # nothing dropped
+    assert after["deleted"] == gist["deleted"] and after["entries"][3]["source"] == "juno"
     assert store.get_setting(conn, "brain")["gistId"] == "g42"
     assert brain.sync(conn, http)["pushed"] == 0  # already there now

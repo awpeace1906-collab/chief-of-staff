@@ -38,10 +38,10 @@ class FakeGraph:
             return httpx.Response(401, json={})
         path = url.path.removeprefix("/v1.0")
         if path == "/me":
-            return httpx.Response(200, json={"displayName": "Andrew", "userPrincipalName": "awpeace1906@gmail.com"})
+            return httpx.Response(200, json={"displayName": "Pat", "userPrincipalName": "pat@example.com"})
         if path == "/me/calendars":
             return httpx.Response(200, json={"value": [{"id": "cal-1", "name": "Calendar", "isDefaultCalendar": True,
-                                                        "owner": {"address": "awpeace1906@gmail.com"}}]})
+                                                        "owner": {"address": "pat@example.com"}}]})
         if path.endswith("calendarView"):
             assert request.headers["Prefer"] == 'outlook.timezone="UTC"'
             if "cal-broken" in path:
@@ -58,8 +58,8 @@ class FakeGraph:
             return httpx.Response(200, json={"value": [{
                 "id": "m-sent" if sent else "m-1", "conversationId": "conv-1",
                 "subject": "Re: lunch" if sent else "Lunch Thursday?",
-                "from": {"emailAddress": {"name": "Ryan", "address": "ryan@example.com"}},
-                "toRecipients": [{"emailAddress": {"address": "awpeace1906@gmail.com"}}],
+                "from": {"emailAddress": {"name": "Alex", "address": "alex@example.com"}},
+                "toRecipients": [{"emailAddress": {"address": "pat@example.com"}}],
                 "receivedDateTime": "2026-10-20T14:00:00Z", "bodyPreview": "Can you do lunch",
                 "body": {"contentType": "html", "content": "<p>Can you do <b>lunch</b> Thursday?</p><style>x{}</style>"},
                 "webLink": "https://outlook.live.com/m-1"}]})
@@ -120,9 +120,9 @@ def test_sign_in_through_the_app(tmp_path, env):
         r = c.get("/oauth/microsoft/start", follow_redirects=False)
         state = parse_qs(urlparse(r.headers["location"]).query)["state"][0]
         done = c.get(f"/oauth/microsoft/callback?state={state}&code=good-code")
-        assert "awpeace1906@gmail.com" in done.text
+        assert "pat@example.com" in done.text
         st = c.get("/api/microsoft/status").json()
-        assert st["connected"] and st["account"] == "awpeace1906@gmail.com"
+        assert st["connected"] and st["account"] == "pat@example.com"
         assert c.get(f"/oauth/microsoft/callback?state={state}&code=good-code").status_code == 400  # state is single-use
         assert c.get("/api/microsoft/calendars").json()[0]["isDefault"] is True
         c.post("/api/microsoft/disconnect")
@@ -136,7 +136,7 @@ def test_refresh_rotates_the_refresh_token(conn):
     ms.me()
     assert fake.token_forms[-1]["grant_type"] == ["refresh_token"]
     tok = get_secret(conn, oauth.TOKEN_KEY)
-    assert tok["access_token"] == "at-2" and tok["refresh_token"] == "rt-2" and tok["account"] == "awpeace1906@gmail.com"
+    assert tok["access_token"] == "at-2" and tok["refresh_token"] == "rt-2" and tok["account"] == "pat@example.com"
 
 
 def test_revoked_refresh_token(conn):
@@ -168,7 +168,7 @@ def test_agenda_by_division(conn):
 def test_mail_search_strips_html(conn):
     ms = connected(conn, FakeGraph())
     m = ms.search("lunch")[0]
-    assert m["body"] == "Can you do lunch Thursday?" and m["from"] == "Ryan <ryan@example.com>" and m["threadId"] == "conv-1"
+    assert m["body"] == "Can you do lunch Thursday?" and m["from"] == "Alex <alex@example.com>" and m["threadId"] == "conv-1"
 
 
 def test_todo_follows_pages_and_skips_completed(conn):
@@ -187,8 +187,8 @@ def test_capture_reads_outlook_too(conn, monkeypatch):
 
     def fake_complete(c, route, system, user, schema, client=None, **kw):
         seen["user"] = user
-        return {"changes": [{"op": "add", "itemId": None, "title": "Reply to Ryan about lunch", "direction": "i-owe",
-                             "division": "me", "counterparty": "Ryan", "due": None, "dueConfidence": "none",
+        return {"changes": [{"op": "add", "itemId": None, "title": "Reply to Alex about lunch", "direction": "i-owe",
+                             "division": "me", "counterparty": "Alex", "due": None, "dueConfidence": "none",
                              "notes": "", "evidence": None, "sourceRef": "m-1"}], "questions": []}
 
     monkeypatch.setattr(capture.llm, "complete", fake_complete)

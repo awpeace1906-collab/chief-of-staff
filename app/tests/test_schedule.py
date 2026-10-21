@@ -40,7 +40,7 @@ def test_blocks_go_before_the_due_date_late_items_first_window():
     slots = [{"start": "2026-10-21T19:00:00-06:00", "end": "2026-10-21T19:45:00-06:00", "minutes": 45},
              {"start": "2026-10-24T09:00:00-06:00", "end": "2026-10-24T12:00:00-06:00", "minutes": 180}]
     review = {
-        "overdue": [{"id": "a", "title": "Sign BEAR agreement", "due": "2026-10-19", "daysLate": 2}],
+        "overdue": [{"id": "a", "title": "Sign Mentor agreement", "due": "2026-10-19", "daysLate": 2}],
         "dueSoon": [{"id": "b", "title": "Mid-point eval", "due": "2026-10-22", "daysLate": 0}],
         "undatedPromises": [{"id": "c", "title": "Send slides", "due": None, "daysLate": 0}],
     }
@@ -52,10 +52,10 @@ def test_blocks_go_before_the_due_date_late_items_first_window():
 
 
 def test_brief_passes_slots_and_blocks(env):
-    store.add_item(env.conn, {"title": "Sign BEAR agreement", "direction": "i-owe", "division": "me",
+    store.add_item(env.conn, {"title": "Sign Mentor agreement", "direction": "i-owe", "division": "me",
                               "due": "2026-10-19"})
     claude = FakeClaude({"changes": [], "questions": []}, BRIEF)
     brief.run(env.conn, env.google, client=claude, today=datetime(2026, 10, 21, 8, 25, tzinfo=DENVER))
     plan_input = json.loads(claude.calls[1]["messages"][0]["content"])
     assert plan_input["freeSlots"] and plan_input["freeSlots"][0]["start"].startswith("2026-10-21T08:30")
-    assert plan_input["suggestedBlocks"][0]["title"] == "Sign BEAR agreement"
+    assert plan_input["suggestedBlocks"][0]["title"] == "Sign Mentor agreement"

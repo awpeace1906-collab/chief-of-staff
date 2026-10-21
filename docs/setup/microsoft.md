@@ -1,6 +1,6 @@
 # Connect Microsoft 365 (one-time setup)
 
-Chief of Staff reads Outlook mail, the Outlook calendar, Microsoft To Do and OneDrive through Microsoft Graph, **read-only**. It works with a **personal Microsoft account**, including one you sign in to with a Gmail address (Andrew's is `awpeace1906@gmail.com`), and with work or school accounts if you allow them.
+Chief of Staff reads Outlook mail, the Outlook calendar, Microsoft To Do and OneDrive through Microsoft Graph, **read-only**. It works with a **personal Microsoft account**, including one you sign in to with a Gmail address, and with work or school accounts if you allow them.
 
 Claude's built-in Microsoft 365 connector only works with work or school accounts, which is why the app has its own connection.
 
@@ -55,7 +55,7 @@ cos microsoft todo
 
 ## 6. Map calendars to divisions (optional)
 
-By default your main Outlook calendar counts as **Me**. To map others, set `microsoft.divisions` in `config/tower.json` (or `PUT /api/settings/microsoft`):
+By default your main Outlook calendar counts as **Me**. To map others, set `microsoft.divisions` in memory (`memory.json`, or `PUT /api/settings/microsoft`):
 
 ```json
 "microsoft": {
@@ -80,6 +80,6 @@ By default your main Outlook calendar counts as **Me**. To map others, set `micr
 
 In the app's SQLite file (`secrets` table, file mode 0600). It is never exported. Microsoft rotates the refresh token on every refresh, and the app stores the new one each time.
 
-## Work account (burrell.edu)
+## Work or school account
 
-A school or hospital tenant usually blocks third-party apps until IT approves them. Until then, keep the forwarding approach in [../features/digests.md](../features/digests.md): Outlook rules forward digests (no PHI) to the Tower inbox.
+A school or hospital tenant usually blocks third-party apps until IT approves them. Until then, keep the forwarding approach in [../features/digests.md](../features/digests.md): Outlook rules forward digests (no PHI) to the agent's inbox.

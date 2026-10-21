@@ -64,7 +64,7 @@ def sync(conn: sqlite3.Connection, http: httpx.Client | None = None) -> dict:
     http = http or httpx.Client(timeout=30)
     gist_id = _gist_id(conn, http)
     data = _read(http, gist_id)
-    tag = store.assistant_name(conn).lower()
+    tag = store.assistant_id(conn)
     deleted = set(data.get("deleted", []))
     entries = data.setdefault("entries", [])
     in_brain = {e.get("id") for e in entries}
