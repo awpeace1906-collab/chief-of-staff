@@ -21,12 +21,12 @@ TELNYX_API_KEY=...                          # Telnyx
 VOIPMS_USER=... VOIPMS_PASSWORD=...         # VoIP.ms API user and API password
 ```
 
-Settings (`config/tower.json` → `sms`, or `PUT /api/settings/sms`):
+Settings (memory's `memory.json` → `sms`, or `PUT /api/settings/sms`):
 
 ```json
 "sms": {
   "provider": "telnyx",
-  "number": "+15755550199",
+  "number": "+15555550199",
   "ownerNumber": "+1XXXXXXXXXX",
   "briefByText": true
 }

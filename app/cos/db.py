@@ -85,7 +85,7 @@ CREATE TABLE IF NOT EXISTS messages (
 
 CREATE TABLE IF NOT EXISTS records (
     kind       TEXT NOT NULL,        -- decision | trip | binder | expense | card
-    id         TEXT NOT NULL,        -- a slug, e.g. unm-reserved-ca1, or tomorrow / week for cards
+    id         TEXT NOT NULL,        -- a slug, e.g. job-offer-reply, or tomorrow / week for cards
     data       TEXT NOT NULL,        -- JSON
     updated_at TEXT NOT NULL,
     PRIMARY KEY (kind, id)

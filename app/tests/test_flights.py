@@ -56,7 +56,7 @@ def conn(tmp_path, monkeypatch):
     monkeypatch.setenv("AERODATABOX_KEY", "k")
     c = db.connect(tmp_path / "cos.db")
     store.put_setting(c, "timezone", "America/Denver")
-    store.put_setting(c, "assistant", {"name": "Tower"})
+    store.put_setting(c, "assistant", {"name": "Juno"})
     store.put_record(c, "trip", "stl", {"title": "St. Louis: WashU CTICU", "start": "2026-10-25", "end": "2026-11-21", "legs": [
         {"when": "Sun Oct 25 5:36pm MT", "what": "AA 690 El Paso to Dallas", "flight": "AA 690", "date": "2026-10-25",
          "from": "ELP", "to": "DFW"},
@@ -117,10 +117,10 @@ def test_cancellation_or_overnight_arrival_emails_the_owner(conn):
     run(conn, sky, at("12:00"), owner)
     sky.flight = adb("Delayed", dep_rev="2026-10-25 22:50-06:00", arr_rev="2026-10-26 01:30-05:00")
     run(conn, sky, at("12:30"), owner)
-    assert len(owner.sent) == 1 and owner.sent[0][0] == "Tower: AA 690 changed"
+    assert len(owner.sent) == 1 and owner.sent[0][0] == "Juno: AA 690 changed"
     sky.flight = adb("Canceled")
     run(conn, sky, at("13:00"), owner)
-    assert owner.sent[-1][0] == "Tower: AA 690 cancelled" and "cancelled" in owner.sent[-1][1]
+    assert owner.sent[-1][0] == "Juno: AA 690 cancelled" and "cancelled" in owner.sent[-1][1]
 
 
 def test_without_a_key_only_faa_is_used(conn, monkeypatch):

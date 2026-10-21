@@ -6,7 +6,7 @@ Access: `calendar.readonly`, `gmail.readonly`, and `gmail.send`. The send permis
 
 ## 1. Create the project
 
-1. Go to [console.cloud.google.com](https://console.cloud.google.com) and sign in as awpeace1906@gmail.com.
+1. Go to [console.cloud.google.com](https://console.cloud.google.com) and sign in with the Google account the agent will read.
 2. Project picker → **New project** → name it `Chief of Staff` → Create.
 
 ## 2. Turn on the two APIs
@@ -20,9 +20,9 @@ Access: `calendar.readonly`, `gmail.readonly`, and `gmail.send`. The send permis
 **APIs & Services → OAuth consent screen** (labeled **Google Auth Platform** in newer consoles):
 1. User type **External** → app name `Chief of Staff`, your email as support and developer contact.
 2. **Scopes:** add `.../auth/calendar.readonly`, `.../auth/calendar.events`, `.../auth/gmail.readonly` and `.../auth/gmail.send`. `calendar.events` is used only to carry out calendar proposals you approved, and never invites anyone.
-3. **Test users:** add awpeace1906@gmail.com.
+3. **Test users:** add that same Google account.
 
-**Testing vs production.** While the app is in *Testing*, Google expires its sign-in after **7 days**, so you'd reconnect weekly. To avoid that, set the publishing status to **In production**. Gmail read access is a "restricted" scope, so Google will show an "unverified app" warning when you sign in. For a personal app used only by you, click through it (**Advanced → Go to Chief of Staff**). Verification is only needed for apps offered to the public; the public Chief of Staff product will need it, Andrew's own install doesn't. Check the console's current wording; Google adjusts these screens often.
+**Testing vs production.** While the app is in *Testing*, Google expires its sign-in after **7 days**, so you'd reconnect weekly. To avoid that, set the publishing status to **In production**. Gmail read access is a "restricted" scope, so Google will show an "unverified app" warning when you sign in. For a personal app used only by you, click through it (**Advanced → Go to Chief of Staff**). Verification is only needed for apps offered to the public; the public Chief of Staff product will need it, a personal install doesn't. Check the console's current wording; Google adjusts these screens often.
 
 ## 4. Create the OAuth client
 
@@ -46,7 +46,7 @@ GOOGLE_CLIENT_SECRET=...
 COS_API_TOKEN=<any long random string>
 ```
 
-If you use the server/tunnel redirect, also set it in config (`config/tower.json` → `google.redirectUri`) or `COS_GOOGLE_REDIRECT`, so it matches what you registered in step 4.
+If you use the server/tunnel redirect, also set it in memory (`memory.json` → `google.redirectUri`) or `COS_GOOGLE_REDIRECT`, so it matches what you registered in step 4.
 
 ## 6. Connect
 
@@ -65,7 +65,7 @@ v0.3 added the send permission. `cos google status` shows `"canSend": false` unt
 
 ## Digest intake address
 
-Tower reads mail sent to **awpeace1906+tower@gmail.com** (`google.intakeAddress` in config). Gmail delivers plus-addresses to your normal inbox; nothing to set up. Optional: a Gmail filter (`to:awpeace1906+tower@gmail.com` → apply label `Tower/Intake`, skip inbox) keeps forwarded digests out of your way. Check with `cos mail intake`.
+The agent reads mail sent to a plus-address such as **you+<agent>@gmail.com** (`google.intakeAddress` in memory). Gmail delivers plus-addresses to your normal inbox; nothing to set up. Optional: a Gmail filter (`to:you+<agent>@gmail.com` → apply label `<Agent>/Intake`, skip inbox) keeps forwarded digests out of your way. Check with `cos mail intake`.
 
 ## Disconnect
 

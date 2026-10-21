@@ -1,10 +1,10 @@
 {
-  "schema": "tower-digests/v1",
+  "schema": "cos-digests/v1",
   "intake": {
-    "gmail": "awpeace1906@gmail.com",
-    "towerInbox": "tower-andrew@agentmail.to",
-    "notes": "towerInbox: AgentMail address once created. Siloed accounts forward digests there. Sender addresses for systems not yet seen in Andrew's mail are best guesses; confirm and correct each from the first real digest.",
-    "afterHandling": "Mark each AgentMail message read (remove the 'unread' label) once Tower has handled it. Applies to every AgentMail inbox Tower reads; leave unhandled or unclear messages unread."
+    "gmail": "pat@example.com",
+    "agentInbox": "juno-pat@agentmail.example",
+    "notes": "Siloed accounts forward digests to the agent inbox. Confirm each adapter's sender address from the first real digest.",
+    "afterHandling": "Mark each agent-inbox message read once handled; leave unhandled or unclear messages unread."
   },
   "adapters": [
     {
@@ -141,7 +141,7 @@
       ],
       "handling": "itemize",
       "division": "me",
-      "notes": "Fills Andrew's missing call calendar once a call schedule exists."
+      "notes": "Fills the owner's call calendar once a call schedule exists."
     },
     {
       "id": "clinical-compliance",

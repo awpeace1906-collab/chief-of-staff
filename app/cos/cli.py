@@ -7,7 +7,7 @@ import sys
 
 import httpx
 
-from . import agent, brain, brief, capture, db, llm, store
+from . import agent, brain, brief, capture, db, llm, memory, store
 from .google import oauth
 from .google.api import Google
 from .importer import export_all, import_board, import_brain, import_config, import_page
@@ -26,12 +26,16 @@ def main(argv: list[str] | None = None) -> int:
 
     imp = sub.add_parser("import", help="import existing setup")
     imp.add_argument("--config", help="directory with the assistant config and digests.json")
+    imp.add_argument("--memory", nargs="?", const="", help="the agent's memory directory (default: find <alias>-memory)")
     imp.add_argument("--brain", help="brain-data.json export")
-    imp.add_argument("--brain-tag", help="Brain tag that marks the assistant's entries (default: the assistant's name)")
+    imp.add_argument("--brain-tag", help="Brain tag that marks the assistant's entries (default: the assistant's id)")
     imp.add_argument("--board", help="cos-board/v1 export")
     imp.add_argument("--page", help="export of the old Claude-hosted page (items, proposals, messages, brief)")
 
     sub.add_parser("export", help="print everything as portable JSON")
+
+    ren = sub.add_parser("rename", help="give the agent a new alias (same agent; <alias>-memory follows)")
+    ren.add_argument("name")
 
     g = sub.add_parser("google", help="Google connection status")
     g.add_argument("action", choices=["status", "disconnect"])
@@ -70,16 +74,21 @@ def main(argv: list[str] | None = None) -> int:
 
     conn = db.connect(args.db)
     if args.cmd == "import":
-        if not (args.config or args.brain or args.board or args.page):
-            parser.error("import needs --config, --brain, --board and/or --page")
+        if not (args.config or args.memory is not None or args.brain or args.board or args.page):
+            parser.error("import needs --memory, --config, --brain, --board and/or --page")
+        if args.memory is not None:
+            path = memory.locate() if args.memory == "" else args.memory
+            print("memory:", path, import_config(conn, path))
         if args.config:
             print("config:", import_config(conn, args.config))
         if args.brain:
-            print("brain entries:", import_brain(conn, args.brain, args.brain_tag or store.assistant_name(conn).lower()))
+            print("brain entries:", import_brain(conn, args.brain, args.brain_tag or store.assistant_id(conn)))
         if args.board:
             print("board items:", import_board(conn, args.board))
         if args.page:
             print("page:", import_page(conn, json.loads(open(args.page).read())))
+    elif args.cmd == "rename":
+        _print(store.rename_assistant(conn, args.name))
     elif args.cmd == "export":
         _print(export_all(conn))
     elif args.cmd == "google":

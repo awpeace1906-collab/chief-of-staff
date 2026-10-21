@@ -17,7 +17,7 @@ from cos.importer import import_config
 from cos.main import create_app
 from pathlib import Path
 
-REPO_CONFIG = Path(__file__).resolve().parents[2] / "config"
+REPO_CONFIG = Path(__file__).resolve().parents[2] / "examples" / "memory"
 
 
 def b64(s: str) -> str:
@@ -52,7 +52,7 @@ class FakeGoogle:
             return httpx.Response(401, json={})
         assert request.headers["Authorization"].startswith("Bearer at-")
         if url.path.endswith("/calendarList"):
-            return httpx.Response(200, json={"items": [{"id": "awpeace1906@gmail.com", "summary": "Andrew's Calendar"}]})
+            return httpx.Response(200, json={"items": [{"id": "pat@example.com", "summary": "Pat's Calendar"}]})
         if "/calendars/" in url.path and url.path.endswith("/events"):
             if "family" in url.path:
                 return httpx.Response(404, json={})
@@ -68,7 +68,7 @@ class FakeGoogle:
                 "id": "m1", "threadId": "t1", "labelIds": ["INBOX"], "snippet": "Please reply &amp; confirm",
                 "payload": {"mimeType": "multipart/alternative", "headers": [
                     {"name": "From", "value": "Ross <rossela@salud.unm.edu>"},
-                    {"name": "To", "value": "awpeace1906+tower@gmail.com"},
+                    {"name": "To", "value": "pat+juno@example.com"},
                     {"name": "Subject", "value": "Reserved CA1 spot"},
                     {"name": "Date", "value": "Mon, 19 Oct 2026 18:34:34 +0000"},
                 ], "parts": [
@@ -170,7 +170,7 @@ def test_api_oauth_flow_and_errors(tmp_path, fake):
         assert c.get("/oauth/google/callback", params={"state": state, "code": "good-code"}).status_code == 200
         assert c.get("/oauth/google/callback", params={"state": state, "code": "good-code"}).status_code == 400  # one use
         assert c.get("/api/google/status").json()["connected"]
-        assert c.get("/api/calendar/calendars").json()[0]["name"] == "Andrew's Calendar"
+        assert c.get("/api/calendar/calendars").json()[0]["name"] == "Pat's Calendar"
         assert c.get("/api/mail/intake").status_code == 409  # fresh db has no intake address
 
 
@@ -202,7 +202,7 @@ def test_events_sort_by_real_time_across_offsets():
 def test_rejected_access_token_refreshes_once(conn, fake):
     http = httpx.Client(transport=httpx.MockTransport(fake))
     db.put_secret(conn, oauth.TOKEN_KEY, {"access_token": "stale", "refresh_token": "rt-1", "expires_at": time.time() + 3600, "scope": ""})
-    assert Google(conn, http).calendars()[0]["id"] == "awpeace1906@gmail.com"
+    assert Google(conn, http).calendars()[0]["id"] == "pat@example.com"
     assert db.get_secret(conn, oauth.TOKEN_KEY)["access_token"] == "at-2"
 
 

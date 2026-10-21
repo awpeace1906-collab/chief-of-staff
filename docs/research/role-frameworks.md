@@ -1,4 +1,4 @@
-# What a chief of staff and an assistant do, and what Tower should borrow
+# What a chief of staff and an assistant do, and what the agent should borrow
 
 Research notes (Oct 21, 2026). Sources are listed at the bottom. Most are job descriptions and practitioner guides; the HBR piece and O*NET are the most authoritative.
 
@@ -16,43 +16,43 @@ Research notes (Oct 21, 2026). Sources are listed at the bottom. Most are job de
 - **Expenses, research and reports.**
 - **Daily habits:** a short check-in ("what's new, what's blocked"), look at tomorrow and pull what's needed, keep a follow-up file reviewed daily, learn how the principal likes updates, and check alignment monthly.
 
-## How Tower measures up today
+## How the agent measured up (before these were built)
 
 | Function | Today | Gap |
 |---|---|---|
 | Time: calendar, conflicts, coverage | Strong: divisions, coverage check, Day view, blocks, standing agreements | Doesn't protect time (sleep before shifts, family time); no "tomorrow" prep |
 | Information: capture and filter | Strong: capture, digests, morning brief | The brief leads with lists rather than decisions; no weekly look back or ahead |
-| Decisions | Proposals (approve / change / decline) | No log of decisions you're facing (e.g. the UNM reserved CA1 reply), no options brief, no "decided → actions" step |
+| Decisions | Proposals (approve / change / decline) | No log of decisions you're facing (e.g. a program offer that needs a reply), no options brief, no "decided → actions" step |
 | Follow-through | New accountability loop: promises, nudges, do/move/drop | Doesn't chase other people well yet (owed-to-me nudges are proposals only) |
 | Correspondence | Captures "reply owed" | Doesn't draft the reply itself |
 | Travel | Reads flights for coverage | No itinerary view, check-in reminders or change alerts |
 | Meetings and interviews | Adds the event | No prep packet, no follow-up (thank-you notes, action items) |
-| Records | Notes on to-dos | No reference binder per rotation; no renewal or compliance tracker |
-| Expenses | None | Rotation receipts (Uber, hotel, parking) aren't collected |
-| Managing up | Rules in config | No regular "what should Tower start or stop doing?" check |
+| Records | Notes on to-dos | No reference binder per rotation or program; no renewal or compliance tracker |
+| Expenses | None | Travel receipts (rides, hotel, parking) aren't collected |
+| Managing up | Rules in config | No regular "what should the agent start or stop doing?" check |
 
 ## Ideas, ranked by value for effort
 
-1. **Decisions first (CoS: decisions ready to make).** A "Decide" section at the top of Today and the brief. Each decision gets a deadline, two or three options with the trade-offs in one line each, and a recommendation. Once Andrew decides, Tower turns it into actions with dates straight away, the way a strong chief of staff does. *First example:* UNM reserved CA1, reply by Friday.
-2. **Tomorrow, tonight (EA: look at tomorrow).** At about 7pm local, a short card: tomorrow's first commitment and when to leave, what to bring, what's due, and any coverage gap. On rotation it's in local time; for example, "6:00am CTICU; badge, stethoscope."
+1. **Decisions first (CoS: decisions ready to make).** A "Decide" section at the top of Today and the brief. Each decision gets a deadline, two or three options with the trade-offs in one line each, and a recommendation. Once the owner decides, the agent turns it into actions with dates straight away, the way a strong chief of staff does. *Example:* a program offer that needs a reply by Friday.
+2. **Tomorrow, tonight (EA: look at tomorrow).** At about 7pm local, a short card: tomorrow's first commitment and when to leave, what to bring, what's due, and any coverage gap. On rotation it's in local time; for example, "6:00am ICU; badge, stethoscope."
 3. **Weekly review (CoS: operating rhythm).** Sunday evening:
    - Look back: what got done and what slipped.
    - Look ahead: the week's shifts, deadlines and coverage.
-   - Andrew picks the **top 3** for the week.
+   - The owner picks the **top 3** for the week.
    - An honest-broker line: "You've promised about 9 hours of work and have about 6 free hours. Something has to move."
-4. **Reply drafting (EA: correspondence).** For each "reply owed," Tower drafts the reply as a Send proposal. Andrew edits and approves it, and it goes from his own account. A "waiting on" chase gets the same treatment: a polite nudge drafted after the expected date.
+4. **Reply drafting (EA: correspondence).** For each "reply owed," the agent drafts the reply as a Send proposal. The owner edits and approves it, and it goes from their own account. A "waiting on" chase gets the same treatment: a polite nudge drafted after the expected date.
 5. **Interview and meeting kit (EA: meeting prep; CoS: pre-reads).** For each interview or important meeting:
    - A prep packet: program facts, people, links, questions to ask, and a tech check for virtual ones.
    - A prep block before it.
    - Afterwards, a thank-you note drafted within 24 hours, plus action items captured.
-   - With interview season running (Tucson Nov 5, Dec 8), this pays off quickly.
-6. **Rotation binder (EA: records).** One card per rotation: dates, address, parking, badge, contacts and phone numbers, schedule rules, first-day steps and end-of-rotation tasks. It's built from intake emails (the WashU CTICU email already has everything). It's shown on the Day view while the rotation is active.
+   - During an interview season, this pays off quickly.
+6. **Rotation binder (EA: records).** One card per rotation: dates, address, parking, badge, contacts and phone numbers, schedule rules, first-day steps and end-of-rotation tasks. It's built from intake emails (a rotation's welcome email usually has everything). It's shown on the Day view while the rotation is active.
 7. **Travel desk (EA: travel).** One itinerary per trip: flights, hotel, car and parking, plus check-in reminders and delay alerts. A change feeds "planning on the fly," so blocks and coverage get re-proposed.
-8. **Renewals and compliance tracker.** BLS/ACLS, FP-C, NRP, immunizations and flu shot uploads, licenses, ERAS/Thalamus deadlines. Each gets an expiry date and is surfaced 60, 30 and 7 days out.
-9. **Expense log per rotation (EA: expenses).** Receipts from mail (Uber, Marriott, parking, Expedia credits) are collected into a list per rotation for reimbursement or taxes.
-10. **Protected time (gatekeeping).** Rules such as "no blocks within 8 hours before a 6am shift" and "Micah bedtime is family time." Blocks and proposals respect them, and requests that collide come with a "decline or move?" draft.
-11. **Delegation tracking.** Things handed to Stephanie, Tiffany or a coordinator become "owed to me" items with a check-in date, and Tower drafts the follow-up.
-12. **Monthly alignment (managing up).** One question in the brief on the first of the month: "What should Tower start, stop or keep doing?" The answers become rules in config.
+8. **Renewals and compliance tracker.** Certifications (e.g. BLS/ACLS), immunizations and flu shot uploads, licenses, application deadlines. Each gets an expiry date and is surfaced 60, 30 and 7 days out.
+9. **Expense log per rotation (EA: expenses).** Receipts from mail (rides, hotels, parking, travel credits) are collected into a list per rotation for reimbursement or taxes.
+10. **Protected time (gatekeeping).** Rules such as "no blocks within 8 hours before a 6am shift" and "the kids' bedtime is family time." Blocks and proposals respect them, and requests that collide come with a "decline or move?" draft.
+11. **Delegation tracking.** Things handed to the partner, the nanny or a coordinator become "owed to me" items with a check-in date, and the agent drafts the follow-up.
+12. **Monthly alignment (managing up).** One question in the brief on the first of the month: "What should the agent start, stop or keep doing?" The answers become rules in memory.
 
 ## Sources
 

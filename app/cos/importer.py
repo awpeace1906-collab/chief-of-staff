@@ -4,6 +4,7 @@ import json
 import sqlite3
 from pathlib import Path
 
+from . import memory
 from .db import audit, now
 from .store import (
     BOARD_STATUSES,
@@ -40,12 +41,13 @@ def import_config(conn: sqlite3.Connection, config_dir: Path) -> dict:
         cfg = json.loads(path.read_text())
         if "assistant" not in cfg:
             continue
+        prefix = memory.identity(cfg)["id"]
+        cfg["assistant"] = cfg["assistant"] | {"id": prefix}  # pin the id the first time it's read
         for key in ("assistant", "timezone", "brief", "approvals", "divisions", "hosting", "openItems", "google",
                     "microsoft", "sms", "appUrl", "check"):
             if key in cfg:
                 put_setting(conn, key, cfg[key], actor="system")
                 counts["settings"] += 1
-        prefix = cfg["assistant"].get("name", "assistant").lower()
         for i, agreement in enumerate(cfg.get("standingAgreements", [])):
             upsert_rule(conn, {
                 "id": f"{prefix}-import-agreement-{i}",

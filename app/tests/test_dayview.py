@@ -46,7 +46,7 @@ def test_a_block_goes_on_the_calendar_at_exactly_its_time(conn):
     store.update_proposal(conn, p["id"], {"status": "approved"})
     cal = Calendar()
     out = agent.execute_approved(conn, google(conn, cal), client=None)  # no model: an exact block needs none
-    assert out[0]["status"] == "done" and "Andrew Work" in out[0]["result"] and "CDT" in out[0]["result"]
+    assert out[0]["status"] == "done" and "Pat Work" in out[0]["result"] and "CDT" in out[0]["result"]
     made = cal.created[0]
     assert made["summary"] == "Sign BEAR agreement" and made["description"] == "Gaby's Oct 1 email"
     assert made["start"] == {"dateTime": "2026-10-27T19:00:00-05:00", "timeZone": "America/Chicago"}
@@ -63,13 +63,13 @@ def client(tmp_path, monkeypatch):
 
 def test_block_endpoint_stores_an_approved_proposal_without_google(client):
     h = {"Authorization": "Bearer k"}
-    item = client.post("/api/board", headers=h, json={"title": "Put Micah's clothes away", "direction": "household",
+    item = client.post("/api/board", headers=h, json={"title": "Put Robin's clothes away", "direction": "household",
                                                       "division": "kids"}).json()
     body = {"itemId": item["id"], "start": "2026-10-23T18:00:00-06:00", "end": "2026-10-23T18:30:00-06:00",
             "timeZone": "America/Denver"}
     p = client.post("/api/schedule/block", headers=h, json=body).json()
     assert p["status"] == "approved" and p["source"] == "schedule" and p["itemId"] == item["id"]  # Google not connected: waits
-    assert p["title"] == "Add: Put Micah's clothes away" and p["division"] == "kids"
+    assert p["title"] == "Add: Put Robin's clothes away" and p["division"] == "kids"
     assert client.post("/api/schedule/block", headers=h, json=body | {"itemId": "nope"}).status_code == 404
     assert client.post("/api/schedule/block", headers=h, json=body | {"end": body["start"]}).status_code == 422
     assert client.get("/api/day?date=2026-10-23&tz=Nowhere/Land", headers=h).status_code == 422

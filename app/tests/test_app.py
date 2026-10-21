@@ -8,7 +8,7 @@ from cos import ai, db, store
 from cos.importer import export_all, import_board, import_brain, import_config
 from cos.main import create_app
 
-REPO_CONFIG = Path(__file__).resolve().parents[2] / "config"
+REPO_CONFIG = Path(__file__).resolve().parents[2] / "examples" / "memory"
 
 
 @pytest.fixture
@@ -28,11 +28,11 @@ def client(tmp_path, monkeypatch):
 def test_import_repo_config(conn):
     counts = import_config(conn, REPO_CONFIG)
     assert counts["settings"] >= 5
-    assert store.assistant_name(conn) == "Tower"
-    assert set(store.get_setting(conn, "divisions")) == {"me", "stephanie", "kids"}
-    assert store.get_setting(conn, "digests")["schema"] == "tower-digests/v1"
+    assert store.assistant_name(conn) == "Juno"
+    assert set(store.get_setting(conn, "divisions")) == {"me", "sam", "kids"}
+    assert store.get_setting(conn, "digests")["schema"] == "cos-digests/v1"
     contents = [r["content"] for r in store.list_rules(conn)]
-    assert any(c.startswith("Jason Wyatt:") for c in contents)
+    assert any(c.startswith("Dr. Lee:") for c in contents)
 
 
 def test_import_is_idempotent(conn):
@@ -62,13 +62,13 @@ def test_brain_import_skips_other_tags_and_deleted(conn, tmp_path):
     brain.write_text(json.dumps({
         "schema": "brain/v1",
         "entries": [
-            {"id": "tower-1-aaaa", "content": "Jason goes remote", "tags": ["tower", "rule"], "timestamp": "2026-10-19T20:00:00.000Z"},
+            {"id": "juno-1-aaaa", "content": "Lee goes remote", "tags": ["juno", "rule"], "timestamp": "2026-10-19T20:00:00.000Z"},
             {"id": "e-2", "content": "A recipe", "tags": ["food"], "timestamp": "2026-10-19T20:00:00.000Z"},
-            {"id": "tower-3-bbbb", "content": "Old", "tags": ["tower"], "timestamp": "2026-10-19T20:00:00.000Z"},
+            {"id": "juno-3-bbbb", "content": "Old", "tags": ["juno"], "timestamp": "2026-10-19T20:00:00.000Z"},
         ],
-        "deleted": ["tower-3-bbbb"],
+        "deleted": ["juno-3-bbbb"],
     }))
-    assert import_brain(conn, brain, "tower") == 1
+    assert import_brain(conn, brain, "juno") == 1
     assert store.list_rules(conn)[0]["kind"] == "rule"
 
 
@@ -77,7 +77,7 @@ def test_export_round_trips_board(conn, tmp_path):
     store.add_item(conn, {"title": "Reply to UNM", "direction": "i-owe", "division": "me"})
     out = export_all(conn)
     assert out["brain"]["schema"] == "brain/v1"
-    assert all(e["source"] == "tower" for e in out["brain"]["entries"])
+    assert all(e["source"] == "juno" for e in out["brain"]["entries"])
     board = tmp_path / "board.json"
     board.write_text(json.dumps(out["board"]))
     fresh = db.connect(tmp_path / "fresh.db")

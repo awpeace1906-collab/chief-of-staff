@@ -87,7 +87,7 @@ def test_drafts_are_validated_and_only_the_owner_edits_them(conn):
 
 def test_an_approved_move_changes_the_event(conn):
     cal = Calendar()
-    p = approved(conn, calendar="Andrew Work", title="Move: Study block", eventId="ev-7",
+    p = approved(conn, calendar="Pat Work", title="Move: Study block", eventId="ev-7",
                  start="2026-10-21T19:00:00-06:00", end="2026-10-21T20:00:00-06:00", timeZone="America/Denver")
     out = agent.execute_approved(conn, google(conn, cal))
     assert out[0]["status"] == "done" and out[0]["result"].startswith("Moved to Wed Oct 21, 7:00 PM")
@@ -102,7 +102,7 @@ def test_replan_proposes_moves_and_replies(conn):
                           data={"day": "2026-10-21", "at": "17:30", "timeZone": "America/Denver"})
     claude = ToolClaude(
         [("free_time", {"date": "2026-10-21"})],
-        [("propose_move", {"calendar": "Andrew Work", "event_id": "ev-7", "title": "Study block",
+        [("propose_move", {"calendar": "Pat Work", "event_id": "ev-7", "title": "Study block",
                            "start": "2026-10-21T19:00", "end": "2026-10-21T20:00", "reason": "Ran long at work"})],
         [("reply", {"text": "Moved your study block to 7pm (waiting on Today). Dinner is still fine."})],
     )

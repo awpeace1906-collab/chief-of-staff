@@ -106,6 +106,15 @@ def create_app(db_path: str | None = None, http: httpx.Client | None = None, cli
                 ai.validate(value)
             except ValueError as e:
                 raise HTTPException(422, str(e))
+        if key == "assistant" and isinstance(value, dict):
+            # a new alias is a rename: same agent (id), memory directory follows the name
+            current = store.get_setting(c, "assistant", {}) or {}
+            store.put_setting(c, key, current | {k: v for k, v in value.items() if k not in {"name", "id", "formerNames"}})
+            try:
+                store.rename_assistant(c, value.get("name") or current.get("name") or "Assistant")
+            except (ValueError, OSError) as e:
+                raise HTTPException(422, str(e))
+            return {"ok": True}
         store.put_setting(c, key, value)
         return {"ok": True}
 

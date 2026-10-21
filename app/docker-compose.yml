@@ -5,9 +5,10 @@ services:
       - "127.0.0.1:8700:8700"
     volumes:
       - cos-data:/data
-      - ../config:/config:ro
+      - ${COS_MEMORY_DIR:?set COS_MEMORY_DIR in .env to your <agent>-memory folder}:/memory
     environment:
       COS_API_TOKEN: ${COS_API_TOKEN:?set COS_API_TOKEN in .env}
+      COS_MEMORY_DIR: /memory
     restart: unless-stopped
 
 volumes:

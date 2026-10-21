@@ -5,7 +5,8 @@ v0.4: its own web app, plus Microsoft 365. One process, one SQLite file.
 ## What it does
 
 - Stores settings, rules (the assistant's memory) and the commitments board in `$COS_DATA_DIR/cos.db`.
-- Imports the current setup: `config/tower.json`, `config/digests.json`, a Brain export, a board export.
+- Reads the agent's memory, which lives outside this repo: renaming the agent (Settings or `cos rename <name>`) keeps its id and moves `<agent>-memory` to the new name.
+- Imports the agent's memory (`<agent>-memory/memory.json` and `digests.json`; [docs/memory.md](../docs/memory.md)), a Brain export, a board export.
 - Exports everything in portable formats (`brain/v1`, `cos-board/v1`), so nothing is locked in.
 - Serves an HTTP API and a status page; every API call needs `COS_API_TOKEN` when it's set.
 - Stores and validates AI routes ([docs/features/ai-providers.md](../docs/features/ai-providers.md)).
@@ -32,7 +33,7 @@ v0.4: its own web app, plus Microsoft 365. One process, one SQLite file.
 - **v0.4.1:** runs its own **hourly check** (`check` setting; default :45 from 6:45am to 9:45pm). The check is silent unless something fails, and then it emails the owner. It:
   - carries out approved calendar proposals, applying your Change… notes (it never invites anyone);
   - answers Talk messages with tools, editing the list directly and turning anything else into a proposal;
-  - turns email you send to the `+tower` address into messages, and replies by email too;
+  - turns email you send to the `+<agent>` address into messages, and replies by email too;
   - captures new mail;
   - syncs with Brain once a day when `BRAIN_GIST_TOKEN` is set.
 
@@ -49,7 +50,8 @@ python3 -m venv .venv && . .venv/bin/activate
 pip install -e ".[dev]"
 
 export COS_DATA_DIR=./data COS_API_TOKEN=change-me
-cos import --config ../config            # settings, standing agreements, digest adapters
+cos import --memory                       # finds <agent>-memory beside this repo (or COS_MEMORY_DIR / COS_MEMORY_BASE)
+# no memory yet? start from the example: cp -r ../examples/memory ../../juno-memory
 cos serve                                 # http://127.0.0.1:8700 → sign in with COS_API_TOKEN
 ```
 
@@ -58,7 +60,7 @@ Local testing over plain http needs `COS_SECURE_COOKIE=0`, because the sign-in c
 Optional imports:
 
 ```bash
-cos import --brain brain-data.json --brain-tag tower   # the assistant's entries from Brain
+cos import --brain brain-data.json   # the agent's entries from Brain (tagged with its id)
 cos import --board cos-board.json                       # an existing board
 cos import --page page.json                             # the old Claude-hosted page (to-dos, proposals, messages, brief)
 cos export > backup.json
@@ -101,9 +103,9 @@ With Docker:
 
 ```bash
 cd app
-echo "COS_API_TOKEN=change-me" > .env
+printf "COS_API_TOKEN=change-me\nCOS_MEMORY_DIR=/path/to/<agent>-memory\n" > .env
 docker compose up -d --build
-docker compose exec cos cos import --config /config
+docker compose exec cos cos import --memory
 ```
 
 ## API

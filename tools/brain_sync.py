@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Tower <-> Brain (brain/v1) gist helper.
+"""Agent <-> Brain (brain/v1) gist helper.
 
-  brain_sync.py list [tag]                     print entries (default: tag "tower")
-  brain_sync.py add <tag> <summary> <content>  append a tower entry (tag: rule|preference|context)
+  brain_sync.py list [tag]                     print entries (default: the agent's id)
+  brain_sync.py add <tag> <summary> <content>  append an agent entry (tag: rule|preference|context)
 
-Reads BRAIN_GIST_TOKEN. Read-modify-write in one step; keeps every entry and
+Reads BRAIN_GIST_TOKEN, and AGENT_ID (the agent's permanent id, `assistant.id` in its memory). Read-modify-write in one step; keeps every entry and
 field it didn't write; never re-adds an id listed in `deleted`.
 """
 import json, os, random, string, sys, time, urllib.request
@@ -12,6 +12,7 @@ from datetime import datetime, timezone
 
 API = "https://api.github.com"
 TOKEN = os.environ.get("BRAIN_GIST_TOKEN")
+AGENT = os.environ.get("AGENT_ID") or "assistant"
 
 
 def req(url, method="GET", body=None):
@@ -50,19 +51,19 @@ def main():
     url = find_gist()
     data = load(url)
     if cmd == "list":
-        tag = sys.argv[2] if len(sys.argv) > 2 else "tower"
+        tag = sys.argv[2] if len(sys.argv) > 2 else AGENT
         for e in data.get("entries", []):
             if tag in e.get("tags", []) and not e.get("archived"):
                 print(f"- [{e['id']}] {e['content']}")
     elif cmd == "add":
         tag, summary, content = sys.argv[2], sys.argv[3], sys.argv[4]
-        eid = f"tower-{int(time.time() * 1000)}-{''.join(random.choices(string.ascii_lowercase + string.digits, k=4))}"
+        eid = f"{AGENT}-{int(time.time() * 1000)}-{''.join(random.choices(string.ascii_lowercase + string.digits, k=4))}"
         if eid in data.get("deleted", []):
             sys.exit("id collides with a deleted id; retry")
         data.setdefault("entries", []).append({
-            "id": eid, "content": content, "type": "text", "tags": ["tower", tag],
+            "id": eid, "content": content, "type": "text", "tags": [AGENT, tag],
             "summary": " ".join(summary.split()[:12]), "pinned": False, "archived": False,
-            "timestamp": now(), "source": "tower",
+            "timestamp": now(), "source": AGENT,
         })
         data["syncedAt"] = now()
         req(url, "PATCH", {"files": {"brain-data.json": {"content": json.dumps(data, indent=2)}}})

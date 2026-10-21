@@ -54,7 +54,7 @@ def test_surfacing_counts_once_a_day_then_escalates(tmp_path):
 
 
 def test_capture_marks_promises_from_sent_mail(env):
-    env.fake.messages["m3"] = gmail_message("m3", "Andrew <awpeace1906@gmail.com>", "Re: BEAR Ambassador",
+    env.fake.messages["m3"] = gmail_message("m3", "Pat <pat@example.com>", "Re: BEAR Ambassador",
                                             "Yes, I will complete the paperwork asap.", labels=("SENT",))
     promise = change("add", "Complete BEAR paperwork", source="m3")
     ask = change("add", "Reply to UNM about reserved CA1 spot", source="m1")

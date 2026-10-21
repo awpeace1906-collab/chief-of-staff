@@ -36,6 +36,33 @@ def assistant_name(conn: sqlite3.Connection) -> str:
     return get_setting(conn, "assistant", {}).get("name") or "Assistant"
 
 
+def rename_assistant(conn: sqlite3.Connection, new_name: str, actor: str = "user") -> dict:
+    """A new alias for the same agent: the id stays, the old name is remembered, and the memory
+    directory follows (`<alias>-memory`) when it can be found. Returns the assistant setting."""
+    from . import memory
+    a = get_setting(conn, "assistant", {}) or {}
+    old, new_name = a.get("name") or "Assistant", (new_name or "").strip()[:40]
+    memory.slug(new_name)  # raises on an empty or symbol-only name
+    if not (a.get("name") or a.get("id")):  # first name, not a rename: it sets the id
+        put_setting(conn, "assistant", a := a | {"name": new_name, "id": memory.slug(new_name)}, actor=actor)
+        return a
+    a = a | {"id": assistant_id(conn)}
+    if new_name != old:
+        try:
+            memory.rename(memory.locate(old), new_name)
+        except FileNotFoundError:
+            pass  # no memory directory here (e.g. memory lives only in Brain): just the setting
+        a = a | {"name": new_name, "formerNames": [n for n in a.get("formerNames", []) if n != new_name] + [old]}
+    put_setting(conn, "assistant", a, actor=actor)
+    return a
+
+
+def assistant_id(conn: sqlite3.Connection) -> str:
+    """The agent's permanent id (Brain tag, rule ids); survives a rename. Defaults to the name's slug."""
+    from . import memory
+    return memory.identity({"assistant": get_setting(conn, "assistant", {}) or {}})["id"]
+
+
 # Divisions: who an item is for. Keys and labels are the owner's data (the divisions setting,
 # imported from their config); the code never names a person.
 
@@ -56,7 +83,7 @@ def division_or_owner(conn: sqlite3.Connection, key: str | None) -> str:
 # Rules: the assistant's long-term memory (Brain-compatible)
 
 def new_rule_id(conn: sqlite3.Connection) -> str:
-    prefix = assistant_name(conn).lower().replace(" ", "-")
+    prefix = assistant_id(conn)
     return f"{prefix}-{int(time.time() * 1000)}-{_rand4()}"
 
 
