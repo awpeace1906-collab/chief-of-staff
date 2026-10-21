@@ -60,7 +60,7 @@ See [docs/self-contained.md](docs/self-contained.md).
 - [ ] Brief parity with the Claude Code version: flight-email parsing, readywhen parity line, Brain sync
 - [x] v0.4 Own web app (installable PWA): Today (brief, proposals with approve / change / decline), To-do (filters, snooze, swipe to finish), Talk (Ask answers instantly; Send queues for the assistant); sign-in by access key; audit log; import from the old Claude-hosted page
 - [x] App catch-up, part 1 (engine): decisions → next steps, records (trips, binders, expenses, tomorrow and week cards), approved email drafts (off until `email.sendApprovedDrafts`), Move: execution, re-plan endpoint, protected time, renewals and the week's top 3; page import brings them over
-- [ ] App catch-up, part 2: web app UI for the above (Decide, cards, trips, binders, expenses, Waiting on others, top-3 stars, drafts, Plans changed?, hatched protected time)
+- [x] App catch-up, part 2: web app UI for the above (Decide, cards, trips, binders, expenses, Waiting on others, top-3 stars, drafts, Plans changed?, hatched protected time)
 - [ ] App catch-up, part 3: the brief and an evening run file decisions, drafts, trips, binders, expenses and cards themselves
 - [x] v0.4 Microsoft 365 via Graph (personal or work accounts, read-only): Outlook mail into capture, Outlook calendar and To Do into the brief ([docs/setup/microsoft.md](docs/setup/microsoft.md))
 - [ ] Andrew: pick a host (Fly.io recommended) and deploy; register the Microsoft app and connect

@@ -160,6 +160,7 @@ def test_api_records_choose_and_replan(client):
     h = {"Authorization": "Bearer k"}
     assert client.put("/api/records/decision/unm-ca1", headers=h, json=DECISION).status_code == 200
     assert client.get("/api/records/trip", headers=h).json() == []
+    assert client.get("/api/records", headers=h).json()["decision"][0]["id"] == "unm-ca1"
     assert client.get("/api/records/nope", headers=h).status_code == 404
     assert client.post("/api/decisions/unm-ca1/choose", headers=h, json={"choice": "maybe"}).status_code == 409
     d = client.post("/api/decisions/unm-ca1/choose", headers=h, json={"choice": "keep"}).json()

@@ -1,6 +1,6 @@
 # Decide, Tomorrow, Week, Trips, Binders, Expenses
 
-**Status:** live on the Chief of Staff page. They come from the chief-of-staff and assistant frameworks ([research](../research/role-frameworks.md)), built in the ranked order. The app (`app/`) has the engine for them (see [The app](#the-app)); its web app screens come next.
+**Status:** live on the Chief of Staff page. They come from the chief-of-staff and assistant frameworks ([research](../research/role-frameworks.md)), built in the ranked order. The app (`app/`) has them too (see [The app](#the-app)), except the runs that fill them, which come next.
 
 | # | Feature | Where it shows | Who fills it |
 |---|---|---|---|
@@ -21,7 +21,9 @@ Sending email: an approved "Send:" proposal is Andrew's permission to send that 
 
 ## The app
 
-The engine is in; the web app's screens and the runs that fill these come next.
+The engine and the web app's screens are in. The runs that file these (the brief and an evening run) come next; until then the scheduled tasks fill the page, and `POST /api/import/page` brings that over.
+
+Web app: **Decide** at the top of Today (tap an option); **Tomorrow**, **This week** and **Next trip** cards above the brief; email drafts in proposal cards (**Send**, or **Change…** to edit the text); To-do gets **Top 3 this week**, **Waiting on others**, renewal expiry dates, a ☆ Top 3 toggle and **Drop it**, and an **Expenses** panel with totals; the Day tab shows the current **binder**, hatched **protected time**, and **Plans changed?** (re-plan).
 
 | Page | App |
 |---|---|

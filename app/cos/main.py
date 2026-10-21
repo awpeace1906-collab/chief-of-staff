@@ -397,6 +397,10 @@ def create_app(db_path: str | None = None, http: httpx.Client | None = None, cli
             raise HTTPException(404, f"unknown record kind '{kind}'")
         return kind
 
+    @app.get("/api/records", dependencies=api)
+    def all_records(c=Depends(get_conn)):
+        return {kind: store.list_records(c, kind) for kind in sorted(store.RECORD_KINDS)}
+
     @app.get("/api/records/{kind}", dependencies=api)
     def records(kind: str, c=Depends(get_conn)):
         return store.list_records(c, record_kind(kind))
