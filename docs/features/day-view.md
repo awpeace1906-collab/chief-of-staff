@@ -1,6 +1,6 @@
 # Day view (Schedule)
 
-**Status:** live on the Chief of Staff page (Day tab). The app's schedule builder (`app/cos/schedule.py`) uses the same rules.
+**Status:** live on the Chief of Staff page (Day tab) and in the self-hosted app (Day tab, `GET /api/day`, `POST /api/schedule/block`, `app/cos/schedule.py`). Both use the same rules.
 
 A calendar-style day view with hours down the side. The open to-dos that most need doing are suggested in the free time.
 
@@ -24,3 +24,9 @@ A calendar-style day view with hours down the side. The open to-dos that most ne
 `calendars` (id, name, division), `blockCalendar`, `dayStart`, `dayEnd`, `minMinutes`.
 
 Calendar IDs are personal: they live in the page's data and config/tower.json, never in the page code.
+
+## In the app
+
+- `GET /api/day?date=YYYY-MM-DD&tz=Area/City` returns the day's events in the viewer's zone, the owner's free windows (minus blocks on their way) and the planned blocks. Without Google it returns 409, and the page assumes an empty day.
+- `POST /api/schedule/block {itemId, start, end, timeZone}` stores an approved calendar proposal (`source: "schedule"`). If Google is connected, it puts the block on the calendar right away. Exact blocks need no model call: `agent._add_block` creates the event at exactly that time with no invites, and the to-do stays open.
+- The schedule setting `blockCalendar` picks the calendar. It defaults to the first calendar in the owner's division.

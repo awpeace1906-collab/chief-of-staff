@@ -70,6 +70,8 @@ header.sign .wrap { display: flex; align-items: center; justify-content: space-b
 nav.tabs { position: fixed; inset: auto 0 0 0; z-index: 6; background: var(--sign-bg); padding-bottom: env(safe-area-inset-bottom, 0px); border-top: 1px solid #000; }
 nav.tabs .wrap { display: flex; height: var(--nav-h); }
 nav.tabs button { flex: 1; min-width: 0; background: transparent; border: 0; border-top: 3px solid transparent; color: var(--sign-dim); font: 600 1rem var(--font-display); letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; display: grid; place-content: center; gap: 1px; }
+nav.tabs button { white-space: nowrap; padding: 0 2px; min-width: 0; }
+@media (max-width: 420px) { nav.tabs button { font-size: 0.88rem; letter-spacing: 0.03em; } }
 nav.tabs button[aria-selected="true"] { color: var(--sign-fg); border-top-color: var(--sign-fg); }
 nav.tabs .badge { font: 500 0.7rem/1 var(--font-mono); min-height: 0.7rem; }
 
@@ -185,6 +187,37 @@ textarea { resize: vertical; min-height: 4.5rem; }
 .compose { position: sticky; bottom: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px)); background: var(--bg); padding-block: 8px 4px; display: grid; gap: 8px; }
 .compose textarea { min-height: 3.2rem; }
 
+
+/* schedule: a day view with hours down the side; open to-dos suggested in the free time */
+.sched-head { display: flex; align-items: center; gap: 6px; }
+.sched-head .dayname { flex: 1; margin: 0; font: 700 1.25rem/1.1 var(--font-display); letter-spacing: 0.03em; }
+.sched-head .dayname small { display: block; font: 500 0.72rem var(--font-mono); color: var(--muted); letter-spacing: 0; }
+.sched-head .btn { min-height: 38px; padding: 6px 12px; }
+.allday { display: flex; flex-wrap: wrap; gap: 6px; }
+.allday span { font-size: 0.8rem; padding: 3px 9px; border-radius: 6px; background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--c, var(--muted)); overflow-wrap: anywhere; }
+.tl { position: relative; --hour: 56px; }
+.tl .hr { position: absolute; left: 0; width: 42px; text-align: right; font: 500 0.68rem/1 var(--font-mono); color: var(--muted); transform: translateY(-50%); }
+.tl .body { position: absolute; left: 48px; right: 0; top: 0; bottom: 0; background: repeating-linear-gradient(to bottom, var(--line) 0 1px, transparent 1px var(--hour)); border-left: 1px solid var(--line); }
+.evt { position: absolute; z-index: 2; border-radius: 6px; padding: 3px 6px; font-size: 0.8rem; line-height: 1.25; overflow: hidden; background: var(--raised); border: 1px solid var(--line); border-left: 4px solid var(--c, var(--muted)); }
+.evt b { display: block; font-weight: 700; overflow-wrap: anywhere; }
+.evt small { color: var(--muted); font: 500 0.68rem var(--font-mono); }
+.evt.tent { background: var(--surface); border-style: dashed; border-left-style: solid; }
+.evt.tent b::before { content: "Planned · "; font-weight: 600; color: var(--muted); }
+[data-div="me"] { --c: var(--me); } [data-div="stephanie"] { --c: var(--steph); } [data-div="kids"] { --c: var(--kids); }
+.gap { position: absolute; z-index: 1; display: grid; align-content: start; gap: 4px; padding: 4px 5px; overflow: hidden; border: 1.5px dashed var(--ok); border-radius: 8px; background: color-mix(in srgb, var(--ok) 7%, var(--bg)); text-align: left; color: inherit; font: inherit; }
+.gap.open { z-index: 5; height: auto !important; overflow: visible; background: var(--surface); box-shadow: 0 8px 24px rgb(0 0 0 / 0.25); }
+.gap .gh { display: flex; justify-content: space-between; gap: 6px; font: 600 0.74rem/1.2 var(--font-display); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ok); }
+.gap .gh button { all: unset; cursor: pointer; text-decoration: underline; }
+.sug { display: grid; grid-template-columns: 28px 1fr auto; gap: 6px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-left: 4px solid var(--c, var(--muted)); border-radius: 6px; padding: 3px 5px; min-width: 0; }
+.sug .check { width: 26px; height: 26px; font-size: 13px; }
+.sug .t { font-weight: 700; font-size: 0.84rem; line-height: 1.2; overflow-wrap: anywhere; }
+.sug .m { display: block; font: 500 0.68rem var(--font-mono); color: var(--muted); }
+.sug .m.late { color: var(--warn); }
+.sug .btn { min-height: 30px; padding: 3px 9px; font-size: 0.85rem; }
+.gap > .m { font-size: 0.8rem; color: var(--muted); }
+.nowline { position: absolute; left: -5px; right: 0; height: 2px; background: var(--warn); z-index: 4; pointer-events: none; }
+.nowline::before { content: ""; position: absolute; left: 0; top: -3px; width: 8px; height: 8px; border-radius: 50%; background: var(--warn); }
+
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 @media (max-width: 420px) { .strip .main { grid-template-columns: 5px 52px 1fr auto; } .fields, .strip .more .fields { grid-template-columns: 1fr; } .stat b { font-size: 1.6rem; } }
 </style>
@@ -258,6 +291,24 @@ textarea { resize: vertical; min-height: 4.5rem; }
     </details>
   </section>
 
+  <section role="tabpanel" id="sched" aria-labelledby="tab-sched" hidden>
+    <div class="sched-head">
+      <button class="btn" type="button" id="dayPrev" aria-label="Previous day">‹</button>
+      <div class="dayname" id="dayName">Today</div>
+      <button class="btn" type="button" id="dayToday">Today</button>
+      <button class="btn" type="button" id="dayNext" aria-label="Next day">›</button>
+    </div>
+    <div class="chips" role="group" aria-label="Calendars to show" id="schedChips">
+      <button class="chip" type="button" data-f="me" aria-pressed="true">Mine</button>
+      <button class="chip" type="button" data-f="kids" aria-pressed="true">Home &amp; kids</button>
+      <button class="chip" type="button" data-f="stephanie" aria-pressed="false">Partner</button>
+    </div>
+    <p class="note">Free time shows the to-dos that most need doing. Tick one off and the list updates. <b>Block</b> puts it on your calendar.</p>
+    <div class="allday" id="allDay"></div>
+    <div class="tl" id="timeline"></div>
+    <p class="status" id="schedStatus"></p>
+  </section>
+
   <section role="tabpanel" id="talk" aria-labelledby="tab-talk" hidden>
     <p class="note"><b>Ask</b> answers right away from your list and the brief. <b>Send</b> goes to <span class="agentName">Assistant</span> for anything that needs doing (calendar, email, changes). It answers here, usually within the hour.</p>
     <div class="thread" id="thread"></div>
@@ -315,6 +366,7 @@ textarea { resize: vertical; min-height: 4.5rem; }
 <nav class="tabs" role="tablist" aria-label="Sections">
   <div class="wrap">
     <button role="tab" id="tab-today" aria-controls="today" aria-selected="true">Today<span class="badge" id="todayBadge"></span></button>
+    <button role="tab" id="tab-sched" aria-controls="sched" aria-selected="false">Day<span class="badge" id="schedBadge"></span></button>
     <button role="tab" id="tab-todo" aria-controls="todo" aria-selected="false">To-do<span class="badge" id="todoBadge"></span></button>
     <button role="tab" id="tab-talk" aria-controls="talk" aria-selected="false">Talk<span class="badge"></span></button>
     <button role="tab" id="tab-more" aria-controls="more" aria-selected="false">Settings<span class="badge" id="moreBadge"></span></button>

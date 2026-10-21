@@ -19,7 +19,7 @@ from fastapi import Body, Cookie, Depends, FastAPI, Form, Header, HTTPException,
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
-from . import __version__, agent, ai, brain, brief, capture, db, llm, scheduler, sms, store
+from . import __version__, agent, ai, brain, brief, capture, db, llm, schedule, scheduler, sms, store
 from .google import oauth
 from .google.api import Google
 from .importer import export_all, import_page
@@ -188,6 +188,50 @@ def create_app(db_path: str | None = None, http: httpx.Client | None = None, cli
     @app.get("/api/calendar/agenda", dependencies=api)
     def agenda(days: int = 7, c=Depends(get_conn)):
         return google_call(lambda: Google(c, http).agenda(max(0, min(days, 31))))
+
+    @app.get("/api/day", dependencies=api)
+    def day_view(date: str | None = None, tz: str | None = None, c=Depends(get_conn)):
+        """One day for the day view, in the viewer's time zone (it follows them when they travel)."""
+        from datetime import date as Date
+        try:
+            zone = ZoneInfo(tz or store.get_setting(c, "timezone", "UTC"))
+            now_here = datetime.now(zone)
+            the_day = Date.fromisoformat(date) if date else now_here.date()
+        except (ValueError, KeyError) as e:
+            raise HTTPException(422, f"bad date or time zone: {e}")
+        # a day in the viewer's zone can start the evening before in the owner's: read one day either side
+        ag = google_call(lambda: Google(c, http).agenda(2, today=the_day - timedelta(days=1)))
+        return schedule.day(ag, the_day, zone, schedule.settings(c), store.list_proposals(c, ("pending", "approved")), now=now_here)
+
+    @app.post("/api/schedule/block", dependencies=api, status_code=201)
+    def block(body: dict = Body(...), c=Depends(get_conn)):
+        """The owner picked a free window for a to-do. Their tap is the approval: store it as an
+        approved calendar proposal and put it on the calendar now if Google is connected."""
+        item = store.get_item(c, str(body.get("itemId") or ""))
+        if item is None:
+            raise HTTPException(404, "unknown to-do")
+        try:
+            start = datetime.fromisoformat(str(body["start"]).replace("Z", "+00:00"))
+            end = datetime.fromisoformat(str(body["end"]).replace("Z", "+00:00"))
+            zone = ZoneInfo(body.get("timeZone") or store.get_setting(c, "timezone", "UTC"))
+        except (KeyError, ValueError) as e:
+            raise HTTPException(422, f"bad block: {e}")
+        if not (start.tzinfo and end > start) or end - start > timedelta(hours=8):
+            raise HTTPException(422, "a block needs a time zone and a sensible length")
+        local = start.astimezone(zone)
+        p = store.add_proposal(c, {
+            "kind": "calendar", "division": item["division"], "calendar": schedule.settings(c).get("blockCalendar") or "",
+            "title": "Add: " + item["title"], "summary": "Time to get it done, picked on the day view.",
+            "when": local.strftime("%a %b %-d, %-I:%M %p ") + (local.tzname() or ""),
+            "start": start.isoformat(), "end": end.isoformat(), "timeZone": zone.key, "itemId": item["id"], "source": "schedule",
+        }, actor="user")
+        p = store.update_proposal(c, p["id"], {"status": "approved"}, actor="user")
+        if oauth.status(c).get("canWriteCalendar"):  # otherwise it waits, approved, for the next check
+            try:
+                agent.execute_approved(c, Google(c, http), only={p["id"]})
+            except Exception:
+                pass  # left approved: the next check carries it out
+        return store.get_proposal(c, p["id"])
 
     @app.get("/api/mail/search", dependencies=api)
     def mail_search(q: str, limit: int = 25, c=Depends(get_conn)):

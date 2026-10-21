@@ -130,7 +130,8 @@ def _rand4() -> str:
 # Proposals: actions the assistant wants to take, waiting for the owner's OK
 
 PROPOSAL_STATUSES = {"pending", "approved", "declined", "done", "failed"}
-PROPOSAL_FIELDS = ("kind", "division", "calendar", "title", "when", "where", "change", "summary")
+PROPOSAL_FIELDS = ("kind", "division", "calendar", "title", "when", "where", "change", "summary",
+                   "start", "end", "timeZone", "itemId", "source")  # the last five: exact blocks from the day view
 
 
 def add_proposal(conn: sqlite3.Connection, proposal: dict, actor: str = "assistant") -> dict:
