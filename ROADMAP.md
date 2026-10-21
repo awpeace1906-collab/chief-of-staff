@@ -28,6 +28,16 @@
 - [ ] burrell.edu Outlook rules: forward Microsoft 365 digests (Viva briefing, Teams, Planner, SharePoint) to the Tower inbox; confirm IT allows external forwarding
 - [ ] Confirm real sender addresses for each adapter from the first digest received
 
+## From the role frameworks (see [docs/research/role-frameworks.md](docs/research/role-frameworks.md))
+
+- [ ] Decisions first: a Decide section with options, a deadline and a recommendation, turned into dated actions once decided
+- [ ] Tomorrow, tonight: an evening card with tomorrow's first commitment, what to bring, what's due, and coverage
+- [ ] Weekly review (Sunday): look back and ahead, pick the top 3, check promised hours against free hours
+- [ ] Reply drafting for "reply owed" and "waiting on" items (Send proposals)
+- [ ] Interview and meeting kit: prep packet, prep block, thank-you within 24 hours
+- [ ] Rotation binder: one card per rotation, built from intake email
+- [ ] Travel desk, renewals tracker, expense log, protected time, delegation tracking, monthly alignment
+
 ## The app: self-contained Chief of Staff
 
 See [docs/self-contained.md](docs/self-contained.md).
