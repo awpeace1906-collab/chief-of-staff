@@ -60,6 +60,7 @@ When evidence is found, Tower marks it `done` and says so in the next brief ("Cl
 - **Escalation:** after 3 briefs, the item is "stuck" and the brief asks plainly: do it (slot), move it (date), or drop it?
 - **Closure needs evidence** (below) or Andrew's say-so. The loop never closes or drops anything by itself.
 - **Schedule builder** (`app/cos/schedule.py`): finds free windows in Andrew's division, around busy events (shifts, interviews; free/"Away" markers don't block), 7am–9pm in his home timezone. Each surfaced item gets the earliest 30-minute window before its due date (late items take the first window). The brief proposes these as "Add: …" blocks, so nothing reaches the calendar without approval. Settings: `schedule.dayStart`, `dayEnd`, `minMinutes`, `blockMinutes`, `division`.
+- **Day view:** the page's Day tab shows the day hour by hour, with surfaced to-dos suggested in the free time (see [day-view.md](day-view.md)).
 - **On the page:** the To-do tab shows "You promised <person>", "date guessed", how many briefs have brought an item up, and the do/move/drop question once an item is stuck. **Drop it** closes an item on purpose. Rescheduling resets the count.
 
 ## Brief integration
