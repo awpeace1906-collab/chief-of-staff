@@ -290,7 +290,7 @@
     $("decideGroup").hidden = !open.length && !recent.length;
     for (const d of open) {
       const c = el("div", "card pad decision group");
-      const k = el("div", "kicker"); k.append(el("span", null, "Decide"));
+      const k = el("div", "kicker"); k.append(el("span", null, "Situation Room"));
       if (d.deadline) k.append(el("span", d.deadline <= addDays(t, 1) ? "num" : null, "· by " + dow(d.deadline) + " " + md(d.deadline)));
       c.append(k, el("p", "ptitle", d.title));
       if (d.context) c.append(el("p", "why", d.context));
@@ -337,13 +337,13 @@
       const body = el("div", "md"); renderMd(text, body); c.append(body); box.append(c);
     };
     const tm = card("tomorrow");
-    if (tm && tm.markdown && (tm.day > t || (tm.day === t && hour < 12))) mdCard(tm.day === t ? "Today, first things" : "Tomorrow", dow(tm.day) + " " + md(tm.day), tm.markdown);
+    if (tm && tm.markdown && (tm.day > t || (tm.day === t && hour < 12))) mdCard(tm.day === t ? "Today, first things" : "The Book", dow(tm.day) + " " + md(tm.day), tm.markdown);
     const wk = card("week");
     if (wk && wk.markdown && wk.weekOf && wk.weekOf <= t && t < addDays(wk.weekOf, 7)) mdCard("This week", "Week of " + md(wk.weekOf), wk.markdown);
     const trip = state.records.trip.filter((x) => (x.end || x.start || "") >= t).sort((a, b) => String(a.start).localeCompare(String(b.start)))[0];
     if (trip) {
       const c = el("div", "card pad tripcard");
-      const k = el("div", "kicker"); k.append(el("span", null, "Next trip"), el("span", null, "· " + md(trip.start) + (trip.end && trip.end !== trip.start ? "–" + md(trip.end) : "")));
+      const k = el("div", "kicker"); k.append(el("span", null, "Next movement"), el("span", null, "· " + md(trip.start) + (trip.end && trip.end !== trip.start ? "–" + md(trip.end) : "")));
       c.append(k, el("h3", null, trip.title || "Trip"));
       if (trip.note) c.append(el("p", "why", trip.note));
       const ul = el("ul", "legs");
@@ -362,9 +362,9 @@
     if (!state.loaded) return;
     const box = $("brief"); box.textContent = "";
     const b = state.brief;
-    if (!b) { box.append(el("p", "empty", "The morning brief lands here each morning.")); return; }
+    if (!b) { box.append(el("p", "empty", "The daily brief lands here each morning.")); return; }
     const card = el("div", "card brief" + (state.briefOpen ? "" : " collapsed"));
-    card.append(el("h3", null, b.subject || "Morning brief"));
+    card.append(el("h3", null, b.subject || "Daily brief"));
     card.append(el("p", "note", b.day ? (b.day === today() ? "Today · " : "") + dow(b.day) + " " + md(b.day) : ""));
     const body = el("div", "md"); renderMd(b.markdown, body); card.append(body);
     const tog = el("button", "btn quiet small", state.briefOpen ? "Show less" : "Read all"); tog.type = "button";

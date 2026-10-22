@@ -2,7 +2,7 @@
 
 **Status:** live. In the app (v0.4), proposals live in its own database and the web app's Today tab is where the principal approves them. The app's hourly check carries out approved calendar proposals itself. It applies the principal's Change… notes; "hold" means nothing changes. It never invites or notifies anyone. Email proposals ("Send:") show the full draft; Change… edits it and Send approves it. The approved text is sent exactly as shown from the principal's Gmail, on the thread.
 
-**Until the app is hosted:** the Chief of Staff page (a Claude-hosted page) carries approvals. There's no hourly polling. Tapping **Approve** or sending a message wakes the agent straight away through an on-demand scheduled task. Taps close together share one run, with at most one more per 90 seconds. Anything that can't wake the agent (a declined connector permission, say) is picked up by the next morning brief.
+**Until the app is hosted:** the Chief of Staff page (a Claude-hosted page) carries approvals. There's no hourly polling. Tapping **Approve** or sending a message wakes the agent straight away through an on-demand scheduled task. Taps close together share one run, with at most one more per 90 seconds. Anything that can't wake the agent (a declined connector permission, say) is picked up by the next daily brief.
 
 ## How it works
 

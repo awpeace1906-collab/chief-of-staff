@@ -25,7 +25,7 @@ Secrets (API keys, tokens) are in neither: they live in the host's secret store.
 | Path | What it is |
 |---|---|
 | [docs/self-contained.md](docs/self-contained.md) | **Target design:** one Chief of Staff app; only hosting, telephony, AI and the principal's data sources stay outside |
-| [docs/vernacular.md](docs/vernacular.md) | The words the app uses: principal, callsign, and the proposed secret-service terms |
+| [docs/vernacular.md](docs/vernacular.md) | The words the app uses: principal, the Book, Situation Room, movement, advance, position, detail |
 | [docs/memory.md](docs/memory.md) | The agent's memory: layout, identity and renaming, how the core reads it |
 | [docs/architecture.md](docs/architecture.md) | How the agent works end to end |
 | [docs/vision.md](docs/vision.md) | End goal, principles, product requirements |
@@ -33,7 +33,7 @@ Secrets (API keys, tokens) are in neither: they live in the host's secret store.
 | [docs/features/](docs/features/) | One file per feature: what it does, its rules, its data |
 | [docs/integrations.md](docs/integrations.md) | Every outside system the agent reads or writes, and how |
 | [examples/memory/](examples/memory/) | A fictional memory (`memory.json`, `digests.json`) to start from |
-| [prompts/](prompts/) | The exact instructions the agent runs: morning brief, capture, evening setup |
+| [prompts/](prompts/) | The exact instructions the agent runs: daily brief, capture, evening setup |
 | [schemas/board.schema.json](schemas/board.schema.json) | The commitments board format |
 | [app/](app/) | **The Chief of Staff app**: run instructions and API |
 | [tools/](tools/) | Brain and board helpers, and the core check |
@@ -43,7 +43,7 @@ Secrets (API keys, tokens) are in neither: they live in the host's secret store.
 
 | Feature | Status |
 |---|---|
-| Morning brief (daily) | Live |
+| Daily brief (daily) | Live |
 | Coverage check | Live (inside the brief) |
 | Propose → approve flow | Live (approve on the page, in the session, or by text in the app) |
 | Commitment capture + board | Live on the page; in the app since v0.3 |

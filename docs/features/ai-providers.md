@@ -7,7 +7,7 @@ Every AI task goes through a named **route**, and each route picks a provider an
 | Route | What it does | Default | Effort | Why |
 |---|---|---|---|---|
 | `triage` | Sort mail and digests, spot commitments, classify | Claude Haiku 5.5 | low | High volume, simple judgments; Haiku is very cheap |
-| `plan` | Morning brief, coverage check, proposals | Claude Opus 5.5 | high | Reasoning across calendars, travel and rules; mistakes are costly |
+| `plan` | Daily brief, coverage check, proposals | Claude Opus 5.5 | high | Reasoning across calendars, travel and rules; mistakes are costly |
 | `draft` | Emails and messages for approval | Claude Opus 5.5 | medium | Quality of writing that goes out under your name |
 | `chat` | Texts, voice notes, calls | Claude Opus 5.5 | medium | Has to understand loose speech and act correctly |
 

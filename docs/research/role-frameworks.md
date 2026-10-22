@@ -21,7 +21,7 @@ Research notes (Oct 21, 2026). Sources are listed at the bottom. Most are job de
 | Function | Today | Gap |
 |---|---|---|
 | Time: calendar, conflicts, coverage | Strong: divisions, coverage check, Day view, blocks, standing agreements | Doesn't protect time (sleep before shifts, family time); no "tomorrow" prep |
-| Information: capture and filter | Strong: capture, digests, morning brief | The brief leads with lists rather than decisions; no weekly look back or ahead |
+| Information: capture and filter | Strong: capture, digests, daily brief | The brief leads with lists rather than decisions; no weekly look back or ahead |
 | Decisions | Proposals (approve / change / decline) | No log of decisions you're facing (e.g. a program offer that needs a reply), no options brief, no "decided → actions" step |
 | Follow-through | New accountability loop: promises, nudges, do/move/drop | Doesn't chase other people well yet (owed-to-me nudges are proposals only) |
 | Correspondence | Captures "reply owed" | Doesn't draft the reply itself |

@@ -36,7 +36,7 @@ The app is the interface between the principal and their agent: the phone (and c
 
 | On the device (default) | On the server (only when needed) |
 |---|---|
-| The interface: Today, Day, To-do, Talk, approvals | Scheduled runs while the phone is asleep: the morning brief, evening setup, capture sweeps, flight watches |
+| The interface: Today, Day, To-do, Talk, approvals | Scheduled runs while the phone is asleep: the daily brief, evening setup, capture sweeps, flight watches |
 | Location, from the phone's own location services, used on the device | Inbound channels: the agent's phone number (SMS, calls), its email inbox, webhooks |
 | Speech in and out, reminders, notifications | The AI model, until a local one is good enough for the job ([AI providers](features/ai-providers.md)) |
 | A local copy of the board, plan and memory, usable offline | Sync between the principal's devices, and backups |

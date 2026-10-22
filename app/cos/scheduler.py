@@ -1,4 +1,4 @@
-"""In-process scheduler: the morning brief once a day at `brief.time`, and the hourly check
+"""In-process scheduler: the daily brief once a day at `brief.time`, and the hourly check
 (approved proposals, new messages, new mail) at :45 from 6:45am to 9:45pm by default (`check` setting),
 and the flight watch for legs near departure (flights.py).
 The check stays silent unless something fails; then it emails the principal, at most every 3 hours.

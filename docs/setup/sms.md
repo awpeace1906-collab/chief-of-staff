@@ -1,6 +1,6 @@
 # Text Chief of Staff (one-time setup)
 
-Text your assistant from your phone. Approve proposals by replying with their numbers, and get the morning brief by text. You need the app hosted first (see [../deployment.md](../deployment.md)), because the phone company has to be able to reach it.
+Text your assistant from your phone. Approve proposals by replying with their numbers, and get the daily brief by text. You need the app hosted first (see [../deployment.md](../deployment.md)), because the phone company has to be able to reach it.
 
 ## 1. Rent a number
 
@@ -48,7 +48,7 @@ Only `ownerNumber` is ever answered or texted. Texts from anyone else are ignore
 | `decline 2` | Declines it |
 | anything else | A message to your assistant. It answers by text, and the exchange also shows in the app's Talk tab |
 
-With `briefByText` on, the morning brief also arrives as a short text: the subject, the numbered proposals and how to approve. Set `appUrl` in settings to include a link to the app.
+With `briefByText` on, the daily brief also arrives as a short text: the subject, the numbered proposals and how to approve. Set `appUrl` in settings to include a link to the app.
 
 ## Not yet
 

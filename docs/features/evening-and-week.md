@@ -4,18 +4,18 @@
 
 | # | Feature | Where it shows | Who fills it |
 |---|---|---|---|
-| 1 | **Decide**: choices with a deadline, options, trade-offs and an optional recommendation | Top of Today | Morning brief (`decisions/<slug>`). A tap records the choice and wakes the agent, which turns it into dated next steps the same day (`actions`). |
+| 1 | **Situation Room**: choices with a deadline, options, trade-offs and an optional recommendation | Top of Today | Daily brief (`decisions/<slug>`). A tap records the choice and wakes the agent, which turns it into dated next steps the same day (`actions`). |
 | 2 | **Tomorrow**: first commitment and when to leave (from where the principal actually is, named; see [location](location.md)), what to bring, what's due, coverage, flights | Today, from evening until noon | Evening setup, early evening daily (`brief/tomorrow`) |
 | 3 | **Weekly review**: last week, this week, promised vs free hours, suggested top 3 | Today, during the week | Evening setup on Sundays (`brief/week`). The principal stars a top 3 in To-do (`items.top` = the week's Monday). |
-| 4 | **Reply drafts**: "Send:" proposals with the email shown; Change… edits the text; Send sends it | Today, Needs your OK | Morning brief files them (`proposal.draft`); the on-demand run sends after approval (Gmail, on the thread) |
-| 5 | **Interview kit**: prep item, a prep block the day before, thank-you draft within 24 hours | To-do and Needs your OK | Morning brief |
-| 6 | **Binder** (a rotation, program or project): dates, first day, shifts, phones, people, before-you-leave | Day tab, while it's on | Morning brief, from intake mail (`binders/<slug>`); no passwords stored |
-| 7 | **Next trip**: legs with times, what's missing, live flight status | Today | Morning brief from flight, hotel and TripIt mail (`trips/<slug>`). An optional `base` `{label, lat?, lon?}` (the hotel or apartment) is the starting point for drive times on that trip's days ([location](location.md)). Flight legs also carry `flight`, `date`, `from` and `to` so the app can watch them ([planning on the fly](planning-on-the-fly.md#live-flight-status-and-public-atc-data-the-app)). |
-| 8 | **Renewals**: certifications, licenses, immunizations | To-do (`kind: "renewal"`, `expires`) | Morning brief; surfaced at 60, 30 and 7 days |
+| 4 | **Reply drafts**: "Send:" proposals with the email shown; Change… edits the text; Send sends it | Today, Needs your OK | Daily brief files them (`proposal.draft`); the on-demand run sends after approval (Gmail, on the thread) |
+| 5 | **Interview kit**: prep item, a prep block the day before, thank-you draft within 24 hours | To-do and Needs your OK | Daily brief |
+| 6 | **Binder** (a rotation, program or project): dates, first day, shifts, phones, people, before-you-leave | Day tab, while it's on | Daily brief, from intake mail (`binders/<slug>`); no passwords stored |
+| 7 | **Next movement**: legs with times, what's missing, live flight status | Today | Daily brief from flight, hotel and TripIt mail (`trips/<slug>`). An optional `base` `{label, lat?, lon?}` (the hotel or apartment) is the starting point for drive times on that trip's days ([location](location.md)). Flight legs also carry `flight`, `date`, `from` and `to` so the app can watch them ([planning on the fly](planning-on-the-fly.md#live-flight-status-and-public-atc-data-the-app)). |
+| 8 | **Renewals**: certifications, licenses, immunizations | To-do (`kind: "renewal"`, `expires`) | Daily brief; surfaced at 60, 30 and 7 days |
 | 9 | **Expenses** by trip or rotation, with totals | To-do, Expenses | Evening setup from receipts (`expenses/<slug>`) |
 | 10 | **Protected time**: weekly windows that are never free time | Day tab, hatched | `settings/schedule.protect: [{label, start, end, days?}]`, set by the principal |
-| 11 | **Waiting on others**: things handed off, with the person and a check-in | To-do, own group | Morning brief; nudges drafted when late |
-| 12 | **Monthly alignment**: "What should the agent start, stop or keep doing?" | The brief on the 1st | Morning brief; answers become rules in memory |
+| 11 | **Waiting on others**: things handed off, with the person and a check-in | To-do, own group | Daily brief; nudges drafted when late |
+| 12 | **Monthly alignment**: "What should the agent start, stop or keep doing?" | The brief on the 1st | Daily brief; answers become rules in memory |
 
 Sending email: an approved "Send:" proposal is the principal's permission to send that one email, from their Gmail, to the recipient shown. Nothing else ever goes to anyone but the principal.
 
@@ -23,7 +23,7 @@ Sending email: an approved "Send:" proposal is the principal's permission to sen
 
 The engine and the web app's screens are in. The runs that file these (the brief and an evening run) come next; until then the scheduled tasks fill the page, and `POST /api/import/page` brings that over.
 
-Web app: **Decide** at the top of Today (tap an option); **Tomorrow**, **This week** and **Next trip** cards above the brief; email drafts in proposal cards (**Send**, or **Change…** to edit the text); To-do gets **Top 3 this week**, **Waiting on others**, renewal expiry dates, a ☆ Top 3 toggle and **Drop it**, and an **Expenses** panel with totals; the Day tab shows the current **binder**, hatched **protected time**, and **Plans changed?** (re-plan).
+Web app: **Situation Room** at the top of Today (tap an option); **Tomorrow**, **This week** and **Next movement** cards above the brief; email drafts in proposal cards (**Send**, or **Change…** to edit the text); To-do gets **Top 3 this week**, **Waiting on others**, renewal expiry dates, a ☆ Top 3 toggle and **Drop it**, and an **Expenses** panel with totals; the Day tab shows the current **binder**, hatched **protected time**, and **Plans changed?** (re-plan).
 
 | Page | App |
 |---|---|

@@ -24,11 +24,11 @@ v0.4: its own web app, plus Microsoft 365. One process, one SQLite file.
   - **Re-plan** (`POST /api/replan`) proposes **Move:**s; an approved Move: changes the event.
   - **Location** (`POST /api/location` from a phone automation, `GET /api/location`): where the principal is, so drive times never start from a guess ([location](../docs/features/location.md)).
   - **Protected time** (`schedule.protect`), **renewals** at 60/30/7 days, and the week's **top 3** in the accountability review.
-  - **Web app:** Decide, Tomorrow / This week / Next trip cards, draft emails with Send, Top 3 and Waiting on others, Expenses, the day's binder, hatched protected time, and Plans changed?
+  - **Web app:** Decide, Tomorrow / This week / Next movement cards, draft emails with Send, Top 3 and Waiting on others, Expenses, the day's binder, hatched protected time, and Plans changed?
 - **v0.5:** **texting** through Telnyx or VoIP.ms ([docs/setup/sms.md](../docs/setup/sms.md)). It only answers the principal's number. You can:
   - text "list", "approve 1, 3" or "decline 2", and approved proposals are carried out right away;
   - text anything else to reach the assistant, which answers by text;
-  - get the morning brief by text.
+  - get the daily brief by text.
 
   The web app gains a **Settings** tab: connection status with connect buttons, the assistant's name, brief time and check hours, and "run the check now".
 - **v0.4.1:** runs its own **hourly check** (`check` setting; default :45 from 6:45am to 9:45pm). The check is silent unless something fails, and then it emails the principal. It:
@@ -40,7 +40,7 @@ v0.4: its own web app, plus Microsoft 365. One process, one SQLite file.
 
   It also supports a **local AI provider** (OpenAI-compatible, e.g. Ollama) for the structured routes.
 - **v0.4:** connects to **Microsoft 365** through Microsoft Graph, with personal or work accounts and read-only access. Outlook mail goes into capture, and the Outlook calendar and To Do go into the brief. Setup: [docs/setup/microsoft.md](../docs/setup/microsoft.md).
-- **v0.3:** captures commitments from new mail with Claude (Haiku), writes the morning brief (Opus), saves it, emails it to the principal, and can run it on a schedule. Logs token use and estimated cost per route.
+- **v0.3:** captures commitments from new mail with Claude (Haiku), writes the daily brief (Opus), saves it, emails it to the principal, and can run it on a schedule. Logs token use and estimated cost per route.
 - **v0.2:** signs in to Google itself (OAuth with PKCE, read-only Calendar + Gmail), shows the agenda by division, searches Gmail, and reads the digest intake address. Setup: [docs/setup/google.md](../docs/setup/google.md).
 
 ## Run it
@@ -174,7 +174,7 @@ pytest
 | `cos/google/api.py` | Calendar (agenda by division) and Gmail (search, message text, intake) |
 | `cos/llm.py` | Model calls (structured output, caching, fallbacks), usage log and cost estimate |
 | `cos/capture.py` | New mail → board changes |
-| `cos/brief.py` | The morning brief |
+| `cos/brief.py` | The daily brief |
 | `cos/scheduler.py` | Daily brief at `brief.time`; the hourly check; error emails |
 | `cos/agent.py` | Carry out approved proposals; answer messages; email intake; the check |
 | `cos/brain.py` | Two-way Brain sync (brain/v1) |

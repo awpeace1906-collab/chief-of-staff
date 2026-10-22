@@ -4,7 +4,7 @@ The principal's own setup steps (accounts, keys, numbers) are tracked in their m
 
 ## Now (live)
 
-- [x] Morning brief, daily, email + Claude session
+- [x] Daily brief, daily, email + Claude session
 - [x] Calendar divisions (e.g. me / partner / kids & coverage), configured in memory
 - [x] Coverage check
 - [x] Propose → approve flow
@@ -50,7 +50,7 @@ See [docs/self-contained.md](docs/self-contained.md).
 
 - [x] v0.1 Skeleton: FastAPI app, SQLite store, settings, AI routes, Docker image; import memory, Brain and board; portable export ([app/](app/))
 - [x] v0.2 Google: own OAuth (PKCE); Calendar agenda by division; Gmail search and plus-address intake ([docs/setup/google.md](docs/setup/google.md))
-- [x] v0.3 Core: capture → board → plan with Claude (structured output); morning brief by email to the principal; built-in scheduler; token usage and cost per route
+- [x] v0.3 Core: capture → board → plan with Claude (structured output); daily brief by email to the principal; built-in scheduler; token usage and cost per route
 - [ ] Brief parity with the Claude Code version: flight-email parsing, Brain sync
 - [x] v0.4 Own web app (installable PWA): Today (brief, proposals with approve / change / decline), To-do (filters, snooze, swipe to finish), Talk (Ask answers instantly; Send queues for the agent); sign-in by access key; audit log; import from the Claude-hosted page
 - [x] App catch-up, part 1 (engine): decisions → next steps, records (trips, binders, expenses, tomorrow and week cards), approved email drafts (off until `email.sendApprovedDrafts`), Move: execution, re-plan endpoint, protected time, renewals and the week's top 3; page import brings them over

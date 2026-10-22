@@ -1,6 +1,6 @@
 # Capture: extract commitments
 
-Runs at the start of every morning brief (and later on new mail). Output goes to the board ([schemas/board.schema.json](../schemas/board.schema.json)) via `tools/board.py`.
+Runs at the start of every daily brief (and later on new mail). Output goes to the board ([schemas/board.schema.json](../schemas/board.schema.json)) via `tools/board.py`.
 
 ---
 

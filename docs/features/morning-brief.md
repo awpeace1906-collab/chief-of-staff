@@ -1,4 +1,4 @@
-# Morning brief
+# Daily brief
 
 **Status:** live as a Claude Code scheduled task; built into the Chief of Staff app in v0.3 (see below). Exact instructions: [prompts/morning-brief.md](../../prompts/morning-brief.md).
 

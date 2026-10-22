@@ -46,7 +46,7 @@ When evidence is found, the agent marks it `done` and says so in the next brief 
 
 ## Accountability loop
 
-**Status:** live in the morning brief and in the app (`app/cos/accountability.py`). The goal: nothing the principal signed up for or promised quietly drops.
+**Status:** live in the daily brief and in the app (`app/cos/accountability.py`). The goal: nothing the principal signed up for or promised quietly drops.
 
 - **Promises are first-class.** When the principal's sent mail promises something ("I'll…", "I will…", "let me get back to you"), it becomes an `i-owe` item with `promise: true` and `counterparty` set to the recipient. With no date, the due date is inferred ("asap" = 2 days, "this week" = Friday) and marked as inferred.
 - **Every brief reviews the board:**

@@ -1,6 +1,6 @@
 # Coverage check
 
-**Status:** live, inside the morning brief.
+**Status:** live, inside the daily brief.
 
 ## Question it answers
 

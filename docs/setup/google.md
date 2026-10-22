@@ -2,7 +2,7 @@
 
 Chief of Staff talks to Google Calendar and Gmail directly, with its own sign-in. Google requires each app to have a Google Cloud project; for a personal install, that project is yours. About 15 minutes, free.
 
-Access: `calendar.readonly`, `gmail.readonly`, and `gmail.send`. The send permission is used for one thing only: emailing the morning brief to you. The app has no code path that emails anyone else (that waits for approvals in v0.4). Changing calendars comes later and will ask for more access then.
+Access: `calendar.readonly`, `gmail.readonly`, and `gmail.send`. The send permission is used for one thing only: emailing the daily brief to you. The app has no code path that emails anyone else (that waits for approvals in v0.4). Changing calendars comes later and will ask for more access then.
 
 ## 1. Create the project
 

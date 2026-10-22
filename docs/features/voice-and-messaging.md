@@ -11,7 +11,7 @@ Talk to the agent like a person: text it, send a voice note, or call it.
 | **Text** | "What's today?" · "Who has the kids Thursday?" · "approve 1, 3" · "Remind me to review the nanny's contract Friday" |
 | **Voice note** | Ramble a to-do list between meetings; the agent turns it into board items and reads back what it captured |
 | **Call** | Ring the agent on the drive in and talk the day through; it proposes changes and you approve out loud |
-| **Outbound** | Morning brief by text (short version, link to the full email); alerts when coverage breaks or a flight slips |
+| **Outbound** | Daily brief by text (short version, link to the full email); alerts when coverage breaks or a flight slips |
 
 ## Architecture (hybrid, recommended for one person)
 
