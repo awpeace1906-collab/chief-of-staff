@@ -5,7 +5,7 @@ import sqlite3
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-from . import accountability, capture, llm, schedule, store
+from . import accountability, capture, llm, location, schedule, store
 from .db import audit, now
 from .google.api import Google
 
@@ -39,6 +39,9 @@ Sections, in this order, leaving out any that are empty:
 7. **Questions**: anything the capture step was unsure about.
 
 Rules:
+- Never assume where the owner is. Start every drive time, leave-by time and coverage call from
+  `whereabouts` (the phone's latest location, else the trip they're on, else home), and name the
+  starting point ("from home in …"). If its source is "home" or "unknown", say it's assumed.
 - Apply the owner's standing rules before flagging conflicts.
 - Propose; never act. Nothing is sent or changed without the owner's approval.
 - No clinical, patient or health details.
@@ -104,6 +107,7 @@ def run(conn: sqlite3.Connection, google: Google, client=None, send: bool = Fals
     )
     user = json.dumps({
         "now": today.isoformat(),
+        "whereabouts": location.whereabouts(conn, today.date(), now=today),
         "board": store.list_items(conn),
         "accountability": acct,
         "freeSlots": slots[:40],
