@@ -15,6 +15,7 @@ The result (`whereabouts`) is `{label, source: phone|trip|home|unknown, lat?, lo
 
 ## Getting the phone's location
 
+- **In the native app (the target):** the Chief of Staff app reads the phone's own location services and works out the starting point on the device. Only that starting point goes to the server, and only when a server task (an overnight brief, a flight watch) needs it. The options below are the stopgap until then.
 - **The app:** `POST /api/location {lat, lon, accuracy?, at?, place?}` with the API token. Only the latest report is kept (`lastLocation`); there's no history. `GET /api/location?date=YYYY-MM-DD` shows what the agent would use for that day, and why.
 - **iPhone:** a Shortcuts personal automation ("Time of Day" before the morning brief and evening setup, plus "Arrive"/"Leave" for places that matter) runs: Get Current Location → Get Details of Locations (City) → Get Contents of URL (POST, JSON body `lat`, `lon`, `place`, header `Authorization: Bearer <token>`). Turn off "Ask Before Running".
 - **Android:** the same with Tasker or an HTTP Shortcuts app.

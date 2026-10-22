@@ -30,6 +30,21 @@ Everything else moves inside the app.
 
 Removed entirely: AgentMail, Claude Code scheduled tasks, Claude connectors, the board gist, and any third-party brief service.
 
+## Local first, server when needed
+
+The app is the interface between the owner and their agent: the phone (and computer) app is where they talk, approve and see the plan. It works on the device whenever it can, and calls the server only when it must.
+
+| On the device (default) | On the server (only when needed) |
+|---|---|
+| The interface: Today, Day, To-do, Talk, approvals | Scheduled runs while the phone is asleep: the morning brief, evening setup, capture sweeps, flight watches |
+| Location, from the phone's own location services, used on the device | Inbound channels: the agent's phone number (SMS, calls), its email inbox, webhooks |
+| Speech in and out, reminders, notifications | The AI model, until a local one is good enough for the job ([AI providers](features/ai-providers.md)) |
+| A local copy of the board, plan and memory, usable offline | Sync between the owner's devices, and backups |
+
+- The server is the same app in server mode (below). A household can run it on its own hardware ([deployment.md](deployment.md)).
+- Data goes to the server only when a server task needs it. For example, a scheduled run gets the starting point for drive times, not a location history ([features/location.md](features/location.md)).
+- Today the device side is the installable web app (PWA). A native iPhone app comes later, for location, notifications and offline use.
+
 ## Shape of the app
 
 One process, one Docker image, one database file.
