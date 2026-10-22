@@ -5,12 +5,12 @@
 | # | Feature | Where it shows | Who fills it |
 |---|---|---|---|
 | 1 | **Decide**: choices with a deadline, options, trade-offs and an optional recommendation | Top of Today | Morning brief (`decisions/<slug>`). A tap records the choice and wakes the agent, which turns it into dated next steps the same day (`actions`). |
-| 2 | **Tomorrow**: first commitment and when to leave, what to bring, what's due, coverage, flights | Today, from evening until noon | Evening setup, early evening daily (`brief/tomorrow`) |
+| 2 | **Tomorrow**: first commitment and when to leave (from where the owner actually is, named; see [location](location.md)), what to bring, what's due, coverage, flights | Today, from evening until noon | Evening setup, early evening daily (`brief/tomorrow`) |
 | 3 | **Weekly review**: last week, this week, promised vs free hours, suggested top 3 | Today, during the week | Evening setup on Sundays (`brief/week`). The owner stars a top 3 in To-do (`items.top` = the week's Monday). |
 | 4 | **Reply drafts**: "Send:" proposals with the email shown; Change… edits the text; Send sends it | Today, Needs your OK | Morning brief files them (`proposal.draft`); the on-demand run sends after approval (Gmail, on the thread) |
 | 5 | **Interview kit**: prep item, a prep block the day before, thank-you draft within 24 hours | To-do and Needs your OK | Morning brief |
 | 6 | **Binder** (a rotation, program or project): dates, first day, shifts, phones, people, before-you-leave | Day tab, while it's on | Morning brief, from intake mail (`binders/<slug>`); no passwords stored |
-| 7 | **Next trip**: legs with times, what's missing, live flight status | Today | Morning brief from flight, hotel and TripIt mail (`trips/<slug>`). Flight legs also carry `flight`, `date`, `from` and `to` so the app can watch them ([planning on the fly](planning-on-the-fly.md#live-flight-status-and-public-atc-data-the-app)). |
+| 7 | **Next trip**: legs with times, what's missing, live flight status | Today | Morning brief from flight, hotel and TripIt mail (`trips/<slug>`). An optional `base` `{label, lat?, lon?}` (the hotel or apartment) is the starting point for drive times on that trip's days ([location](location.md)). Flight legs also carry `flight`, `date`, `from` and `to` so the app can watch them ([planning on the fly](planning-on-the-fly.md#live-flight-status-and-public-atc-data-the-app)). |
 | 8 | **Renewals**: certifications, licenses, immunizations | To-do (`kind: "renewal"`, `expires`) | Morning brief; surfaced at 60, 30 and 7 days |
 | 9 | **Expenses** by trip or rotation, with totals | To-do, Expenses | Evening setup from receipts (`expenses/<slug>`) |
 | 10 | **Protected time**: weekly windows that are never free time | Day tab, hatched | `settings/schedule.protect: [{label, start, end, days?}]`, set by the owner |

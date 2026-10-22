@@ -19,7 +19,7 @@ from fastapi import Body, Cookie, Depends, FastAPI, Form, Header, HTTPException,
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
-from . import __version__, agent, ai, brain, brief, capture, db, llm, schedule, scheduler, sms, store
+from . import __version__, agent, ai, brain, brief, capture, db, llm, location, schedule, scheduler, sms, store
 from .google import oauth
 from .google.api import Google
 from .importer import export_all, import_page
@@ -469,6 +469,24 @@ def create_app(db_path: str | None = None, http: httpx.Client | None = None, cli
                               kind="replan", data={"day": day, "at": at, "timeZone": zone.key})
         in_background(c, "replan", lambda: agent.handle_messages(c, Google(c, http), client=client, only={m["id"]}, http=http))
         return m
+
+    @app.post("/api/location", dependencies=api, status_code=201)
+    def location_ping(body: dict = Body(...), c=Depends(get_conn)):
+        """The owner's phone reports where it is (e.g. an iOS Shortcuts automation). Only the latest is kept."""
+        try:
+            return location.record(c, body.get("lat"), body.get("lon"), at=body.get("at"),
+                                   accuracy=body.get("accuracy"), place=body.get("place") or "")
+        except (TypeError, ValueError) as e:
+            raise HTTPException(422, f"bad location: {e}")
+
+    @app.get("/api/location", dependencies=api)
+    def where(date: str | None = None, c=Depends(get_conn)):
+        """Where the assistant thinks the owner is (or will start from on `date`), and why."""
+        try:
+            day = datetime.fromisoformat(date).date() if date else None
+        except ValueError:
+            raise HTTPException(422, "date must be YYYY-MM-DD")
+        return location.whereabouts(c, day)
 
     @app.get("/api/messages", dependencies=api)
     def messages(limit: int = 40, status: str | None = None, c=Depends(get_conn)):

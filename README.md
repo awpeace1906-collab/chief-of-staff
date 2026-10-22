@@ -52,6 +52,7 @@ Secrets (API keys, tokens) are in neither: they live in the host's secret store.
 | Self-contained app | v0.4+: its own installable web app (Today, Day, To-do, Talk, Settings), Microsoft 365 alongside Google ([app/](app/)); needs a host ([docs/deployment.md](docs/deployment.md#hosting-the-app-today-v04)) |
 | Microsoft 365 (personal account) | Built into the app via Microsoft Graph, read-only ([docs/setup/microsoft.md](docs/setup/microsoft.md)) |
 | AI providers | Claude by default, per-task routes; local models optional ([docs/features/ai-providers.md](docs/features/ai-providers.md)) |
+| Location (where the owner is, from the phone) | In the app: `POST /api/location` from a phone automation; never assumed ([docs/features/location.md](docs/features/location.md)) |
 
 ## Rule for changes
 

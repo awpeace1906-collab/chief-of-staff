@@ -22,6 +22,7 @@ v0.4: its own web app, plus Microsoft 365. One process, one SQLite file.
   - **Records** for trips, binders, expenses and the tomorrow and week cards (`/api/records/<kind>`).
   - **Email drafts:** an approved Send: goes out exactly as shown, from the owner's Gmail, only with `email.sendApprovedDrafts` on.
   - **Re-plan** (`POST /api/replan`) proposes **Move:**s; an approved Move: changes the event.
+  - **Location** (`POST /api/location` from a phone automation, `GET /api/location`): where the owner is, so drive times never start from a guess ([location](../docs/features/location.md)).
   - **Protected time** (`schedule.protect`), **renewals** at 60/30/7 days, and the week's **top 3** in the accountability review.
   - **Web app:** Decide, Tomorrow / This week / Next trip cards, draft emails with Send, Top 3 and Waiting on others, Expenses, the day's binder, hatched protected time, and Plans changed?
 - **v0.5:** **texting** through Telnyx or VoIP.ms ([docs/setup/sms.md](../docs/setup/sms.md)). It only answers the owner's number. You can:

@@ -31,6 +31,8 @@ A starting point is in [`examples/memory/`](../examples/memory/), with a fiction
 | `brief`, `approvals`, `checkCadence`, `protectedTime` | When and how the agent runs and asks |
 | `standingAgreements` | `[{who, rule}]`: imported as rules |
 | `mailRules`, `calendarRules`, `notificationRules`, `emailRules` | Imported as rules |
+| `home` | `{label, lat?, lon?, airport?}`: the fallback starting point when the phone's location isn't fresh ([location](features/location.md)) |
+| `location` | `{freshHours?, homeRadiusKm?}`: how long a phone report counts, and how near home reads as home |
 | `google`, `microsoft`, `hosting`, `sms`, `appUrl`, `check` | Connection and hosting settings (no secrets) |
 | `openItems` | Seed to-dos for a first import |
 

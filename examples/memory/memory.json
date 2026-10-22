@@ -29,6 +29,12 @@
     }
   ],
   "timezone": "America/Denver",
+  "home": {
+    "label": "Mesa Verde, NM",
+    "lat": 32.3,
+    "lon": -106.78,
+    "airport": "ELP"
+  },
   "brief": {
     "time": "08:25",
     "deliver": [

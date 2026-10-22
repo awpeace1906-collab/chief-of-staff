@@ -25,6 +25,8 @@ Morning brief. Run the daily brief for the owner, then email it to the owner (su
 - Keep the waiting-on-others list.
 - On the 1st of the month, ask the alignment question.
 
+**Step 2d: location.** Never assume where the owner is. Start every drive, leave-by and coverage call from where they actually are: the phone's latest location, else the trip covering the day, else home (say it's assumed). Name the starting point. See [docs/features/location.md](../docs/features/location.md).
+
 **Step 3: travel.** Check flight emails (airlines, booking sites, TripIt forwards) for changes affecting the next 7 days and feed them into the coverage check.
 
 **Step 4: board hygiene.** Ask about items whose done-evidence is ambiguous; never close silently on a guess.
