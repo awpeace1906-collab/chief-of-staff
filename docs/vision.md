@@ -18,6 +18,7 @@ It does everything the first deployment does (briefs, coverage checks, planning 
 4. **Memory lives with the owner.** People, rules and preferences live in the agent's memory (`<agent>-memory`, [memory.md](memory.md)) and Brain (the owner's own gist), never in the app's code.
 5. **Readable in 60 seconds on a phone.**
 6. **Accountability over reminders.** A commitment is closed only by evidence: a sent reply, a booked event, the user marking it done or declining it. Silence isn't closure. Overdue and at-risk commitments surface in the brief and the front end until they're resolved.
+7. **Local first, server when needed.** The Chief of Staff app is the interface between the owner and their agent. It does everything it can on the owner's own device, and uses a server only for what must be always on or can't run locally yet. See [self-contained.md](self-contained.md#local-first-server-when-needed).
 
 ## Product requirements
 
