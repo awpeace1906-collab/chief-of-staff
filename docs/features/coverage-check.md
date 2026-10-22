@@ -11,14 +11,14 @@ Is there any window, today through +7 days, where nobody has the kids?
 Flag a window when all three are true:
 
 1. **The partner is busy:** working, on call, or in a meeting (the partner's division calendars).
-2. **The owner is busy or away:** working, traveling, or on rotation (the owner's division calendars, flight emails).
+2. **The principal is busy or away:** working, traveling, or on rotation (the principal's division calendars, flight emails).
 3. **Childcare is not scheduled** (the coverage people in the kids division, e.g. the nanny's schedule calendar).
 
 Which divisions and people these are comes from memory (`divisions`, `coverage`). Account for real travel: flight landing times plus the drive home from the airport.
 
 ## Example
 
-The nanny leaves at 6:00pm; the partner's meeting runs to 6:30pm. The owner lands at 3:00pm and is home within an hour, so the owner covers. If the flight slips, the agent raises it.
+The nanny leaves at 6:00pm; the partner's meeting runs to 6:30pm. The principal lands at 3:00pm and is home within an hour, so the principal covers. If the flight slips, the agent raises it.
 
 ## Output
 

@@ -1,18 +1,18 @@
-"""Accountability: keep every open commitment in front of the owner until it's resolved.
+"""Accountability: keep every open commitment in front of the principal until it's resolved.
 
 No model calls. Each morning, `review` sorts the board into what needs attention:
 - overdue: past due, still open
 - dueSoon: due in the next two days
-- undatedPromises: something the owner promised (from sent mail) with no date after three days
-- waitingLate: something owed to the owner that's past due (time to nudge them)
+- undatedPromises: something the principal promised (from sent mail) with no date after three days
+- waitingLate: something owed to the principal that's past due (time to nudge them)
 - stuck: anything surfaced in three or more briefs without resolution, so the brief asks
   "do it, move it, or drop it?"
 - renewals: licenses, certifications and the like (`kind: "renewal"`) expiring within 60 days;
   `alert` is true on the 60-, 30- and 7-day marks and once it's 7 days or less
-- top: the owner's top 3 for this week (`top` = this week's Monday)
+- top: the principal's top 3 for this week (`top` = this week's Monday)
 
 `mark_surfaced` counts how many briefs have shown each item. Nothing here closes an item.
-Only evidence closes it (capture), or the owner does.
+Only evidence closes it (capture), or the principal does.
 """
 
 import sqlite3

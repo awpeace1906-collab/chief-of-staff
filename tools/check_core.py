@@ -1,4 +1,4 @@
-"""Check that the core holds none of the owner's information.
+"""Check that the core holds none of the principal's information.
 
 Reads the agent's memory (memory.json) for what counts as personal: the agent's names, the
 owner and people, standing-agreement contacts, and every email address or calendar id in it.

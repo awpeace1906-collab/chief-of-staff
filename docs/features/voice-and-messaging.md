@@ -1,6 +1,6 @@
 # Voice and messaging
 
-**Status:** texting is built (v0.5, [setup](../setup/sms.md)): Telnyx or VoIP.ms, owner-only, "list", "approve 1, 3", "decline 2", messages answered by text, and the brief by text. Voice notes and calls are still spec.
+**Status:** texting is built (v0.5, [setup](../setup/sms.md)): Telnyx or VoIP.ms, principal-only, "list", "approve 1, 3", "decline 2", messages answered by text, and the brief by text. Voice notes and calls are still spec.
 
 Talk to the agent like a person: text it, send a voice note, or call it.
 
@@ -30,14 +30,14 @@ Talk to the agent like a person: text it, send a voice note, or call it.
 | Number + SMS | VoIP.ms or Telnyx | Cheapest; ~$1–1.50/mo per number |
 | Live calls | Provider's real-time speech at first (e.g. Telnyx or Twilio ConversationRelay); move to local Whisper + Piper once hardware allows | Low latency now, privacy and savings later |
 | Voice notes | Local Whisper | Not real-time, so any CPU works; audio never leaves home |
-| Server | Small always-on machine at home, reached through Cloudflare Tunnel (no open ports) | Private, cheap, the owner owns it |
+| Server | Small always-on machine at home, reached through Cloudflare Tunnel (no open ports) | Private, cheap, the principal owns it |
 | Brain | Claude API with the agent's tools | Reasoning quality; the main running cost either way |
 
 ## Flows
 
 **Inbound text**
 1. Carrier posts the message to the Chief of Staff server.
-2. Server checks the sender is an allowed number (the owner; later the partner with their own permissions).
+2. Server checks the sender is an allowed number (the principal; later the partner with their own permissions).
 3. Claude answers using the agent's tools and rules from memory and Brain.
 4. Any action comes back as a numbered proposal; "approve 2" executes it.
 

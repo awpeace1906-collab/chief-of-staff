@@ -1,4 +1,4 @@
-"""Where the owner is: the phone's latest location, else the trip they're on, else home. The assistant never
+"""Where the principal is: the phone's latest location, else the trip they're on, else home. The assistant never
 assumes a starting point for a drive or a leave-by time; it uses this, and says which source it used."""
 
 import math
@@ -17,7 +17,7 @@ def settings(conn: sqlite3.Connection) -> dict:
 
 def record(conn: sqlite3.Connection, lat: float, lon: float, at: str | None = None, accuracy: float | None = None,
            place: str = "", source: str = "phone") -> dict:
-    """Store a location ping (from the owner's phone). Only the latest one is kept."""
+    """Store a location ping (from the principal's phone). Only the latest one is kept."""
     lat, lon = float(lat), float(lon)
     if not (-90 <= lat <= 90 and -180 <= lon <= 180):
         raise ValueError("lat/lon out of range")
@@ -34,7 +34,7 @@ def record(conn: sqlite3.Connection, lat: float, lon: float, at: str | None = No
 
 
 def whereabouts(conn: sqlite3.Connection, day: date | None = None, now: datetime | None = None) -> dict:
-    """The owner's starting point for `day` (default today): {label, source, lat?, lon?, asOf?, note}.
+    """The principal's starting point for `day` (default today): {label, source, lat?, lon?, asOf?, note}.
     source is "phone" (a fresh ping), "trip" (a trip covering that day) or "home" (the fallback)."""
     now = now or datetime.now(timezone.utc)
     day = day or now.date()
@@ -64,7 +64,7 @@ def whereabouts(conn: sqlite3.Connection, day: date | None = None, now: datetime
     if home.get("label"):
         return {"label": f"home ({home['label']})", "source": "home", **{k: home[k] for k in ("lat", "lon") if k in home},
                 "note": "Assumed: no fresh phone location and no trip that day. Say so."}
-    return {"label": "", "source": "unknown", "note": "Unknown: no phone location, trip or home is set. Ask the owner."}
+    return {"label": "", "source": "unknown", "note": "Unknown: no phone location, trip or home is set. Ask the principal."}
 
 
 def _near(a: dict, b: dict, km: float) -> bool:

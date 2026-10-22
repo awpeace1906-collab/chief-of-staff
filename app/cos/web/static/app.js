@@ -1,7 +1,7 @@
 // Chief of Staff web app: talks only to this server's /api. No third-party scripts.
 (() => {
-  // divisions (who an item is for) come from the owner's settings, never from this code:
-  // {key: {label, suggest?}} in the order the owner set; the owner's own is schedule.division ("me")
+  // divisions (who an item is for) come from the principal's settings, never from this code:
+  // {key: {label, suggest?}} in the order the principal set; the principal's own is schedule.division ("me")
   let DIV = { me: "Me" }, DIVS = [{ key: "me", label: "Me" }], OWNER = "me";
   const KIND = { calendar: "Calendar", email: "Email", board: "To-do list", list: "To-do list", other: "Proposal" };
   const SOURCE = { gmail: "Gmail", outlook: "Outlook", calendar: "calendar", manual: "you", readywhen: "readywhen", "microsoft-todo": "Microsoft To Do", digest: "a digest" };
@@ -19,7 +19,7 @@
     const raw = settings.divisions || {}, keys = Object.keys(raw);
     const owner = settings.schedule?.division || (keys.includes("me") ? "me" : keys[0]) || "me";
     const list = (keys.length ? keys : ["me"]).map((k) => ({ key: k, label: raw[k]?.label || k, suggest: raw[k]?.suggest }));
-    list.sort((a, b) => (a.key === owner ? -1 : b.key === owner ? 1 : 0));  // the owner's color is always the first
+    list.sort((a, b) => (a.key === owner ? -1 : b.key === owner ? 1 : 0));  // the principal's color is always the first
     const sig = JSON.stringify([owner, list]);
     if (sig === setDivisions.sig) return false;
     setDivisions.sig = sig;
@@ -68,7 +68,7 @@
   }
   const send = (path, method, body) => api(path, { method, body: JSON.stringify(body) });
 
-  // dates in the owner's timezone
+  // dates in the principal's timezone
   const ymd = (d) => new Intl.DateTimeFormat("en-CA", { timeZone: state.tz, year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
   const today = () => ymd(new Date());
   const addDays = (s, n) => { const d = new Date(s + "T12:00:00Z"); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
@@ -281,7 +281,7 @@
     }
   }
 
-  // decisions: the owner's tap is the choice; the assistant sets up the next steps
+  // decisions: the principal's tap is the choice; the assistant sets up the next steps
   function renderDecisions() {
     const box = $("decisions"); box.textContent = "";
     const t = today();
@@ -513,7 +513,7 @@
   });
 
 
-  // Day view: hours down the side, in the device's time zone (it follows the owner when they
+  // Day view: hours down the side, in the device's time zone (it follows the principal when they
   // travel). The server gives the day's events, free windows and blocks on their way; the
   // suggestions come from the to-do list here, so ticking one off updates them at once.
   const DEV_TZ = (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone; } catch (e) { return null; } })() || "UTC";

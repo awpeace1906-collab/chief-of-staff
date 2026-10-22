@@ -63,7 +63,7 @@ def assistant_id(conn: sqlite3.Connection) -> str:
     return memory.identity({"assistant": get_setting(conn, "assistant", {}) or {}})["id"]
 
 
-# Divisions: who an item is for. Keys and labels are the owner's data (the divisions setting,
+# Divisions: who an item is for. Keys and labels are the principal's data (the divisions setting,
 # imported from their config); the code never names a person.
 
 def divisions(conn: sqlite3.Connection) -> dict:
@@ -71,7 +71,7 @@ def divisions(conn: sqlite3.Connection) -> dict:
 
 
 def owner_division(conn: sqlite3.Connection) -> str:
-    """The owner's own division: schedule.division, else "me" if it exists, else the first one."""
+    """The principal's own division: schedule.division, else "me" if it exists, else the first one."""
     keys = list(divisions(conn))
     return (get_setting(conn, "schedule", {}) or {}).get("division") or ("me" if "me" in keys or not keys else keys[0])
 
@@ -171,13 +171,13 @@ def _rand4() -> str:
     return "".join(random.choices(string.ascii_lowercase + string.digits, k=4))
 
 
-# Proposals: actions the assistant wants to take, waiting for the owner's OK
+# Proposals: actions the assistant wants to take, waiting for the principal's OK
 
 PROPOSAL_STATUSES = {"pending", "approved", "declined", "done", "failed"}
 PROPOSAL_FIELDS = ("kind", "division", "calendar", "title", "when", "where", "change", "summary",
                    "start", "end", "timeZone", "itemId", "source",  # exact blocks from the day view
                    "eventId")  # Move: the event to change
-DRAFT_FIELDS = ("to", "subject", "body", "threadId")  # Send: the email, shown to the owner before it goes
+DRAFT_FIELDS = ("to", "subject", "body", "threadId")  # Send: the email, shown to the principal before it goes
 
 
 def add_proposal(conn: sqlite3.Connection, proposal: dict, actor: str = "assistant") -> dict:
@@ -203,7 +203,7 @@ def add_proposal(conn: sqlite3.Connection, proposal: dict, actor: str = "assista
 
 
 def update_proposal(conn: sqlite3.Connection, proposal_id: str, patch: dict, actor: str = "user") -> dict:
-    """The owner approves or declines (optionally with changes); the assistant records done/failed."""
+    """The principal approves or declines (optionally with changes); the assistant records done/failed."""
     p = get_proposal(conn, proposal_id)
     if p is None:
         raise KeyError(proposal_id)
@@ -220,7 +220,7 @@ def update_proposal(conn: sqlite3.Connection, proposal_id: str, patch: dict, act
             p[k] = str(patch[k])[:2000]
     if patch.get("draftBody"):
         if actor != "user" or not p.get("draft"):
-            raise ValueError("only the owner can edit an email draft")
+            raise ValueError("only the principal can edit an email draft")
         p["draftBody"] = str(patch["draftBody"])[:10000]
     p["status"] = status
     p["decidedAt" if actor == "user" else "handledAt"] = now()
@@ -255,7 +255,7 @@ def _write_proposal(conn: sqlite3.Connection, p: dict) -> None:
     )
 
 
-# Messages: the owner's line to the assistant
+# Messages: the principal's line to the assistant
 
 MESSAGE_SENDERS = {"owner", "assistant"}
 MESSAGE_KINDS = {"text", "replan"}
@@ -305,7 +305,7 @@ RECORD_KINDS = {"decision", "trip", "binder", "expense", "card"}
 
 
 def put_record(conn: sqlite3.Connection, kind: str, record_id: str, data: dict, actor: str = "assistant") -> dict:
-    """Create or replace a record. A decided decision keeps the owner's choice."""
+    """Create or replace a record. A decided decision keeps the principal's choice."""
     if kind not in RECORD_KINDS:
         raise ValueError(f"unknown record kind '{kind}'")
     if not record_id or "/" in record_id:
@@ -347,7 +347,7 @@ def delete_record(conn: sqlite3.Connection, kind: str, record_id: str, actor: st
 
 
 def choose(conn: sqlite3.Connection, decision_id: str, choice: str) -> dict:
-    """The owner picks an option. The assistant turns it into next steps (`actions`) on its next run."""
+    """The principal picks an option. The assistant turns it into next steps (`actions`) on its next run."""
     d = get_record(conn, "decision", decision_id)
     if d is None:
         raise KeyError(decision_id)

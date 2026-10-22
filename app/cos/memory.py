@@ -1,11 +1,11 @@
-"""The agent's memory: the owner's information, kept outside this code (docs/memory.md).
+"""The agent's memory: the principal's information, kept outside this code (docs/memory.md).
 
 Memory is a directory named `<alias>-memory`, usually its own private git
 repo, holding `memory.json` (the agent config: people, divisions, calendars, rules) and
 optionally `digests.json` and `notes/`. The core reads it; it never writes personal data into
 the core.
 
-Identity: `assistant.id` never changes; `assistant.name` is the alias the owner sees. Renaming
+Identity: `assistant.id` never changes; `assistant.name` is the alias the principal sees. Renaming
 the agent changes the name and moves the directory to `<new alias>-memory`; the id, and with it
 Brain tags and rule ids, stays the same, so it is the same agent under a new name.
 

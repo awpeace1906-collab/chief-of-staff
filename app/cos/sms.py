@@ -1,7 +1,7 @@
 """Text messaging (v0.5): talk to the assistant and approve proposals by SMS.
 
 Providers: Telnyx (API key) or VoIP.ms (API user + password); the number is rented from either.
-Inbound texts arrive at /hooks/sms/<provider>/<COS_HOOK_SECRET>. Only the owner's number is
+Inbound texts arrive at /hooks/sms/<provider>/<COS_HOOK_SECRET>. Only the principal's number is
 answered. "approve 1, 3", "decline 2", "approve all" and "list" are handled at once; anything else
 becomes a message the assistant answers by text, the same way it answers the web app.
 """
@@ -60,13 +60,13 @@ def parse_inbound(provider: str, payload: dict) -> tuple[str, str] | None:
 
 
 def send(conn: sqlite3.Connection, text: str, http: httpx.Client | None = None, to: str | None = None) -> int:
-    """Text the owner (only the owner). Splits long text; returns the number of parts sent."""
+    """Text the principal (only the principal). Splits long text; returns the number of parts sent."""
     s = settings(conn)
     if not configured(conn):
         raise SmsNotConfigured("set sms.provider, sms.number and sms.ownerNumber (docs/setup/sms.md)")
     to = e164(to or s["ownerNumber"])
     if digits(to) != digits(s["ownerNumber"]):
-        raise ValueError("texts only go to the owner")
+        raise ValueError("texts only go to the principal")
     http = http or httpx.Client(timeout=20)
     provider, limit = s["provider"], LIMITS.get(s["provider"], 160)
     parts = _split(text.strip(), limit)

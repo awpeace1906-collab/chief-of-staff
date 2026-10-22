@@ -1,6 +1,6 @@
 # Architecture
 
-The agent runs on its own. Another brief service, if the owner has one, is an optional extra input, never a dependency. This page describes the pipeline; [self-contained.md](self-contained.md) describes how it's packaged into one app.
+The agent runs on its own. Another brief service, if the principal has one, is an optional extra input, never a dependency. This page describes the pipeline; [self-contained.md](self-contained.md) describes how it's packaged into one app.
 
 ```
  Sources ──► Capture ──► Board ──► Plan ──► Propose ──► Approve ──► Act ──► Close
@@ -31,15 +31,15 @@ The agent runs on its own. Another brief service, if the owner has one, is an op
 
 | Store | Holds | Why separate |
 |---|---|---|
-| **Brain** (`brain-data.json`) | Rules, preferences, context, standing agreements | The owner's long-term memory; human-browsable in the Brain app |
+| **Brain** (`brain-data.json`) | Rules, preferences, context, standing agreements | The principal's long-term memory; human-browsable in the Brain app |
 | **Board** (`cos-board.json`, own gist, description `{ chief of staff } board`) | Commitments with status and due dates | High-churn operational data; keeps Brain clean |
-| **`<agent>-memory/memory.json`** | Divisions, calendars, people, rules ([memory.md](memory.md)) | The owner's setup, in their own private repo; fallback when Brain is offline |
+| **`<agent>-memory/memory.json`** | Divisions, calendars, people, rules ([memory.md](memory.md)) | The principal's setup, in their own private repo; fallback when Brain is offline |
 
 Both gists use the same `gist`-scope token (`BRAIN_GIST_TOKEN`).
 
 ## Another brief service during a transition
 
-Optional cross-check. If the owner already gets a brief from another service, the agent compares: anything it caught that the agent missed is logged as a capture miss. Once the agent matches it for two weeks, the other service can be dropped.
+Optional cross-check. If the principal already gets a brief from another service, the agent compares: anything it caught that the agent missed is logged as a capture miss. Once the agent matches it for two weeks, the other service can be dropped.
 
 ## What the agent covers
 

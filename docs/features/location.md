@@ -1,12 +1,12 @@
-# Location: where the owner is
+# Location: where the principal is
 
 **Status:** in the app (`app/cos/location.py`) and in the scheduled tasks' instructions.
 
-The agent never assumes where the owner is. Every leave-by time, drive time and coverage call starts from a known place, and the agent says which place it used, so the owner can correct a wrong one.
+The agent never assumes where the principal is. Every leave-by time, drive time and coverage call starts from a known place, and the agent says which place it used, so the principal can correct a wrong one.
 
 ## Where it looks, in order
 
-1. **The phone.** The owner's phone reports its location (below). A report counts while it's fresh, 6 hours by default (`location.freshHours`). It covers today, and tomorrow when the report comes the evening before, since that's where the owner will sleep. Within `location.homeRadiusKm` (25 km) of home, it reads as "home".
+1. **The phone.** The principal's phone reports its location (below). A report counts while it's fresh, 6 hours by default (`location.freshHours`). It covers today, and tomorrow when the report comes the evening before, since that's where the principal will sleep. Within `location.homeRadiusKm` (25 km) of home, it reads as "home".
 2. **A trip.** A trip in `trips/<slug>` whose `start`–`end` covers the day. The trip's optional `base` (`{label, lat?, lon?}`, e.g. the rotation's hotel or apartment) is the starting point; without one, the trip's title is used.
 3. **Home.** The `home` setting from memory (`{label, lat?, lon?, airport?}`). This is a fallback, so the agent says it's assumed: "from home in …, assumed".
 4. **Unknown.** If none of these is set, the agent asks rather than guessing.
@@ -23,5 +23,5 @@ The result (`whereabouts`) is `{label, source: phone|trip|home|unknown, lat?, lo
 
 ## Privacy
 
-- Only the latest point is stored, in the owner's own database. It's never sent anywhere else and never written to the memory repo or the core.
+- Only the latest point is stored, in the principal's own database. It's never sent anywhere else and never written to the memory repo or the core.
 - The token in the automation is the app's API token; keep it in the phone's Shortcuts, not in memory files.

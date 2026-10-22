@@ -1,4 +1,4 @@
-"""Two-way sync with Brain (the owner's second-brain PWA), following its brain/v1 contract.
+"""Two-way sync with Brain (the principal's second-brain PWA), following its brain/v1 contract.
 
 Pull: entries tagged with the assistant's name become rules (never ones listed in `deleted`).
 Push: the assistant's own rules that Brain doesn't have yet are appended. The whole file is

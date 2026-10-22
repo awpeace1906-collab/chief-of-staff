@@ -16,22 +16,22 @@ v0.4: its own web app, plus Microsoft 365. One process, one SQLite file.
   - **Talk:** **Ask** answers right away from the board and brief; **Send** queues a message for the assistant.
 
   Sign-in uses the access key (`COS_API_TOKEN`); the device then stays signed in for 90 days. `cos import --page` brings over the old Claude-hosted page's data.
-- **Flight watch:** live flight status (AeroDataBox, `AERODATABOX_KEY`) and the FAA's public airport status feed (ground stops, delays, closures), checked every 20 minutes from 6 hours before each trip leg. A real change messages the owner and files a re-plan; a cancellation or an overnight delay also emails a 3-line alert It runs in the background on the scheduler ([docs](../docs/features/planning-on-the-fly.md#live-flight-status-and-public-atc-data-the-app)).
+- **Flight watch:** live flight status (AeroDataBox, `AERODATABOX_KEY`) and the FAA's public airport status feed (ground stops, delays, closures), checked every 20 minutes from 6 hours before each trip leg. A real change messages the principal and files a re-plan; a cancellation or an overnight delay also emails a 3-line alert It runs in the background on the scheduler ([docs](../docs/features/planning-on-the-fly.md#live-flight-status-and-public-atc-data-the-app)).
 - **Catch-up:** the page's newer features, in the engine and the web app (the runs that file them come next; [docs/features/evening-and-week.md](../docs/features/evening-and-week.md#the-app)):
-  - **Decisions:** filed as records; the owner's choice (`POST /api/decisions/<slug>/choose`) becomes next steps straight away.
+  - **Decisions:** filed as records; the principal's choice (`POST /api/decisions/<slug>/choose`) becomes next steps straight away.
   - **Records** for trips, binders, expenses and the tomorrow and week cards (`/api/records/<kind>`).
-  - **Email drafts:** an approved Send: goes out exactly as shown, from the owner's Gmail, only with `email.sendApprovedDrafts` on.
+  - **Email drafts:** an approved Send: goes out exactly as shown, from the principal's Gmail, only with `email.sendApprovedDrafts` on.
   - **Re-plan** (`POST /api/replan`) proposes **Move:**s; an approved Move: changes the event.
-  - **Location** (`POST /api/location` from a phone automation, `GET /api/location`): where the owner is, so drive times never start from a guess ([location](../docs/features/location.md)).
+  - **Location** (`POST /api/location` from a phone automation, `GET /api/location`): where the principal is, so drive times never start from a guess ([location](../docs/features/location.md)).
   - **Protected time** (`schedule.protect`), **renewals** at 60/30/7 days, and the week's **top 3** in the accountability review.
   - **Web app:** Decide, Tomorrow / This week / Next trip cards, draft emails with Send, Top 3 and Waiting on others, Expenses, the day's binder, hatched protected time, and Plans changed?
-- **v0.5:** **texting** through Telnyx or VoIP.ms ([docs/setup/sms.md](../docs/setup/sms.md)). It only answers the owner's number. You can:
+- **v0.5:** **texting** through Telnyx or VoIP.ms ([docs/setup/sms.md](../docs/setup/sms.md)). It only answers the principal's number. You can:
   - text "list", "approve 1, 3" or "decline 2", and approved proposals are carried out right away;
   - text anything else to reach the assistant, which answers by text;
   - get the morning brief by text.
 
   The web app gains a **Settings** tab: connection status with connect buttons, the assistant's name, brief time and check hours, and "run the check now".
-- **v0.4.1:** runs its own **hourly check** (`check` setting; default :45 from 6:45am to 9:45pm). The check is silent unless something fails, and then it emails the owner. It:
+- **v0.4.1:** runs its own **hourly check** (`check` setting; default :45 from 6:45am to 9:45pm). The check is silent unless something fails, and then it emails the principal. It:
   - carries out approved calendar proposals, applying your Change… notes (it never invites anyone);
   - answers Talk messages with tools, editing the list directly and turning anything else into a proposal;
   - turns email you send to the `+<agent>` address into messages, and replies by email too;
@@ -40,7 +40,7 @@ v0.4: its own web app, plus Microsoft 365. One process, one SQLite file.
 
   It also supports a **local AI provider** (OpenAI-compatible, e.g. Ollama) for the structured routes.
 - **v0.4:** connects to **Microsoft 365** through Microsoft Graph, with personal or work accounts and read-only access. Outlook mail goes into capture, and the Outlook calendar and To Do go into the brief. Setup: [docs/setup/microsoft.md](../docs/setup/microsoft.md).
-- **v0.3:** captures commitments from new mail with Claude (Haiku), writes the morning brief (Opus), saves it, emails it to the owner, and can run it on a schedule. Logs token use and estimated cost per route.
+- **v0.3:** captures commitments from new mail with Claude (Haiku), writes the morning brief (Opus), saves it, emails it to the principal, and can run it on a schedule. Logs token use and estimated cost per route.
 - **v0.2:** signs in to Google itself (OAuth with PKCE, read-only Calendar + Gmail), shows the agenda by division, searches Gmail, and reads the digest intake address. Setup: [docs/setup/google.md](../docs/setup/google.md).
 
 ## Run it
@@ -138,8 +138,8 @@ docker compose exec cos cos import --memory
 | POST | `/login`, `/logout` | Access-key sign-in; sets an HTTP-only cookie the API also accepts |
 | GET | `/api/proposals?days=3` | Pending, approved and failed proposals, plus those done or declined in the last `days` |
 | POST | `/api/proposals` | The assistant adds one (numbered after the day's others) |
-| PATCH | `/api/proposals/{id}` | Owner: `approved` (optionally with `changes`) or `declined`; assistant (`?as_assistant=1`): `done` or `failed` with `result` |
-| GET/POST | `/api/messages` | The Talk thread; owner messages start as `new` |
+| PATCH | `/api/proposals/{id}` | Principal: `approved` (optionally with `changes`) or `declined`; assistant (`?as_assistant=1`): `done` or `failed` with `result` |
+| GET/POST | `/api/messages` | The Talk thread; principal messages start as `new` |
 | PATCH | `/api/messages/{id}` | Mark `handled` |
 | POST | `/api/ask` | Quick answer from the board, proposals and brief (`chat` route); never acts |
 | POST | `/api/import/page` | Import the old page's export |

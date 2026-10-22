@@ -1,7 +1,7 @@
 """In-process scheduler: the morning brief once a day at `brief.time`, and the hourly check
 (approved proposals, new messages, new mail) at :45 from 6:45am to 9:45pm by default (`check` setting),
 and the flight watch for legs near departure (flights.py).
-The check stays silent unless something fails; then it emails the owner, at most every 3 hours.
+The check stays silent unless something fails; then it emails the principal, at most every 3 hours.
 
 Enabled with COS_SCHEDULER=1. Checks every 30 seconds; if the server was down
 at brief time, it runs as soon as it's back the same day. A failed run is
@@ -124,7 +124,7 @@ def google_connected(conn) -> bool:
 
 
 def notify_errors(conn: sqlite3.Connection, google: Google, errors: list[str]) -> bool:
-    """Email the owner about failures, at most every 3 hours. Returns whether it sent."""
+    """Email the principal about failures, at most every 3 hours. Returns whether it sent."""
     state = store.get_setting(conn, "scheduler", {})
     if time.time() - state.get("lastErrorNotice", 0) < ERROR_NOTICE_SECONDS:
         return False
@@ -141,7 +141,7 @@ def notify_errors(conn: sqlite3.Connection, google: Google, errors: list[str]) -
 
 def flight_tick(conn: sqlite3.Connection, lock: threading.Lock, http=None, client=None) -> dict | None:
     """Watch flights in their window (see flights.py). A change that needs a re-plan is handled
-    straight away when Google is connected, so the moves are proposed before the owner lands."""
+    straight away when Google is connected, so the moves are proposed before the principal lands."""
     if not any(flights.due(leg, datetime.now(ZoneInfo("UTC")), flights.settings(conn)) for _, _, leg in flights.legs(conn)):
         return None
     with lock:

@@ -1,12 +1,12 @@
 # Morning brief: scheduled task instructions
 
-Source of truth for the morning brief scheduled task (daily, in the owner's time zone). When you change one, change the other.
+Source of truth for the morning brief scheduled task (daily, in the principal's time zone). When you change one, change the other.
 
 Rules, people and calendar IDs live in the agent's memory, `<agent>-memory/memory.json` ([docs/memory.md](../docs/memory.md)), and, once connected, in Brain.
 
 ---
 
-Morning brief. Run the daily brief for the owner, then email it to the owner (subject starts with the agent's name) and post the same brief in the session.
+Morning brief. Run the daily brief for the principal, then email it to the principal (subject starts with the agent's name) and post the same brief in the session.
 
 **Step 0: Brain.** Load every non-archived Brain entry tagged with the agent's id using `tools/brain_sync.py list <agent-id>`; they override memory.json where they differ. If Brain has no entries for the agent yet, seed it once from memory.json (one entry per rule) and say so. If `BRAIN_GIST_TOKEN` is missing or `api.github.com` is blocked, use memory.json and add one line `Brain offline: <reason>` at the bottom.
 
@@ -25,10 +25,10 @@ Morning brief. Run the daily brief for the owner, then email it to the owner (su
 - Keep the waiting-on-others list.
 - On the 1st of the month, ask the alignment question.
 
-**Step 2d: location.** Never assume where the owner is. Start every drive, leave-by and coverage call from where they actually are: the phone's latest location, else the trip covering the day, else home (say it's assumed). Name the starting point. See [docs/features/location.md](../docs/features/location.md).
+**Step 2d: location.** Never assume where the principal is. Start every drive, leave-by and coverage call from where they actually are: the phone's latest location, else the trip covering the day, else home (say it's assumed). Name the starting point. See [docs/features/location.md](../docs/features/location.md).
 
 **Step 3: travel.** Check flight emails (airlines, booking sites, TripIt forwards) for changes affecting the next 7 days and feed them into the coverage check.
 
 **Step 4: board hygiene.** Ask about items whose done-evidence is ambiguous; never close silently on a guess.
 
-Propose only; number every proposal so the owner can reply "approve 1, 3". Apply standing agreements before flagging conflicts. Times in the owner's home time zone unless traveling (then local + home). Readable in 60 seconds on a phone. When the owner states a new rule or preference, save it to Brain and to the memory repo.
+Propose only; number every proposal so the principal can reply "approve 1, 3". Apply standing agreements before flagging conflicts. Times in the principal's home time zone unless traveling (then local + home). Readable in 60 seconds on a phone. When the principal states a new rule or preference, save it to Brain and to the memory repo.

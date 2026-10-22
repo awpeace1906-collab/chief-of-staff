@@ -134,14 +134,14 @@ class Google:
         }
 
     def send_to_owner(self, subject: str, text: str) -> str:
-        """Email the owner (and only the owner). Returns the Gmail message id."""
+        """Email the principal (and only the principal). Returns the Gmail message id."""
         owner = get_setting(self.conn, "assistant", {}).get("email")
         if not owner:
             raise RuntimeError("no owner email; set assistant.email in settings")
         return self.send(owner, subject, text)
 
     def send(self, to: str, subject: str, text: str, thread_id: str | None = None) -> str:
-        """Send one email from the owner's Gmail. Callers other than send_to_owner must hold the owner's
+        """Send one email from the principal's Gmail. Callers other than send_to_owner must hold the principal's
         approval of this exact email (an approved Send: proposal). Returns the Gmail message id."""
         owner = get_setting(self.conn, "assistant", {}).get("email")
         if not status(self.conn).get("canSend"):

@@ -33,14 +33,14 @@ Research notes (Oct 21, 2026). Sources are listed at the bottom. Most are job de
 
 ## Ideas, ranked by value for effort
 
-1. **Decisions first (CoS: decisions ready to make).** A "Decide" section at the top of Today and the brief. Each decision gets a deadline, two or three options with the trade-offs in one line each, and a recommendation. Once the owner decides, the agent turns it into actions with dates straight away, the way a strong chief of staff does. *Example:* a program offer that needs a reply by Friday.
+1. **Decisions first (CoS: decisions ready to make).** A "Decide" section at the top of Today and the brief. Each decision gets a deadline, two or three options with the trade-offs in one line each, and a recommendation. Once the principal decides, the agent turns it into actions with dates straight away, the way a strong chief of staff does. *Example:* a program offer that needs a reply by Friday.
 2. **Tomorrow, tonight (EA: look at tomorrow).** At about 7pm local, a short card: tomorrow's first commitment and when to leave, what to bring, what's due, and any coverage gap. On rotation it's in local time; for example, "6:00am ICU; badge, stethoscope."
 3. **Weekly review (CoS: operating rhythm).** Sunday evening:
    - Look back: what got done and what slipped.
    - Look ahead: the week's shifts, deadlines and coverage.
-   - The owner picks the **top 3** for the week.
+   - The principal picks the **top 3** for the week.
    - An honest-broker line: "You've promised about 9 hours of work and have about 6 free hours. Something has to move."
-4. **Reply drafting (EA: correspondence).** For each "reply owed," the agent drafts the reply as a Send proposal. The owner edits and approves it, and it goes from their own account. A "waiting on" chase gets the same treatment: a polite nudge drafted after the expected date.
+4. **Reply drafting (EA: correspondence).** For each "reply owed," the agent drafts the reply as a Send proposal. The principal edits and approves it, and it goes from their own account. A "waiting on" chase gets the same treatment: a polite nudge drafted after the expected date.
 5. **Interview and meeting kit (EA: meeting prep; CoS: pre-reads).** For each interview or important meeting:
    - A prep packet: program facts, people, links, questions to ask, and a tech check for virtual ones.
    - A prep block before it.

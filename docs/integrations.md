@@ -3,7 +3,7 @@
 | System | Role | How the agent connects today | Read / write |
 |---|---|---|---|
 | Google Calendar | Every division's schedule | Claude connector; the app reads it directly since v0.2 ([setup](setup/google.md)) | Read; write after approval |
-| Gmail | Inbox scan, flights, sending the brief | Claude connector; the app reads it directly since v0.2 | Read; send to the owner; approved drafts |
+| Gmail | Inbox scan, flights, sending the brief | Claude connector; the app reads it directly since v0.2 | Read; send to the principal; approved drafts |
 | Brain | Long-term memory (rules, preferences, context) | Private gist `brain-data.json`, `brain/v1`, via `BRAIN_GIST_TOKEN` | Read + write |
 | Board | Commitments | Private gist `cos-board.json` (`{ chief of staff } board`), same token | Read + write |
 | Another brief service (optional) | Cross-check during a transition | Reads its brief email | Read |
@@ -14,7 +14,7 @@
 | Microsoft 365, personal | Outlook mail and calendar, To Do, OneDrive | The app connects directly through Microsoft Graph (v0.4, [setup](setup/microsoft.md)); Claude's Microsoft 365 connector only supports work or school accounts | Read |
 | Siloed systems (work Microsoft 365, MedHub, Amion, Canvas, …) | Commitments, schedule changes, FYIs | Their digest emails, via adapters in `<agent>-memory/digests.json` | Read |
 
-The owner's own accounts and addresses for each row are in their memory, not here.
+The principal's own accounts and addresses for each row are in their memory, not here.
 
 ## Brain contract
 

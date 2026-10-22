@@ -1,6 +1,6 @@
 # Roadmap
 
-The owner's own setup steps (accounts, keys, numbers) are tracked in their memory repo, not here.
+The principal's own setup steps (accounts, keys, numbers) are tracked in their memory repo, not here.
 
 ## Now (live)
 
@@ -15,7 +15,7 @@ The owner's own setup steps (accounts, keys, numbers) are tracked in their memor
 - [ ] Connect Brain (needs `BRAIN_GIST_TOKEN` + `api.github.com` access); seed the agent's rules into it
 - [x] Planning on the fly: Re-plan this day on the Day tab, plus flight watches on travel days
 - [x] Commitment framework: architecture, board schema, capture prompt, board helper
-- [ ] Capture parity check against any brief service the owner already runs; log misses
+- [ ] Capture parity check against any brief service the principal already runs; log misses
 - [x] Voice and messaging spec; deployment modes (cloud / hybrid / self-hosted)
 - [ ] Chief of Staff server v0: inbound SMS → Claude with the agent's tools → reply; approvals by text
 - [ ] Voice notes with local Whisper
@@ -50,7 +50,7 @@ See [docs/self-contained.md](docs/self-contained.md).
 
 - [x] v0.1 Skeleton: FastAPI app, SQLite store, settings, AI routes, Docker image; import memory, Brain and board; portable export ([app/](app/))
 - [x] v0.2 Google: own OAuth (PKCE); Calendar agenda by division; Gmail search and plus-address intake ([docs/setup/google.md](docs/setup/google.md))
-- [x] v0.3 Core: capture → board → plan with Claude (structured output); morning brief by email to the owner; built-in scheduler; token usage and cost per route
+- [x] v0.3 Core: capture → board → plan with Claude (structured output); morning brief by email to the principal; built-in scheduler; token usage and cost per route
 - [ ] Brief parity with the Claude Code version: flight-email parsing, Brain sync
 - [x] v0.4 Own web app (installable PWA): Today (brief, proposals with approve / change / decline), To-do (filters, snooze, swipe to finish), Talk (Ask answers instantly; Send queues for the agent); sign-in by access key; audit log; import from the Claude-hosted page
 - [x] App catch-up, part 1 (engine): decisions → next steps, records (trips, binders, expenses, tomorrow and week cards), approved email drafts (off until `email.sendApprovedDrafts`), Move: execution, re-plan endpoint, protected time, renewals and the week's top 3; page import brings them over
@@ -58,12 +58,12 @@ See [docs/self-contained.md](docs/self-contained.md).
 - [x] Flight watch in the app: live flight status (AeroDataBox, optional key) + FAA NAS Status airport events; changes re-plan the day
 - [ ] App catch-up, part 3: the brief and an evening run file decisions, drafts, trips, binders, expenses and cards themselves
 - [x] v0.4 Microsoft 365 via Graph (personal or work accounts, read-only): Outlook mail into capture, Outlook calendar and To Do into the brief ([docs/setup/microsoft.md](docs/setup/microsoft.md))
-- [x] v0.4.1 The app's own hourly check (silent unless something fails; then an email to the owner): carries out approved calendar proposals (Calendar write scope; never invites anyone), answers Send messages with tools (list changes directly, everything else as a proposal), turns email to the `+<agent>` address into messages and replies by email, captures new mail
+- [x] v0.4.1 The app's own hourly check (silent unless something fails; then an email to the principal): carries out approved calendar proposals (Calendar write scope; never invites anyone), answers Send messages with tools (list changes directly, everything else as a proposal), turns email to the `+<agent>` address into messages and replies by email, captures new mail
 - [x] Optional local AI provider (OpenAI-compatible: Ollama, llama.cpp) for structured routes (triage, plan); tool-using routes stay on Claude
 - [x] Brain two-way sync in the app (`BRAIN_GIST_TOKEN`), daily with the first check
 - [x] v0.5 Channels: carrier webhooks for SMS (Telnyx, VoIP.ms); approvals by text; brief by text ([docs/setup/sms.md](docs/setup/sms.md))
 - [x] Settings screen in the web app: connections (Google, Microsoft, Claude, Brain, texting, scheduler) with connect buttons, agent name, brief time and check hours, "run the check now"
-- [x] Two silos: the core holds no owner data; memory is `<agent>-memory` with a permanent agent id, and a rename moves it ([docs/memory.md](docs/memory.md))
+- [x] Two silos: the core holds no principal data; memory is `<agent>-memory` with a permanent agent id, and a rename moves it ([docs/memory.md](docs/memory.md))
 - [ ] v0.6 Voice notes (faster-whisper); calls via carrier speech; Piper for replies
 - [x] v0.7 Brain sync (two-way, optional); export/backup (moved up into v0.4.1)
 - [ ] Cut over from the Claude Code scheduled tasks and the page to the hosted app
@@ -72,7 +72,7 @@ See [docs/self-contained.md](docs/self-contained.md).
 
 - [x] Configurable agent name, divisions, coverage people, standing agreements (from memory)
 - [x] Google OAuth for Calendar and Gmail; Microsoft Graph as an optional direct source
-- [ ] Per-user agent inbox and a digest adapter library owners can extend
+- [ ] Per-user agent inbox and a digest adapter library principals can extend
 - [ ] Brain (`brain/v1` gist) as the memory store
 - [ ] Scheduler for the brief and re-plan triggers
 - [ ] One-tap approvals (push / email)
