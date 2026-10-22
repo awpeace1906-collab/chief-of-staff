@@ -1,7 +1,7 @@
 // Chief of Staff web app: talks only to this server's /api. No third-party scripts.
 (() => {
-  // divisions (who an item is for) come from the owner's settings, never from this code:
-  // {key: {label, suggest?}} in the order the owner set; the owner's own is schedule.division ("me")
+  // divisions (who an item is for) come from the principal's settings, never from this code:
+  // {key: {label, suggest?}} in the order the principal set; the principal's own is schedule.division ("me")
   let DIV = { me: "Me" }, DIVS = [{ key: "me", label: "Me" }], OWNER = "me";
   const KIND = { calendar: "Calendar", email: "Email", board: "To-do list", list: "To-do list", other: "Proposal" };
   const SOURCE = { gmail: "Gmail", outlook: "Outlook", calendar: "calendar", manual: "you", readywhen: "readywhen", "microsoft-todo": "Microsoft To Do", digest: "a digest" };
@@ -19,7 +19,7 @@
     const raw = settings.divisions || {}, keys = Object.keys(raw);
     const owner = settings.schedule?.division || (keys.includes("me") ? "me" : keys[0]) || "me";
     const list = (keys.length ? keys : ["me"]).map((k) => ({ key: k, label: raw[k]?.label || k, suggest: raw[k]?.suggest }));
-    list.sort((a, b) => (a.key === owner ? -1 : b.key === owner ? 1 : 0));  // the owner's color is always the first
+    list.sort((a, b) => (a.key === owner ? -1 : b.key === owner ? 1 : 0));  // the principal's color is always the first
     const sig = JSON.stringify([owner, list]);
     if (sig === setDivisions.sig) return false;
     setDivisions.sig = sig;
@@ -68,7 +68,7 @@
   }
   const send = (path, method, body) => api(path, { method, body: JSON.stringify(body) });
 
-  // dates in the owner's timezone
+  // dates in the principal's timezone
   const ymd = (d) => new Intl.DateTimeFormat("en-CA", { timeZone: state.tz, year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
   const today = () => ymd(new Date());
   const addDays = (s, n) => { const d = new Date(s + "T12:00:00Z"); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
@@ -281,7 +281,7 @@
     }
   }
 
-  // decisions: the owner's tap is the choice; the assistant sets up the next steps
+  // decisions: the principal's tap is the choice; the assistant sets up the next steps
   function renderDecisions() {
     const box = $("decisions"); box.textContent = "";
     const t = today();
@@ -290,7 +290,7 @@
     $("decideGroup").hidden = !open.length && !recent.length;
     for (const d of open) {
       const c = el("div", "card pad decision group");
-      const k = el("div", "kicker"); k.append(el("span", null, "Decide"));
+      const k = el("div", "kicker"); k.append(el("span", null, "Situation Room"));
       if (d.deadline) k.append(el("span", d.deadline <= addDays(t, 1) ? "num" : null, "· by " + dow(d.deadline) + " " + md(d.deadline)));
       c.append(k, el("p", "ptitle", d.title));
       if (d.context) c.append(el("p", "why", d.context));
@@ -337,13 +337,13 @@
       const body = el("div", "md"); renderMd(text, body); c.append(body); box.append(c);
     };
     const tm = card("tomorrow");
-    if (tm && tm.markdown && (tm.day > t || (tm.day === t && hour < 12))) mdCard(tm.day === t ? "Today, first things" : "Tomorrow", dow(tm.day) + " " + md(tm.day), tm.markdown);
+    if (tm && tm.markdown && (tm.day > t || (tm.day === t && hour < 12))) mdCard(tm.day === t ? "Today, first things" : "The Book", dow(tm.day) + " " + md(tm.day), tm.markdown);
     const wk = card("week");
     if (wk && wk.markdown && wk.weekOf && wk.weekOf <= t && t < addDays(wk.weekOf, 7)) mdCard("This week", "Week of " + md(wk.weekOf), wk.markdown);
     const trip = state.records.trip.filter((x) => (x.end || x.start || "") >= t).sort((a, b) => String(a.start).localeCompare(String(b.start)))[0];
     if (trip) {
       const c = el("div", "card pad tripcard");
-      const k = el("div", "kicker"); k.append(el("span", null, "Next trip"), el("span", null, "· " + md(trip.start) + (trip.end && trip.end !== trip.start ? "–" + md(trip.end) : "")));
+      const k = el("div", "kicker"); k.append(el("span", null, "Next movement"), el("span", null, "· " + md(trip.start) + (trip.end && trip.end !== trip.start ? "–" + md(trip.end) : "")));
       c.append(k, el("h3", null, trip.title || "Trip"));
       if (trip.note) c.append(el("p", "why", trip.note));
       const ul = el("ul", "legs");
@@ -362,9 +362,9 @@
     if (!state.loaded) return;
     const box = $("brief"); box.textContent = "";
     const b = state.brief;
-    if (!b) { box.append(el("p", "empty", "The morning brief lands here each morning.")); return; }
+    if (!b) { box.append(el("p", "empty", "The daily brief lands here each morning.")); return; }
     const card = el("div", "card brief" + (state.briefOpen ? "" : " collapsed"));
-    card.append(el("h3", null, b.subject || "Morning brief"));
+    card.append(el("h3", null, b.subject || "Daily brief"));
     card.append(el("p", "note", b.day ? (b.day === today() ? "Today · " : "") + dow(b.day) + " " + md(b.day) : ""));
     const body = el("div", "md"); renderMd(b.markdown, body); card.append(body);
     const tog = el("button", "btn quiet small", state.briefOpen ? "Show less" : "Read all"); tog.type = "button";
@@ -513,7 +513,7 @@
   });
 
 
-  // Day view: hours down the side, in the device's time zone (it follows the owner when they
+  // Day view: hours down the side, in the device's time zone (it follows the principal when they
   // travel). The server gives the day's events, free windows and blocks on their way; the
   // suggestions come from the to-do list here, so ticking one off updates them at once.
   const DEV_TZ = (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone; } catch (e) { return null; } })() || "UTC";

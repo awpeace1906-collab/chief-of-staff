@@ -208,13 +208,13 @@ def create_app(db_path: str | None = None, http: httpx.Client | None = None, cli
             the_day = Date.fromisoformat(date) if date else now_here.date()
         except (ValueError, KeyError) as e:
             raise HTTPException(422, f"bad date or time zone: {e}")
-        # a day in the viewer's zone can start the evening before in the owner's: read one day either side
+        # a day in the viewer's zone can start the evening before in the principal's: read one day either side
         ag = google_call(lambda: Google(c, http).agenda(2, today=the_day - timedelta(days=1)))
         return schedule.day(ag, the_day, zone, schedule.settings(c), store.list_proposals(c, ("pending", "approved")), now=now_here)
 
     @app.post("/api/schedule/block", dependencies=api, status_code=201)
     def block(body: dict = Body(...), c=Depends(get_conn)):
-        """The owner picked a free window for a to-do. Their tap is the approval: store it as an
+        """The principal picked a free window for a to-do. Their tap is the approval: store it as an
         approved calendar proposal and put it on the calendar now if Google is connected."""
         item = store.get_item(c, str(body.get("itemId") or ""))
         if item is None:
@@ -443,7 +443,7 @@ def create_app(db_path: str | None = None, http: httpx.Client | None = None, cli
 
     @app.post("/api/decisions/{decision_id}/choose", dependencies=api)
     def choose(decision_id: str, body: dict = Body(...), c=Depends(get_conn)):
-        """The owner's tap is the decision. The assistant sets up the next steps straight away."""
+        """The principal's tap is the decision. The assistant sets up the next steps straight away."""
         try:
             d = store.choose(c, decision_id, str(body.get("choice") or ""))
         except KeyError:
@@ -472,7 +472,7 @@ def create_app(db_path: str | None = None, http: httpx.Client | None = None, cli
 
     @app.post("/api/location", dependencies=api, status_code=201)
     def location_ping(body: dict = Body(...), c=Depends(get_conn)):
-        """The owner's phone reports where it is (e.g. an iOS Shortcuts automation). Only the latest is kept."""
+        """The principal's phone reports where it is (e.g. an iOS Shortcuts automation). Only the latest is kept."""
         try:
             return location.record(c, body.get("lat"), body.get("lon"), at=body.get("at"),
                                    accuracy=body.get("accuracy"), place=body.get("place") or "")
@@ -481,7 +481,7 @@ def create_app(db_path: str | None = None, http: httpx.Client | None = None, cli
 
     @app.get("/api/location", dependencies=api)
     def where(date: str | None = None, c=Depends(get_conn)):
-        """Where the assistant thinks the owner is (or will start from on `date`), and why."""
+        """Where the assistant thinks the principal is (or will start from on `date`), and why."""
         try:
             day = datetime.fromisoformat(date).date() if date else None
         except ValueError:
@@ -520,10 +520,10 @@ def create_app(db_path: str | None = None, http: httpx.Client | None = None, cli
         history = [m for m in body.get("history", [])[-8:] if isinstance(m, dict)]
         latest = brief.latest(c)
         name = store.assistant_name(c)
-        system = (f"You are {name}, the owner's chief of staff, answering inside the Chief of Staff app. "
+        system = (f"You are {name}, the principal's chief of staff, answering inside the Chief of Staff app. "
                   f"Answer briefly and plainly from the data in the message only; if something isn't there, say "
                   f"you don't know. You can't take actions from here: for anything that needs doing (calendar, "
-                  f"email, changes), tell the owner to tap \"Send to {name}\". Never include clinical or patient details.")
+                  f"email, changes), tell the principal to tap \"Send to {name}\". Never include clinical or patient details.")
         user = json.dumps({
             "now": datetime.now(_tz(c)).isoformat(),
             "openItems": store.list_items(c),

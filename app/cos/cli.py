@@ -56,8 +56,8 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("check", help="the hourly check now: approvals, messages, new mail")
     sub.add_parser("brain", help="sync rules with Brain (needs BRAIN_GIST_TOKEN)")
 
-    b = sub.add_parser("brief", help="capture, then write the morning brief")
-    b.add_argument("--send", action="store_true", help="also email it to the owner")
+    b = sub.add_parser("brief", help="capture, then write the daily brief")
+    b.add_argument("--send", action="store_true", help="also email it to the principal")
 
     u = sub.add_parser("usage", help="AI token use and estimated cost")
     u.add_argument("--days", type=int, default=30)

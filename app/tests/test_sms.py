@@ -116,7 +116,7 @@ def test_voipms_inbound_and_split(tmp_path, monkeypatch):
 def test_only_texts_the_owner(tmp_path):
     c = db.connect(tmp_path / "x.db")
     store.put_setting(c, "sms", {"provider": "telnyx", "number": "+1", "ownerNumber": OWNER})
-    with pytest.raises(ValueError, match="only go to the owner"):
+    with pytest.raises(ValueError, match="only go to the principal"):
         sms.send(c, "hi", to="+12125550000")
     c.close()
 

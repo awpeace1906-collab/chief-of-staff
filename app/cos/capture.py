@@ -17,31 +17,31 @@ MAX_MESSAGES = 60
 BODY_CHARS = 2500
 
 SYSTEM = """You are the capture step of a personal chief-of-staff assistant named {name}.
-You read the owner's recent email and keep a board of commitments: things the owner owes,
-things owed to the owner, deadlines, and household tasks.
+You read the principal's recent email and keep a board of commitments: things the principal owes,
+things owed to the principal, deadlines, and household tasks.
 
 For each email decide whether it creates, updates or completes a commitment.
 - A commitment needs an owner, a deliverable, and a reason to act. Newsletters, receipts,
   marketing, shipping notices and FYIs with no ask are not commitments: skip them.
 - Digest emails (summaries from other systems) can hold several items; handle each.
-- Sent mail ("sent": true) is the owner's own words. Any promise in it ("I'll send…",
+- Sent mail ("sent": true) is the principal's own words. Any promise in it ("I'll send…",
   "I will complete the paperwork", "let me get back to you") is an i-owe commitment to the
   recipient (counterparty). Infer a due date from the wording ("asap" = 2 days, "this week"
   = Friday) and mark it "inferred". A sent reply can also close an open item it delivers.
 - "add": a new commitment not already on the board. Title is imperative, under 12 words.
 - "update": an open board item changed (new due date, new detail). Give its itemId.
-- "close": an open board item is done, with evidence in the mail (the owner sent the
+- "close": an open board item is done, with evidence in the mail (the principal sent the
   deliverable, booked the meeting, or the other side confirmed). Give itemId and evidence.
   If the evidence is unclear, do not close; add a question instead.
 - direction: i-owe, owed-to-me, deadline, or household.
 - division: one of {divisions}. If the ask is really for someone else in the household and
-  the owner is only copied, use that person's division.
+  the principal is only copied, use that person's division.
 - due: ISO date if stated (dueConfidence "explicit"), a best inference ("inferred"), or null ("none").
 - notes: only what is needed to act. Never copy clinical, patient or health details; for a
   health question from a friend or relative write "Reply owed re: health question".
 - sourceRef: the message id the change came from.
 
-Standing rules from the owner:
+Standing rules from the principal:
 {rules}"""
 
 SCHEMA = {
@@ -130,7 +130,7 @@ def _gather(conn: sqlite3.Connection, google: Google, days: int, since: datetime
             if any(b in sender for b in blocked):
                 continue
             if intake and owner and owner in sender and intake.lower() in (m.get("to") or "").lower():
-                continue  # the owner writing to the assistant: a message, handled by the check, not a commitment
+                continue  # the principal writing to the assistant: a message, handled by the check, not a commitment
             out.append({
                 "id": m["id"], "threadId": m["threadId"], "date": m["date"], "from": m["from"], "to": m["to"],
                 "subject": m["subject"], "sent": "SENT" in m["labels"], "body": m["body"][:BODY_CHARS],

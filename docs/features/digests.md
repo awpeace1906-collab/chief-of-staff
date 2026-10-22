@@ -10,14 +10,14 @@ The agent reads digests from one of two places:
 
 | Intake | How | Best for |
 |---|---|---|
-| **Gmail** | Digests already sent to the owner's Gmail | Personal services |
+| **Gmail** | Digests already sent to the principal's Gmail | Personal services |
 | **The agent's inbox** (e.g. an AgentMail address) | Rules in other accounts auto-forward digests here | Siloed work or school accounts (an organization's Microsoft 365) and anything kept out of Gmail |
 
 A dedicated inbox is the portable choice: the public app gives every user one, and any system that can send or forward email can feed the agent.
 
 ### Read state
 
-Once the agent has handled a message in its inbox (captured to the board, routed to the plan or Roundup, or ignored per its adapter), it marks it read. Anything unhandled, failed or waiting on the owner stays unread, so unread means "the agent hasn't dealt with this". This applies to every agent inbox it reads. Gmail read state is left alone.
+Once the agent has handled a message in its inbox (captured to the board, routed to the plan or Roundup, or ignored per its adapter), it marks it read. Anything unhandled, failed or waiting on the principal stays unread, so unread means "the agent hasn't dealt with this". This applies to every agent inbox it reads. Gmail read state is left alone.
 
 ### Forwarding from a work or school Microsoft 365
 
@@ -38,7 +38,7 @@ Each known sender has an adapter in `<agent>-memory/digests.json` (example: [exa
 | `handling` | `itemize` (split into items), `summarize` (one line), `metrics` (numbers only), `ignore`, `sensitive` (never read content) |
 | `division` | Default division for its items |
 
-Unknown senders whose email looks like a digest (a list of items; subject has digest, summary, activity, briefing, recap, "you missed") are handled by the **generic adapter**: itemize, classify, and propose a new adapter in the brief so the owner can confirm it.
+Unknown senders whose email looks like a digest (a list of items; subject has digest, summary, activity, briefing, recap, "you missed") are handled by the **generic adapter**: itemize, classify, and propose a new adapter in the brief so the principal can confirm it.
 
 ## Routing each item
 
@@ -65,4 +65,4 @@ Roundup
 
 - `sensitive` adapters (health data, e.g. a glucose-monitor report) are never read. The agent only notes that one arrived, if asked.
 - No clinical or patient details on the board, in the brief, or in Brain.
-- Work-account content stays in the brief and board. It never goes into Brain unless the owner turns it into a rule.
+- Work-account content stays in the brief and board. It never goes into Brain unless the principal turns it into a rule.

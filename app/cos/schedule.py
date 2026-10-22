@@ -1,9 +1,9 @@
-"""Schedule builder: find the owner's free time and slot open commitments into it.
+"""Schedule builder: find the principal's free time and slot open commitments into it.
 
-No model calls. `free_slots` reads the agenda (busy events in the owner's division) and
+No model calls. `free_slots` reads the agenda (busy events in the principal's division) and
 returns open windows inside the working day. `suggest_blocks` gives each commitment the
 accountability review surfaced its earliest window before it's due. The brief turns those
-into numbered "Add: …" proposals, so nothing reaches a calendar without the owner's OK.
+into numbered "Add: …" proposals, so nothing reaches a calendar without the principal's OK.
 
 Settings (`schedule`): dayStart / dayEnd ("07:00" / "21:00"), minMinutes (30),
 blockMinutes (30), division ("me"), blockCalendar (where day-view blocks go), and
@@ -18,7 +18,7 @@ from zoneinfo import ZoneInfo
 from . import store
 
 DEFAULTS = {"dayStart": "07:00", "dayEnd": "21:00", "minMinutes": 30, "blockMinutes": 30, "division": "me",
-            "blockCalendar": None,  # None: the first calendar in the owner's division
+            "blockCalendar": None,  # None: the first calendar in the principal's division
             "protect": []}
 
 
@@ -130,7 +130,7 @@ def planned(proposals: list[dict]) -> list[dict]:
 
 def day(agenda: dict, the_day: date, tz: ZoneInfo, cfg: dict, proposals: list[dict], now: datetime | None = None) -> dict:
     """One day for the day view, in `tz` (the viewer's zone, which follows them when they travel):
-    every division's events that touch the day, the owner's free windows, and blocks on their way."""
+    every division's events that touch the day, the principal's free windows, and blocks on their way."""
     lo = datetime.combine(the_day, time.min, tz)
     hi = lo + timedelta(days=1)
     events = []

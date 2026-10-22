@@ -23,9 +23,9 @@ REVOKE_URL = "https://oauth2.googleapis.com/revoke"
 
 SCOPES = [
     "https://www.googleapis.com/auth/calendar.readonly",
-    "https://www.googleapis.com/auth/calendar.events",  # only to carry out proposals the owner approved
+    "https://www.googleapis.com/auth/calendar.events",  # only to carry out proposals the principal approved
     "https://www.googleapis.com/auth/gmail.readonly",
-    "https://www.googleapis.com/auth/gmail.send",  # the owner, plus drafts the owner approved (if email.sendApprovedDrafts)
+    "https://www.googleapis.com/auth/gmail.send",  # the principal, plus drafts the principal approved (if email.sendApprovedDrafts)
     "openid",
     "email",
 ]

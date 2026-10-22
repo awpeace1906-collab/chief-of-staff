@@ -1,5 +1,5 @@
 """Flight watch: live flight status and public air traffic control data, so a delay or cancellation
-re-plans the day instead of surprising the owner.
+re-plans the day instead of surprising the principal.
 
 Two sources:
 - FAA NAS Status (nasstatus.faa.gov), public and keyless: ground stops, ground delay programs,
@@ -11,10 +11,10 @@ What's watched: trip legs (records kind `trip`) that carry `flight` ("AA 690"), 
 departure date) and, ideally, `from` / `to` (IATA). A leg is checked every `intervalMinutes` from
 `watchHours` before its scheduled departure until 2 hours after its scheduled arrival.
 
-On a change the leg's `live` field is updated and the owner gets one message. A delay of 30+
+On a change the leg's `live` field is updated and the principal gets one message. A delay of 30+
 minutes, a cancellation or a diversion also files a `replan` message for the arrival day, so the
 assistant proposes the moves. A cancellation, a diversion, or a delay that pushes the arrival past
-midnight also emails the owner a 3-line alert. Nothing else is sent, and nothing is booked or moved
+midnight also emails the principal a 3-line alert. Nothing else is sent, and nothing is booked or moved
 without approval. No model calls happen here unless a re-plan is filed.
 
 Settings (`flights`): provider ("aerodatabox" | "none"), watchHours (6), intervalMinutes (20).
@@ -184,7 +184,7 @@ def delay_minutes(live: dict, side: str = "departure") -> int:
 
 
 def diff(old: dict, new: dict) -> list[str]:
-    """What changed that the owner should hear about, in plain words."""
+    """What changed that the principal should hear about, in plain words."""
     out = []
     status = new.get("status")
     if status and status != old.get("status") and status in {"Canceled", "CanceledUncertain", "Diverted", "Delayed"}:
@@ -213,7 +213,7 @@ def urgent(live: dict) -> bool:
 
 
 def _tell(conn, trip: dict, leg: dict, live: dict, changes: list[str], google) -> str | None:
-    """Message the owner; file a re-plan when the change matters. Returns the re-plan message id."""
+    """Message the principal; file a re-plan when the change matters. Returns the re-plan message id."""
     name = store.assistant_name(conn)
     text = f"{_pretty(leg['flight'])} on {leg['date']}: " + "; ".join(changes) + "."
     replan = live.get("status") in {"Canceled", "CanceledUncertain", "Diverted"} or delay_minutes(live) >= REPLAN_DELAY \

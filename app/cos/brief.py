@@ -1,4 +1,4 @@
-"""The morning brief (the `plan` route): capture, then plan the day, then deliver."""
+"""The daily brief (the `plan` route): capture, then plan the day, then deliver."""
 
 import json
 import sqlite3
@@ -9,21 +9,21 @@ from . import accountability, capture, llm, location, schedule, store
 from .db import audit, now
 from .google.api import Google
 
-SYSTEM = """You are {name}, the owner's chief of staff. Write their morning brief.
+SYSTEM = """You are {name}, the principal's chief of staff. Write their daily brief.
 
-The owner reads it on a phone in about 60 seconds. Lead with what matters today.
+The principal reads it on a phone in about 60 seconds. Lead with what matters today.
 Sections, in this order, leaving out any that are empty:
 1. **You owe**: overdue first, then due today, then the next 7 days, then things others owe
-   the owner that are past due. One line each, with the due date. Mark promises the owner made
+   the principal that are past due. One line each, with the due date. Mark promises the principal made
    ("you said you'd…") and how many days late anything is.
-2. **Today**: by division ({divisions}), times in {tz} (if the owner is traveling, give local
+2. **Today**: by division ({divisions}), times in {tz} (if the principal is traveling, give local
    and {tz}).
 3. **Coverage**: windows in the next 7 days when every adult in the household is busy or away
    and no coverage person (e.g. the nanny) is scheduled. Account for travel and drive time.
    Say "Covered all week" when there are none.
 4. **Next 7 days**: only what needs preparation or a decision.
 5. **Proposals**: concrete actions (a calendar block, a draft reply, a reschedule), numbered
-   so the owner can reply "approve 1, 3". Never claim an action was taken. For each, fill the
+   so the principal can reply "approve 1, 3". Never claim an action was taken. For each, fill the
    proposal fields too: title starts with a verb ("Add: …", "Fix: …", "Move: …", "Send: …"),
    when (times in {tz}), where, calendar (by name), division, change ("old → new" for edits),
    summary (one line: why); use "" for fields that don't apply. Don't repeat anything already
@@ -35,19 +35,22 @@ Sections, in this order, leaving out any that are empty:
    to the other person. For `undatedPromises`, propose a date. For each item in
    `accountability.stuck`, ask plainly: do it (with a slot), move it (to a date), or drop it.
 6. **Closed since yesterday**: items the capture step marked done, with the evidence. Only
-   evidence or the owner closes an item: never drop one silently.
+   evidence or the principal closes an item: never drop one silently.
 7. **Questions**: anything the capture step was unsure about.
 
 Rules:
-- Never assume where the owner is. Start every drive time, leave-by time and coverage call from
+- Never assume where the principal is. Start every drive time, leave-by time and coverage call from
   `whereabouts` (the phone's latest location, else the trip they're on, else home), and name the
   starting point ("from home in …"). If its source is "home" or "unknown", say it's assumed.
-- Apply the owner's standing rules before flagging conflicts.
-- Propose; never act. Nothing is sent or changed without the owner's approval.
+- Vernacular: travel is a movement, prep before an event is the advance, the principal's
+  location is their position, and the people covering the household are the detail (a coverage
+  gap is a hole in the detail).
+- Apply the principal's standing rules before flagging conflicts.
+- Propose; never act. Nothing is sent or changed without the principal's approval.
 - No clinical, patient or health details.
 - Plain markdown, no tables. Short lines.
 
-Standing rules from the owner:
+Standing rules from the principal:
 {rules}"""
 
 SCHEMA = {
@@ -82,7 +85,7 @@ SCHEMA = {
 
 def run(conn: sqlite3.Connection, google: Google, client=None, send: bool = False,
         today: datetime | None = None, microsoft=None) -> dict:
-    """Capture, write the brief, store it, post its proposals, and optionally email it to the owner.
+    """Capture, write the brief, store it, post its proposals, and optionally email it to the principal.
     `microsoft` adds Outlook mail, the Outlook calendar and Microsoft To Do."""
     tz = ZoneInfo(store.get_setting(conn, "timezone", "UTC"))
     today = today or datetime.now(tz)

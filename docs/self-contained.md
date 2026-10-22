@@ -1,13 +1,13 @@
 # Self-contained Chief of Staff
 
-Goal: one Chief of Staff app that does everything itself, with the owner's agent inside it. The only outside resources are the ones that can't sensibly be owned:
+Goal: one Chief of Staff app that does everything itself, with the principal's agent inside it. The only outside resources are the ones that can't sensibly be owned:
 
 | Allowed outside resource | Why it stays outside |
 |---|---|
 | **Hosting** (cloud server now, home box later) | Something has to be always on |
 | **Telephony** (VoIP.ms / Telnyx number, SMS, call audio) | Only carriers can connect to the phone network |
 | **AI processing** (Claude API) | Reasoning quality; local models aren't good enough for the agent's job |
-| **Google** (Calendar, Gmail) | Not a dependency so much as where the owner's data lives; the agent talks to it directly |
+| **Google** (Calendar, Gmail) | Not a dependency so much as where the principal's data lives; the agent talks to it directly |
 
 Everything else moves inside the app.
 
@@ -26,20 +26,20 @@ Everything else moves inside the app.
 | Speech-to-text / text-to-speech | — | Local Whisper (faster-whisper) and Piper, inside the app | No |
 | Approvals | The page, or a reply in a Claude chat | The app's own web app (installable PWA) + "approve 2" by text | No |
 | Notifications | Email from Claude session | Email via Gmail API, SMS via carrier, Web Push from the PWA | Carrier for SMS |
-| Spec and config | Core repo + the owner's memory repo | The core repo stays the source of the app; memory (`<agent>-memory`) is imported into the app's database and editable in Settings | No |
+| Spec and config | Core repo + the principal's memory repo | The core repo stays the source of the app; memory (`<agent>-memory`) is imported into the app's database and editable in Settings | No |
 
 Removed entirely: AgentMail, Claude Code scheduled tasks, Claude connectors, the board gist, and any third-party brief service.
 
 ## Local first, server when needed
 
-The app is the interface between the owner and their agent: the phone (and computer) app is where they talk, approve and see the plan. It works on the device whenever it can, and calls the server only when it must.
+The app is the interface between the principal and their agent: the phone (and computer) app is where they talk, approve and see the plan. It works on the device whenever it can, and calls the server only when it must.
 
 | On the device (default) | On the server (only when needed) |
 |---|---|
-| The interface: Today, Day, To-do, Talk, approvals | Scheduled runs while the phone is asleep: the morning brief, evening setup, capture sweeps, flight watches |
+| The interface: Today, Day, To-do, Talk, approvals | Scheduled runs while the phone is asleep: the daily brief, evening setup, capture sweeps, flight watches |
 | Location, from the phone's own location services, used on the device | Inbound channels: the agent's phone number (SMS, calls), its email inbox, webhooks |
 | Speech in and out, reminders, notifications | The AI model, until a local one is good enough for the job ([AI providers](features/ai-providers.md)) |
-| A local copy of the board, plan and memory, usable offline | Sync between the owner's devices, and backups |
+| A local copy of the board, plan and memory, usable offline | Sync between the principal's devices, and backups |
 
 - The server is the same app in server mode (below). A household can run it on its own hardware ([deployment.md](deployment.md)).
 - Data goes to the server only when a server task needs it. For example, a scheduled run gets the starting point for drive times, not a location history ([features/location.md](features/location.md)).
@@ -91,8 +91,8 @@ The core never changes between stages. What moves is where memory lives, where s
 |---|---|---|---|---|
 | 0. Today | Claude Code scheduled tasks + the Claude-hosted page; the app not yet hosted | Claude (Claude Code session) | `<agent>-memory` repo, read by the tasks; the page's database | — |
 | 1. Host the app | A cloud server (docs/deployment.md) | Claude API (own key) | `<agent>-memory` cloned on the server, pulled on a schedule; the app's database is the working copy | Two weeks of matching briefs, side by side |
-| 2. Memory writes back | Same | Same | Lasting changes the agent learns (a rule, a person, a renamed division) are committed back to `<agent>-memory` with a key scoped to that one repo; Brain keeps rules, keyed by the agent's id | The owner can read every memory change in its history |
-| 3. AI of the owner's choice | Same | Routes switch one at a time to another provider or a local model; Claude stays the fallback | Same | Each route passes an eval built from real past briefs and approvals |
+| 2. Memory writes back | Same | Same | Lasting changes the agent learns (a rule, a person, a renamed division) are committed back to `<agent>-memory` with a key scoped to that one repo; Brain keeps rules, keyed by the agent's id | The principal can read every memory change in its history |
+| 3. AI of the principal's choice | Same | Routes switch one at a time to another provider or a local model; Claude stays the fallback | Same | Each route passes an eval built from real past briefs and approvals |
 | 4. Own hardware and channels | A home or office server (Mac mini, mini PC) | Same | Same; only the hosting settings in memory change | Backups and remote access verified |
 
 ### Stage 1 checklist
@@ -110,7 +110,7 @@ The core never changes between stages. What moves is where memory lives, where s
 ### Before stage 3: gaps to close
 
 - **Tool use beyond Claude:** `llm.run_tools` (approvals, re-plans, messages, decisions) only supports the Claude API today. A local or other provider needs OpenAI-compatible function calling in that loop before those routes can move.
-- **Evals:** a fixed set of real past inputs per route (capture, plan, draft, chat) with the approved outcomes, so a new model is judged on the owner's actual work before it takes over.
+- **Evals:** a fixed set of real past inputs per route (capture, plan, draft, chat) with the approved outcomes, so a new model is judged on the principal's actual work before it takes over.
 - **Structured output:** routes that return JSON need a provider that can follow the schema, or a validate-and-retry step.
 
 Later: SMS and voice (v0.5–v0.6) slot into stage 1 or 4.
