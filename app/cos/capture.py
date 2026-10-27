@@ -12,7 +12,7 @@ from datetime import datetime, timedelta, timezone
 
 import re
 
-from . import accounts, llm, store
+from . import accounts, llm, people, store
 from .db import audit, now
 from .google.api import Google
 
@@ -61,6 +61,7 @@ Records (leave a list empty when the mail has nothing for it):
 - expenses: receipts for travel or rotation costs (flights, bags, seats, rides, hotels, parking, meals while
   away). id is a slug like "aa-bags-2026-10-24"; group is the trip or rotation title. Skip personal shopping and
   anything already in `recentExpenses`.
+{people}
 
 Standing rules from the principal:
 {rules}"""
@@ -110,8 +111,9 @@ SCHEMA = {
         "expenses": {"type": "array", "items": _obj({
             "id": STR, "date": STR, "vendor": STR, "amount": {"type": "number"}, "group": STR,
         })},
+        "newPeople": people.SCHEMA,
     },
-    "required": ["changes", "questions", "trips", "binders", "expenses"],
+    "required": ["changes", "questions", "trips", "binders", "expenses", "newPeople"],
     "additionalProperties": False,
 }
 
@@ -151,15 +153,18 @@ def run(conn: sqlite3.Connection, google: Google, client=None, since: datetime |
     system = SYSTEM.format(
         name=store.assistant_name(conn),
         divisions=", ".join(divisions),
+        people=people.PROMPT.format(where="mail"),
         rules="\n".join(f"- {r['content']}" for r in store.list_rules(conn)) or "- (none)",
     )
     board = [{k: i.get(k) for k in ("id", "title", "status", "division", "due", "counterparty")}
              for i in store.list_items(conn)]
-    user = json.dumps({"openBoardItems": board, **_record_context(conn), "emails": messages}, ensure_ascii=False)
+    user = json.dumps({"openBoardItems": board, **_record_context(conn), **people.context(conn), "emails": messages},
+                      ensure_ascii=False)
     result = llm.complete(conn, "triage", system, user, SCHEMA, client=client)
 
     applied = _apply(conn, result["changes"], {m["id"]: m for m in messages}, set(divisions))
     applied["records"] = apply_records(conn, result)
+    applied["newPeople"] = people.note(conn, result.get("newPeople") or [], "mail", started.date())
     applied["questions"] = result["questions"]
     applied["messages"] = len(messages)
     applied["errors"] = errors

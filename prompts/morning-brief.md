@@ -27,6 +27,8 @@ Daily brief. Run the daily brief for the principal, then email it to the princip
 
 **Step 2d: location.** Never assume where the principal is. Start every drive, leave-by and coverage call from where they actually are: the phone's latest location, else the trip covering the day, else home (say it's assumed). Name the starting point. See [docs/features/location.md](../docs/features/location.md).
 
+**Step 2e: new people.** Watch for names in mail and on the calendars that seem to belong to the household or its care (a new child, partner, caregiver, relative) but aren't in memory's `people`. Never patients, colleagues or senders. Once a name has come up 3 times on 2 different days, ask in the Situation Room: "Is <name> new to the household? Track them?" (the suggested division, one other, or no). A yes adds them to `people` (a caregiver also to the division's `coverage`) in the memory repo, on a branch with a PR; a no is remembered and never asked again. See [docs/features/people.md](../docs/features/people.md).
+
 **Step 3: travel.** Check flight emails (airlines, booking sites, TripIt forwards) for changes affecting the next 7 days and feed them into the coverage check.
 
 **Step 4: board hygiene.** Ask about items whose done-evidence is ambiguous; never close silently on a guess.

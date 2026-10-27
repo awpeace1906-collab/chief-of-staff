@@ -25,7 +25,7 @@ A starting point is in [`examples/memory/`](../examples/memory/), with a fiction
 | Key | What it is |
 |---|---|
 | `assistant` | `id` (permanent, see below), `name` (the alias), `owner`, `email`, `inbox`, `formerNames` |
-| `people` | `[{name, role, division?}]`: the principal and everyone the agent deals with |
+| `people` | `[{name, role, division?}]`: the principal and everyone the agent deals with. The agent adds someone only when the principal asks or answers yes to "track them?" ([people](features/people.md)) |
 | `timezone` | IANA zone, e.g. `America/Denver` |
 | `divisions` | `{key: {label, calendars: {name: id}, coverage?, notes?, suggest?}}`. `suggest: false` leaves a division out of Day-view suggestions (e.g. the partner's) |
 | `brief`, `approvals`, `checkCadence`, `protectedTime` | When and how the agent runs and asks |
