@@ -10,28 +10,33 @@ from zoneinfo import ZoneInfo
 import httpx
 
 from ..store import get_setting
-from .oauth import MicrosoftNotConnected, access_token, expire, remember_account
+from .oauth import TOKEN_KEY, MicrosoftNotConnected, access_token, expire, remember_account
 
 GRAPH = "https://graph.microsoft.com/v1.0"
 
 
 class Microsoft:
-    """One authenticated Graph session; pass `http` to swap the transport in tests."""
+    """One authenticated Graph session; pass `http` to swap the transport in tests. `key` and `account`
+    pick one of several connected accounts (cos/accounts.py); the account's `calendars` map its calendars
+    to divisions."""
 
-    def __init__(self, conn: sqlite3.Connection, http: httpx.Client | None = None):
+    def __init__(self, conn: sqlite3.Connection, http: httpx.Client | None = None, key: str = TOKEN_KEY,
+                 account: dict | None = None):
         self.conn = conn
         self.http = http or httpx.Client(timeout=30)
+        self.key = key
+        self.account = account or {}
 
     def _get(self, url: str, params: dict | None = None, headers: dict | None = None) -> dict:
         if not url.startswith("http"):
             url = GRAPH + url
         for _ in (1, 2):
-            token = access_token(self.conn, self.http)
+            token = access_token(self.conn, self.http, self.key)
             r = self.http.get(url, params=params, headers={"Authorization": f"Bearer {token}", **(headers or {})})
             if r.status_code != 401:
                 r.raise_for_status()
                 return r.json()
-            expire(self.conn)
+            expire(self.conn, self.key)
         raise MicrosoftNotConnected("Microsoft rejected the stored access; connect again at /oauth/microsoft/start")
 
     def _pages(self, url: str, params: dict | None = None, headers: dict | None = None, limit: int = 500) -> list[dict]:
@@ -44,7 +49,7 @@ class Microsoft:
 
     def me(self) -> dict:
         me = self._get("/me", {"$select": "displayName,mail,userPrincipalName"})
-        remember_account(self.conn, me.get("mail") or me.get("userPrincipalName"))
+        remember_account(self.conn, me.get("mail") or me.get("userPrincipalName"), self.key)
         return me
 
     # Calendar
@@ -71,15 +76,22 @@ class Microsoft:
         today = today or datetime.now(tz).date()
         start = datetime.combine(today, time.min, tz)
         end = start + timedelta(days=days + 1)
-        access_token(self.conn, self.http)  # fail fast when not connected
-        mapping = get_setting(self.conn, "microsoft", {}).get("divisions") or {"me": {"Outlook": "default"}}
+        access_token(self.conn, self.http, self.key)  # fail fast when not connected
+        if "calendars" in self.account:  # an account from the list: only the calendars mapped there
+            mapping = {}
+            for name, cal in self.account["calendars"].items():
+                mapping.setdefault(cal["division"], {})[name] = cal["id"]
+        else:
+            mapping = get_setting(self.conn, "microsoft", {}).get("divisions") or {"me": {"Outlook": "default"}}
         result = {"timezone": str(tz), "from": start.isoformat(), "to": end.isoformat(), "divisions": {}}
         for key, cals in mapping.items():
             events, errors = [], []
             for name, cal_id in cals.items():
                 try:
                     found = self.events(None if cal_id == "default" else cal_id, start, end)
-                    events += [e | {"calendarName": name, "source": "microsoft"} for e in found]
+                    events += [e | {"calendarName": name, "source": "microsoft",
+                                    **({"account": self.account["email"]} if self.account.get("email") else {})}
+                               for e in found]
                 except httpx.HTTPStatusError as e:
                     errors.append({"calendar": name, "status": e.response.status_code})
             events.sort(key=lambda e: e["start"])

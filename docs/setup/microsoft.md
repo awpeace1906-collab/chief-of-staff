@@ -53,9 +53,13 @@ cos microsoft agenda --days 7
 cos microsoft todo
 ```
 
+## More than one account
+
+Each sign-in adds an account: open **Settings → Other accounts to watch → Add a Microsoft 365 account** again and pick another one (a personal Outlook, a work or school account the tenant allows). Signing in to one that's already listed just refreshes it. Every account's mail goes through capture, its To Do joins the brief, and its calendars join the divisions you pick (**Calendars** in Settings). **Remove** forgets one. `cos accounts` lists them all.
+
 ## 6. Map calendars to divisions (optional)
 
-By default your main Outlook calendar counts as **Me**. To map others, set `microsoft.divisions` in memory (`memory.json`, or `PUT /api/settings/microsoft`):
+By default each account's main Outlook calendar counts as **Me**. Pick others per account in **Settings → Calendars** (or `PATCH /api/accounts/microsoft/<id>` with `{"calendars": {"School": {"id": "<calendar id>", "division": "kids"}}}`). The first account, connected before there could be several, also still reads `microsoft.divisions` from memory (`memory.json`, or `PUT /api/settings/microsoft`) until it's edited in Settings:
 
 ```json
 "microsoft": {
@@ -74,7 +78,7 @@ By default your main Outlook calendar counts as **Me**. To map others, set `micr
 
 ## Disconnect
 
-`cos microsoft disconnect` (or `POST /api/microsoft/disconnect`) deletes the stored tokens. To revoke fully, remove "Chief of Staff" at https://account.live.com/consent/Manage.
+**Remove** in Settings (or `DELETE /api/accounts/microsoft/<id>`, or `cos accounts remove microsoft <id>`) deletes one account's stored tokens; `POST /api/microsoft/disconnect` deletes them all. To revoke fully, remove "Chief of Staff" at https://account.live.com/consent/Manage.
 
 ## Where the token lives
 

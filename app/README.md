@@ -17,7 +17,8 @@ v0.4: its own web app, plus Microsoft 365. One process, one SQLite file.
 
   Sign-in uses the access key (`COS_API_TOKEN`); the device then stays signed in for 90 days. `cos import --page` brings over the old Claude-hosted page's data.
 - **Flight watch:** live flight status (AeroDataBox, `AERODATABOX_KEY`) and the FAA's public airport status feed (ground stops, delays, closures), checked every 20 minutes from 6 hours before each trip leg. A real change messages the principal and files a re-plan; a cancellation or an overnight delay also emails a 3-line alert It runs in the background on the scheduler ([docs](../docs/features/planning-on-the-fly.md#live-flight-status-and-public-atc-data-the-app)).
-- **Catch-up:** the page's newer features, in the engine and the web app (the runs that file them come next; [docs/features/evening-and-week.md](../docs/features/evening-and-week.md#the-app)):
+- **Catch-up:** the page's newer features, in the engine, the web app and the app's own runs ([docs/features/evening-and-week.md](../docs/features/evening-and-week.md#the-app)):
+  - **The runs file them:** capture files trips (flight legs included), binders and expenses from mail; the brief files Situation Room decisions and reply drafts; the **evening run** (`evening.time`, default 18:47; `cos evening`) writes the Book and, on Sundays, the weekly review.
   - **Decisions:** filed as records; the principal's choice (`POST /api/decisions/<slug>/choose`) becomes next steps straight away.
   - **Records** for trips, binders, expenses and the tomorrow and week cards (`/api/records/<kind>`).
   - **Email drafts:** an approved Send: goes out exactly as shown, from the principal's Gmail, only with `email.sendApprovedDrafts` on.
@@ -39,6 +40,7 @@ v0.4: its own web app, plus Microsoft 365. One process, one SQLite file.
   - syncs with Brain once a day when `BRAIN_GIST_TOKEN` is set.
 
   It also supports a **local AI provider** (OpenAI-compatible, e.g. Ollama) for the structured routes.
+- **More accounts:** besides the main Google account, any number of other **Google** and **Microsoft 365** accounts can be connected from Settings ("Add a Google account", "Add a Microsoft 365 account"). They're watch-only: their mail goes through capture and the calendars you pick join a division's agenda; nothing is ever sent from them ([docs/setup/google.md](../docs/setup/google.md#more-accounts-to-watch)).
 - **v0.4:** connects to **Microsoft 365** through Microsoft Graph, with personal or work accounts and read-only access. Outlook mail goes into capture, and the Outlook calendar and To Do go into the brief. Setup: [docs/setup/microsoft.md](../docs/setup/microsoft.md).
 - **v0.3:** captures commitments from new mail with Claude (Haiku), writes the daily brief (Opus), saves it, emails it to the principal, and can run it on a schedule. Logs token use and estimated cost per route.
 - **v0.2:** signs in to Google itself (OAuth with PKCE, read-only Calendar + Gmail), shows the agenda by division, searches Gmail, and reads the digest intake address. Setup: [docs/setup/google.md](../docs/setup/google.md).
@@ -144,12 +146,17 @@ docker compose exec cos cos import --memory
 | POST | `/api/ask` | Quick answer from the board, proposals and brief (`chat` route); never acts |
 | POST | `/api/import/page` | Import the old page's export |
 | POST | `/api/check/run` | Run the hourly check now |
+| POST | `/api/evening/run` | Write the Book for tomorrow now (and the week card on a Sunday) |
+| GET | `/api/accounts` | The main Google account and every watched account, plus the divisions to map calendars to |
+| PATCH | `/api/accounts/{provider}/{id}` | A watched account's `label`, `mail` (capture on/off) or `calendars` (`{name: {id, division}}`) |
+| DELETE | `/api/accounts/{provider}/{id}` | Stop watching an account (Google access is revoked) |
+| GET | `/api/accounts/{provider}/{id}/calendars` | That account's calendars, to pick from |
 | GET | `/api/status` | Connections, schedule and 30-day AI cost (the Settings screen) |
 | GET/POST | `/hooks/sms/{telnyx\|voipms}/{COS_HOOK_SECRET}` | Inbound texts from the carrier |
 | POST | `/api/brain/sync` | Sync rules with Brain |
 | GET | `/oauth/microsoft/start` | Begin Microsoft sign-in (browser) |
-| GET | `/api/microsoft/status` · `/calendars` · `/agenda?days=7` · `/mail/search?q=` · `/todo` | Microsoft 365 reads |
-| POST | `/api/microsoft/disconnect` | Forget the Microsoft tokens |
+| GET | `/api/microsoft/status` · `/calendars` · `/agenda?days=7` · `/mail/search?q=` · `/todo` | Microsoft 365 reads (agenda and To Do across all accounts; the rest from the first) |
+| POST | `/api/microsoft/disconnect` | Forget every Microsoft account's tokens |
 | GET | `/status` | Plain status page |
 
 ## Tests
