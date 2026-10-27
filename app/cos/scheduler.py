@@ -1,6 +1,7 @@
-"""In-process scheduler: the daily brief once a day at `brief.time`, and the hourly check
-(approved proposals, new messages, new mail) at :45 from 6:45am to 9:45pm by default (`check` setting),
-and the flight watch for legs near departure (flights.py).
+"""In-process scheduler: the daily brief once a day at `brief.time`, the evening run (the Book, and the weekly
+review on Sundays) at `evening.time` (6:47pm by default), the hourly check (approved proposals, new messages,
+new mail) at :45 from 6:45am to 9:45pm by default (`check` setting), and the flight watch for legs near
+departure (flights.py).
 The check stays silent unless something fails; then it emails the principal, at most every 3 hours.
 
 Enabled with COS_SCHEDULER=1. Checks every 30 seconds; if the server was down
@@ -18,11 +19,9 @@ import time
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-from . import agent, brain, brief, flights, sms, store
+from . import accounts, agent, brain, brief, evening, flights, sms, store
 from .db import audit
 from .google.api import Google
-from .microsoft import oauth as ms_oauth
-from .microsoft.api import Microsoft
 
 log = logging.getLogger("cos.scheduler")
 CHECK_SECONDS = 30
@@ -30,34 +29,50 @@ RETRY_SECONDS = 15 * 60
 MAX_ATTEMPTS_PER_DAY = 3
 
 
-def due(conn: sqlite3.Connection, now: datetime | None = None) -> bool:
+# Daily runs and the scheduler-state keys each keeps (the brief's are the original, unprefixed ones)
+DAILY = {
+    "brief": {"default": "08:25", "last": "lastBriefDay", "attempts": "attempts", "attemptsDay": "attemptsDay",
+              "lastAttempt": "lastAttempt"},
+    "evening": {"default": "18:47", "last": "lastEveningDay", "attempts": "eveningAttempts",
+                "attemptsDay": "eveningAttemptsDay", "lastAttempt": "eveningLastAttempt"},
+}
+
+
+def due(conn: sqlite3.Connection, now: datetime | None = None, run: str = "brief") -> bool:
+    keys = DAILY[run]
     tz = ZoneInfo(store.get_setting(conn, "timezone", "UTC"))
     now = (now or datetime.now(tz)).astimezone(tz)
-    cfg = store.get_setting(conn, "brief", {})
-    hh, mm = (int(x) for x in (cfg.get("time") or "08:25").split(":"))
+    cfg = store.get_setting(conn, run, {}) or {}
+    if cfg.get("enabled") is False:
+        return False
+    hh, mm = (int(x) for x in (cfg.get("time") or keys["default"]).split(":"))
     state = store.get_setting(conn, "scheduler", {})
     today = now.date().isoformat()
-    if state.get("lastBriefDay") == today:
+    if state.get(keys["last"]) == today:
         return False
-    if state.get("attemptsDay") == today and state.get("attempts", 0) >= MAX_ATTEMPTS_PER_DAY:
+    if state.get(keys["attemptsDay"]) == today and state.get(keys["attempts"], 0) >= MAX_ATTEMPTS_PER_DAY:
         return False
     if (now.hour, now.minute) < (hh, mm):
         return False
-    return time.time() - state.get("lastAttempt", 0) >= RETRY_SECONDS
+    return time.time() - state.get(keys["lastAttempt"], 0) >= RETRY_SECONDS
+
+
+def _attempt(conn: sqlite3.Connection, run: str) -> None:
+    keys, state = DAILY[run], store.get_setting(conn, "scheduler", {})
+    tz = ZoneInfo(store.get_setting(conn, "timezone", "UTC"))
+    today = datetime.now(tz).date().isoformat()
+    attempts = state.get(keys["attempts"], 0) + 1 if state.get(keys["attemptsDay"]) == today else 1
+    store.put_setting(conn, "scheduler", state | {keys["lastAttempt"]: time.time(), keys["attemptsDay"]: today,
+                                                  keys["attempts"]: attempts}, actor="system")
 
 
 def tick(conn: sqlite3.Connection, lock: threading.Lock, http=None, client=None) -> None:
     with lock:
         if not due(conn):
             return
-        state = store.get_setting(conn, "scheduler", {})
-        tz = ZoneInfo(store.get_setting(conn, "timezone", "UTC"))
-        today = datetime.now(tz).date().isoformat()
-        attempts = state.get("attempts", 0) + 1 if state.get("attemptsDay") == today else 1
-        store.put_setting(conn, "scheduler", state | {"lastAttempt": time.time(), "attemptsDay": today,
-                                                      "attempts": attempts}, actor="system")
+        _attempt(conn, "brief")
         try:
-            ms = Microsoft(conn, http) if ms_oauth.status(conn)["connected"] else None
+            ms = accounts.microsoft_clients(conn, http) or None
             result = brief.run(conn, Google(conn, http), client=client, send=True, microsoft=ms)
             text_error = None
             if sms.configured(conn) and sms.settings(conn).get("briefByText"):
@@ -73,6 +88,29 @@ def tick(conn: sqlite3.Connection, lock: threading.Lock, http=None, client=None)
                               | {"lastError": f"{e.__class__.__name__}: {e}"}, actor="system")
             audit(conn, "system", "brief.failed", error=str(e))
             conn.commit()
+
+
+def evening_tick(conn: sqlite3.Connection, lock: threading.Lock, http=None, client=None) -> dict | None:
+    """The Book for tomorrow (and the week card on Sundays). Needs Google; a failure is recorded and retried
+    like the brief's, and shows in Settings."""
+    with lock:
+        if not due(conn, run="evening") or not google_connected(conn):
+            return None
+        _attempt(conn, "evening")
+        try:
+            result = evening.run(conn, Google(conn, http), client=client,
+                                 microsoft=accounts.microsoft_clients(conn, http) or None)
+            today = datetime.now(ZoneInfo(store.get_setting(conn, "timezone", "UTC"))).date().isoformat()
+            store.put_setting(conn, "scheduler", store.get_setting(conn, "scheduler", {})
+                              | {"lastEveningDay": today, "eveningError": None}, actor="system")
+            return result
+        except Exception as e:  # record and retry later; never kill the server
+            log.exception("evening run failed")
+            store.put_setting(conn, "scheduler", store.get_setting(conn, "scheduler", {})
+                              | {"eveningError": f"{e.__class__.__name__}: {e}"}, actor="system")
+            audit(conn, "system", "evening.failed", error=str(e))
+            conn.commit()
+            return None
 
 
 CHECK_DEFAULT = {"enabled": True, "minute": 45, "firstHour": 6, "lastHour": 21}
@@ -100,7 +138,7 @@ def check_tick(conn: sqlite3.Connection, lock: threading.Lock, http=None, client
         store.put_setting(conn, "scheduler", store.get_setting(conn, "scheduler", {}) | {"lastCheckSlot": slot}, actor="system")
         google = Google(conn, http)
         connected = google_connected(conn)
-        ms = Microsoft(conn, http) if ms_oauth.status(conn)["connected"] else None
+        ms = accounts.microsoft_clients(conn, http) or None
         try:
             report = agent.check(conn, google, client=client, microsoft=ms, capture_mail=connected) if connected \
                 else {"errors": ["Google isn't connected, so approvals, messages and mail are waiting"]}
@@ -113,6 +151,7 @@ def check_tick(conn: sqlite3.Connection, lock: threading.Lock, http=None, client
                 report["brain"] = brain.sync(conn, http)
             except Exception as e:
                 report["errors"].append(f"brain sync: {e.__class__.__name__}: {e}")
+        report["errors"] += [f"capture {e}" for e in (report.get("capture") or {}).get("errors", [])]
         if report["errors"]:
             notify_errors(conn, google, report["errors"])
         return report
@@ -165,6 +204,7 @@ def start(conn: sqlite3.Connection, lock: threading.Lock) -> threading.Event:
     def loop():
         while not stop.wait(CHECK_SECONDS):
             tick(conn, lock)
+            evening_tick(conn, lock)
             check_tick(conn, lock)
             flight_tick(conn, lock)
 

@@ -5,6 +5,8 @@ including ones signed in with a Gmail address) and, with MS_TENANT=common, work 
 school accounts too. MS_CLIENT_ID comes from an app registration
 (docs/setup/microsoft.md); MS_CLIENT_SECRET is only needed for a "Web" platform
 registration. Microsoft rotates refresh tokens, so each refresh stores the new one.
+Several accounts can be connected: each keeps its tokens under its own key (cos/accounts.py);
+`microsoft.tokens` is the first one, from before there could be more.
 """
 
 import base64
@@ -84,7 +86,8 @@ def start(conn: sqlite3.Connection) -> tuple[str, str, str]:
     return f"{LOGIN}/{tenant()}/oauth2/v2.0/authorize?{urlencode(params)}", state, verifier
 
 
-def finish(conn: sqlite3.Connection, code: str, verifier: str, http: httpx.Client | None = None) -> dict:
+def finish(conn: sqlite3.Connection, code: str, verifier: str, http: httpx.Client | None = None,
+           key: str = TOKEN_KEY) -> dict:
     http = http or httpx.Client(timeout=20)
     r = http.post(f"{LOGIN}/{tenant()}/oauth2/v2.0/token", data=_client_auth() | {
         "code": code,
@@ -97,14 +100,14 @@ def finish(conn: sqlite3.Connection, code: str, verifier: str, http: httpx.Clien
     tok = r.json()
     if "refresh_token" not in tok:
         raise RuntimeError("Microsoft returned no refresh token; check that offline_access is allowed and connect again")
-    stored = _store(conn, tok)
-    audit(conn, "user", "microsoft.connect", scopes=stored["scope"])
+    stored = _store(conn, tok, key=key)
+    audit(conn, "user", "microsoft.connect", key=key, scopes=stored["scope"])
     conn.commit()
     return stored
 
 
-def access_token(conn: sqlite3.Connection, http: httpx.Client | None = None) -> str:
-    tok = get_secret(conn, TOKEN_KEY)
+def access_token(conn: sqlite3.Connection, http: httpx.Client | None = None, key: str = TOKEN_KEY) -> str:
+    tok = get_secret(conn, key)
     if not tok:
         raise MicrosoftNotConnected("Microsoft 365 is not connected; open /oauth/microsoft/start")
     if tok["expires_at"] - time.time() > 60:
@@ -116,36 +119,36 @@ def access_token(conn: sqlite3.Connection, http: httpx.Client | None = None) -> 
         "scope": " ".join(SCOPES),
     })
     _raise_for_token_error(r)
-    return _store(conn, r.json(), refresh_token=tok["refresh_token"])["access_token"]
+    return _store(conn, r.json(), refresh_token=tok["refresh_token"], key=key)["access_token"]
 
 
-def expire(conn: sqlite3.Connection) -> None:
-    tok = get_secret(conn, TOKEN_KEY)
+def expire(conn: sqlite3.Connection, key: str = TOKEN_KEY) -> None:
+    tok = get_secret(conn, key)
     if tok:
-        put_secret(conn, TOKEN_KEY, tok | {"expires_at": 0})
+        put_secret(conn, key, tok | {"expires_at": 0})
         conn.commit()
 
 
-def status(conn: sqlite3.Connection) -> dict:
-    tok = get_secret(conn, TOKEN_KEY)
+def status(conn: sqlite3.Connection, key: str = TOKEN_KEY) -> dict:
+    tok = get_secret(conn, key)
     if not tok:
         return {"connected": False}
     return {"connected": True, "account": tok.get("account"), "scopes": tok["scope"].split(),
             "connectedAt": tok.get("connected_at")}
 
 
-def disconnect(conn: sqlite3.Connection) -> None:
+def disconnect(conn: sqlite3.Connection, key: str = TOKEN_KEY) -> None:
     """Forget the tokens. (Microsoft has no revoke endpoint for personal accounts;
     remove the app at account.live.com/consent/Manage to revoke it fully.)"""
-    put_secret(conn, TOKEN_KEY, None)
-    audit(conn, "user", "microsoft.disconnect")
+    put_secret(conn, key, None)
+    audit(conn, "user", "microsoft.disconnect", key=key)
     conn.commit()
 
 
-def remember_account(conn: sqlite3.Connection, account: str | None) -> None:
-    tok = get_secret(conn, TOKEN_KEY)
+def remember_account(conn: sqlite3.Connection, account: str | None, key: str = TOKEN_KEY) -> None:
+    tok = get_secret(conn, key)
     if tok and account:
-        put_secret(conn, TOKEN_KEY, tok | {"account": account})
+        put_secret(conn, key, tok | {"account": account})
         conn.commit()
 
 
@@ -162,8 +165,8 @@ def _raise_for_token_error(r: httpx.Response) -> None:
     r.raise_for_status()
 
 
-def _store(conn: sqlite3.Connection, tok: dict, refresh_token: str | None = None) -> dict:
-    previous = get_secret(conn, TOKEN_KEY) or {}
+def _store(conn: sqlite3.Connection, tok: dict, refresh_token: str | None = None, key: str = TOKEN_KEY) -> dict:
+    previous = get_secret(conn, key) or {}
     stored = {
         "access_token": tok["access_token"],
         "refresh_token": tok.get("refresh_token") or refresh_token,  # rotated on each refresh
@@ -172,6 +175,6 @@ def _store(conn: sqlite3.Connection, tok: dict, refresh_token: str | None = None
         "account": previous.get("account"),
         "connected_at": previous.get("connected_at") or time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     }
-    put_secret(conn, TOKEN_KEY, stored)
+    put_secret(conn, key, stored)
     conn.commit()
     return stored

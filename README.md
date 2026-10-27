@@ -50,8 +50,9 @@ Secrets (API keys, tokens) are in neither: they live in the host's secret store.
 | Digests from siloed systems (Microsoft 365 etc.) | Framework live; each siloed account needs forwarding to the agent's inbox |
 | Brain as long-term memory | In the hosted app. Claude Code cloud sessions can't reach gists, so there the memory repo is the agent's memory |
 | Voice and messaging (own number: text, voice notes, calls) | Texting in the app (v0.5); voice notes and calls specified |
-| Self-contained app | v0.4+: its own installable web app (Today, Day, To-do, Talk, Settings), Microsoft 365 alongside Google ([app/](app/)); needs a host ([docs/deployment.md](docs/deployment.md#hosting-the-app-today-v04)) |
+| Self-contained app | v0.4+: its own installable web app (Today, Day, To-do, Talk, Settings), Microsoft 365 alongside Google ([app/](app/)). Its own brief, hourly capture and evening run file decisions, drafts, trips, binders, expenses, the Book and the weekly review, so it can replace the scheduled tasks. Needs a host ([docs/deployment.md](docs/deployment.md#hosting-the-app-today-v04)) |
 | Microsoft 365 (personal account) | Built into the app via Microsoft Graph, read-only ([docs/setup/microsoft.md](docs/setup/microsoft.md)) |
+| Several accounts | In the app: the main Google account plus any number of other Google and Microsoft 365 accounts, watched for mail and chosen calendars, never sent from ([docs/setup/google.md](docs/setup/google.md#more-accounts-to-watch)) |
 | AI providers | Claude by default, per-task routes; local models optional ([docs/features/ai-providers.md](docs/features/ai-providers.md)) |
 | Location (where the principal is, from the phone) | In the app: `POST /api/location` from a phone automation; never assumed ([docs/features/location.md](docs/features/location.md)) |
 

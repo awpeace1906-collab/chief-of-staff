@@ -1,6 +1,6 @@
 # Decide, Tomorrow, Week, Trips, Binders, Expenses
 
-**Status:** live on the Chief of Staff page. They come from the chief-of-staff and assistant frameworks ([research](../research/role-frameworks.md)), built in the ranked order. The app (`app/`) has them too (see [The app](#the-app)), except the runs that fill them, which come next.
+**Status:** live on the Chief of Staff page. They come from the chief-of-staff and assistant frameworks ([research](../research/role-frameworks.md)), built in the ranked order. The app (`app/`) has them too, and its own runs fill them (see [The app](#the-app)).
 
 | # | Feature | Where it shows | Who fills it |
 |---|---|---|---|
@@ -21,7 +21,13 @@ Sending email: an approved "Send:" proposal is the principal's permission to sen
 
 ## The app
 
-The engine and the web app's screens are in. The runs that file these (the brief and an evening run) come next; until then the scheduled tasks fill the page, and `POST /api/import/page` brings that over.
+The engine, the web app's screens and the runs that fill them are in. Until the app is hosted, the scheduled tasks fill the page, and `POST /api/import/page` brings that over.
+
+Who fills what in the app:
+
+- **Capture** (every hourly check, and before the brief) reads new mail from every connected account ([accounts](../setup/google.md#more-accounts-to-watch)) and files **trips** (with flight legs the flight watch picks up), **binders** and **expenses**. An update merges into what's on file: an empty field keeps its old value, a binder section replaces only the same heading, live flight status on a leg survives, and a receipt already on file (same id, or same date, vendor and amount) is skipped (`capture.apply_records`).
+- **The daily brief** leads with the **Situation Room** and files new **decisions** (never one that's already there, open or decided) and **reply drafts** (`Send:` proposals with `draft`) for replies owed and late owed-to-me items. It also proposes the advance block the day before an interview or important meeting.
+- **The evening run** (`cos/evening.py`, `evening.time`, default 18:47) writes the **Book** (`card/tomorrow`) from where the principal will be tomorrow, and on Sundays the **weekly review** (`card/week`, promised hours at 30 minutes per open item against free hours). Run it now with `POST /api/evening/run` or `cos evening`; Settings sets its time.
 
 Web app: **Situation Room** at the top of Today (tap an option); **Tomorrow**, **This week** and **Next movement** cards above the brief; email drafts in proposal cards (**Send**, or **Change…** to edit the text); To-do gets **Top 3 this week**, **Waiting on others**, renewal expiry dates, a ☆ Top 3 toggle and **Drop it**, and an **Expenses** panel with totals; the Day tab shows the current **binder**, hatched **protected time**, and **Plans changed?** (re-plan).
 

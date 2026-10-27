@@ -1,11 +1,16 @@
-"""The daily brief (the `plan` route): capture, then plan the day, then deliver."""
+"""The daily brief (the `plan` route): capture, then plan the day, then deliver.
+
+Besides the brief itself, the run files what the principal decides or approves on the Today tab: decisions
+for the Situation Room, and proposals, including reply drafts ("Send: …") ready to approve."""
 
 import json
 import sqlite3
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-from . import accountability, capture, llm, location, schedule, store
+import re
+
+from . import accountability, accounts, capture, llm, location, schedule, store
 from .db import audit, now
 from .google.api import Google
 
@@ -13,6 +18,9 @@ SYSTEM = """You are {name}, the principal's chief of staff. Write their daily br
 
 The principal reads it on a phone in about 60 seconds. Lead with what matters today.
 Sections, in this order, leaving out any that are empty:
+0. **Situation Room**: choices only the principal can make, nearest deadline first: the open ones in
+   `openDecisions`, plus any new ones you file in `decisions`. One line each, with the deadline and your
+   recommendation.
 1. **You owe**: overdue first, then due today, then the next 7 days, then things others owe
    the principal that are past due. One line each, with the due date. Mark promises the principal made
    ("you said you'd…") and how many days late anything is.
@@ -34,9 +42,20 @@ Sections, in this order, leaving out any that are empty:
    window from `freeSlots`), a drafted reply, a new date, or for waitingLate a nudge
    to the other person. For `undatedPromises`, propose a date. For each item in
    `accountability.stuck`, ask plainly: do it (with a slot), move it (to a date), or drop it.
+   Reply drafts: for every item that's a reply owed, and every owed-to-me item more than 2 days past due,
+   propose the email itself (kind "email", title "Send: …") with a draft: to, subject, body (short, in the
+   principal's voice, signed with their first name), threadId (the item's source ref, or ""). It goes out
+   only once approved. For proposals that aren't emails, every draft field is "".
+   Advance: for each interview or important meeting in the next 14 days with no prep block yet, propose
+   one the day before, in free time. Set itemId to the to-do a proposal serves, or "".
 6. **Closed since yesterday**: items the capture step marked done, with the evidence. Only
    evidence or the principal closes an item: never drop one silently.
 7. **Questions**: anything the capture step was unsure about.
+
+Decisions: anything that needs the principal's choice, rather than a task, goes in `decisions`: a short slug
+id, title (a question), deadline (YYYY-MM-DD), context (1–2 lines), 2–3 options (id, label, and detail: its
+trade-off in one line), recommendation (an option id, or "" when it's purely their call), itemId (or "").
+Never file one that's already in `openDecisions` or `decidedDecisions`.
 
 Rules:
 - Never assume where the principal is. Start every drive time, leave-by time and coverage call from
@@ -72,13 +91,46 @@ SCHEMA = {
                     "where": {"type": "string"},
                     "change": {"type": "string"},
                     "summary": {"type": "string"},
+                    "itemId": {"type": "string"},
+                    "draft": {
+                        "type": "object",
+                        "properties": {k: {"type": "string"} for k in ("to", "subject", "body", "threadId")},
+                        "required": ["to", "subject", "body", "threadId"],
+                        "additionalProperties": False,
+                    },
                 },
-                "required": ["n", "kind", "division", "calendar", "title", "when", "where", "change", "summary"],
+                "required": ["n", "kind", "division", "calendar", "title", "when", "where", "change", "summary",
+                             "itemId", "draft"],
+                "additionalProperties": False,
+            },
+        },
+        "decisions": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "id": {"type": "string"},
+                    "title": {"type": "string"},
+                    "deadline": {"type": "string"},
+                    "context": {"type": "string"},
+                    "options": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {k: {"type": "string"} for k in ("id", "label", "detail")},
+                            "required": ["id", "label", "detail"],
+                            "additionalProperties": False,
+                        },
+                    },
+                    "recommendation": {"type": "string"},
+                    "itemId": {"type": "string"},
+                },
+                "required": ["id", "title", "deadline", "context", "options", "recommendation", "itemId"],
                 "additionalProperties": False,
             },
         },
     },
-    "required": ["subject", "markdown", "proposals"],
+    "required": ["subject", "markdown", "proposals", "decisions"],
     "additionalProperties": False,
 }
 
@@ -92,11 +144,18 @@ def run(conn: sqlite3.Connection, google: Google, client=None, send: bool = Fals
     name = store.assistant_name(conn)
 
     changes = capture.run(conn, google, client=client, microsoft=microsoft)
-    agenda = google.agenda(7, today=today.date())
+    agenda = accounts.merge_calendars(conn, google.agenda(7, today=today.date()), google.http, today.date(), 7)
     extra = {}
-    if microsoft is not None:
-        extra["outlookAgenda"] = microsoft.agenda(7, today=today.date())
-        extra["microsoftToDo"] = microsoft.todo()
+    clients = microsoft if isinstance(microsoft, list) else [microsoft] if microsoft is not None else []
+    if clients:
+        extra["outlookAgenda"] = accounts.outlook_agenda(clients, 7, today.date())
+        todo = []
+        for ms in clients:
+            try:
+                todo += ms.todo()
+            except Exception:  # To Do is optional; one account failing doesn't stop the brief
+                pass
+        extra["microsoftToDo"] = todo
     divisions = store.get_setting(conn, "divisions", {})
     acct = accountability.review(conn, today.date())
     cfg = schedule.settings(conn)
@@ -121,6 +180,11 @@ def run(conn: sqlite3.Connection, google: Google, client=None, send: bool = Fals
         "divisionNotes": {k: d.get("notes") for k, d in divisions.items() if d.get("notes")},
         "coveragePeople": {k: d.get("coverage") for k, d in divisions.items() if d.get("coverage")},
         "pendingProposals": store.list_proposals(conn, ("pending", "approved")),
+        "openDecisions": [{k: d.get(k) for k in ("id", "title", "deadline", "recommendation")}
+                          for d in store.list_records(conn, "decision") if d.get("status") == "open"],
+        "decidedDecisions": [d["id"] for d in store.list_records(conn, "decision") if d.get("status") != "open"],
+        "trips": [{k: t.get(k) for k in ("id", "title", "start", "end", "base", "legs", "note")}
+                  for t in store.list_records(conn, "trip") if (t.get("end") or "9999") >= today.date().isoformat()],
         **extra,
     }, ensure_ascii=False, default=str)
     result = llm.complete(conn, "plan", system, user, SCHEMA, client=client)
@@ -136,10 +200,14 @@ def run(conn: sqlite3.Connection, google: Google, client=None, send: bool = Fals
     conn.commit()  # the brief is kept even if emailing it fails
     accountability.mark_surfaced(conn, acct, today.date())
     for p in result["proposals"]:
+        draft = p.pop("draft", None) or {}
+        if p["kind"] == "email" and draft.get("to") and draft.get("body"):
+            p["draft"] = draft
         try:
             store.add_proposal(conn, p | {"day": today.date().isoformat()})
         except ValueError:
             pass  # an empty proposal, or that number was already decided today
+    decisions = file_decisions(conn, result.get("decisions") or [])
 
     sent, send_error = False, None
     if send:
@@ -150,10 +218,33 @@ def run(conn: sqlite3.Connection, google: Google, client=None, send: bool = Fals
         except Exception as e:  # a delivery problem must not trigger a re-run of the whole brief
             send_error = f"{e.__class__.__name__}: {e}"
     audit(conn, "assistant", "brief.run", id=brief_id, sent=sent, sendError=send_error,
-          proposals=len(result["proposals"]))
+          proposals=len(result["proposals"]), decisions=len(decisions))
     conn.commit()
     return {"id": brief_id, "day": today.date().isoformat(), "subject": subject, "markdown": result["markdown"],
-            "proposals": result["proposals"], "capture": changes, "sent": sent, "sendError": send_error}
+            "proposals": result["proposals"], "decisions": decisions, "capture": changes, "sent": sent,
+            "sendError": send_error}
+
+
+SLUG = re.compile(r"^[a-z0-9][a-z0-9-]{0,79}$")
+
+
+def file_decisions(conn: sqlite3.Connection, decisions: list[dict]) -> list[str]:
+    """Put new decisions in the Situation Room. One that's already there (open or decided) is left alone:
+    the principal may be partway through it. Returns the ids filed."""
+    out = []
+    for d in decisions:
+        options = [o for o in d.get("options") or [] if o.get("id") and o.get("label")]
+        if not (SLUG.match(d.get("id") or "") and d.get("title") and len(options) >= 2):
+            continue
+        if store.get_record(conn, "decision", d["id"]):
+            continue
+        rec = {"title": d["title"], "deadline": d.get("deadline") or "", "context": d.get("context") or "",
+               "options": options, "recommendation": d.get("recommendation") or "", "status": "open"}
+        if d.get("itemId"):
+            rec["itemId"] = d["itemId"]
+        store.put_record(conn, "decision", d["id"], rec)
+        out.append(d["id"])
+    return out
 
 
 def latest(conn: sqlite3.Connection) -> dict | None:

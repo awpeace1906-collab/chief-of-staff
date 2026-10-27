@@ -772,9 +772,7 @@
     box.append(conn("Google (Gmail and Calendar)",
       !g.connected ? "Not connected" : !g.canWriteCalendar ? "Connected, read-only. Reconnect so approved calendar changes can be made." : "Connected",
       g.connected && g.canWriteCalendar ? true : false, { label: g.connected ? "Reconnect" : "Connect", href: "/oauth/google/start" }));
-    const m = st.microsoft;
-    box.append(conn("Microsoft 365", m.connected ? "Connected" + (m.account ? " as " + m.account : "") : "Not connected",
-      m.connected ? true : null, { label: m.connected ? "Reconnect" : "Connect", href: "/oauth/microsoft/start" }));
+    renderWatched(st.accounts || []);
     box.append(conn("Claude (AI)", st.anthropicKey ? `Ready · about $${(st.usage30d || 0).toFixed(2)} in the last 30 days` : "No API key set on the server", st.anthropicKey));
     box.append(conn("Brain", st.brain.configured ? (st.brain.lastSync ? "Synced " + new Date(st.brain.lastSync).toLocaleString() : "Set up; syncs with the first check") : "Not set up (optional)",
       st.brain.configured ? true : null, st.brain.configured ? { label: "Sync now", onClick: async (ev) => {
@@ -787,10 +785,85 @@
     $("moreBadge").textContent = (!g.connected || !g.canWriteCalendar || !st.anthropicKey || sch.lastError) ? "!" : "";
     $("agentInput").value = st.assistant.name || state.agent;
     $("briefTime").value = st.brief.time || "08:25";
+    $("eveningTime").value = st.evening?.time || "18:47";
     $("checkOn").value = st.check.enabled ? "1" : "0";
     $("checkFirst").value = st.check.firstHour; $("checkLast").value = st.check.lastHour;
     $("aboutLine").textContent = `Chief of Staff v${st.version}`;
     state.status = st;
+  }
+
+  // Other accounts: watched for mail and calendars, never sent from
+  const PROVIDER = { google: "Google", microsoft: "Microsoft 365" };
+  function renderWatched(list) {
+    const box = $("watched"); box.textContent = "";
+    const watched = list.filter((a) => a.role === "watch");
+    if (!watched.length) { box.append(el("p", "empty", "None yet.")); return; }
+    for (const a of watched) {
+      const row = el("div", "card conn");
+      const n = Object.keys(a.calendars || {}).length;
+      const what = !a.connected ? "Signed out. Add it again to reconnect."
+        : [a.mail ? "mail" : null, n ? `${n} calendar${n === 1 ? "" : "s"}` : null].filter(Boolean).join(" and ") || "nothing yet";
+      row.append(el("b", null, `${PROVIDER[a.provider]} · ${a.email || a.label}`),
+        el("span", "state" + (a.connected ? " ok" : " bad"), a.connected ? "Watching " + what : what));
+      const acts = el("div", "acts");
+      const cal = el("button", "btn small", "Calendars"); cal.type = "button";
+      const mail = el("button", "btn small", a.mail ? "Stop mail" : "Watch mail"); mail.type = "button";
+      const rm = el("button", "btn small", "Remove"); rm.type = "button";
+      cal.addEventListener("click", () => pickCalendars(row, a, cal));
+      mail.addEventListener("click", async () => {
+        mail.disabled = true;
+        try { await send(`/api/accounts/${a.provider}/${encodeURIComponent(a.id)}`, "PATCH", { mail: !a.mail }); loadStatus(); }
+        catch (e) { mail.textContent = "Failed"; }
+      });
+      rm.addEventListener("click", async () => {
+        if (!confirm(`Stop watching ${a.email}? ${state.agent} will forget this account.`)) return;
+        rm.disabled = true;
+        try { await send(`/api/accounts/${a.provider}/${encodeURIComponent(a.id)}`, "DELETE"); loadStatus(); }
+        catch (e) { rm.textContent = "Failed"; }
+      });
+      acts.append(cal, mail, rm);
+      row.append(acts);
+      box.append(row);
+    }
+  }
+
+  async function pickCalendars(row, a, btn) {
+    const open = row.querySelector(".cals");
+    if (open) { open.remove(); return; }
+    btn.disabled = true;
+    const panel = el("div", "cals");
+    try {
+      const [cals, info] = await Promise.all([api(`/api/accounts/${a.provider}/${encodeURIComponent(a.id)}/calendars`), api("/api/accounts")]);
+      const current = a.calendars || {};
+      const byId = Object.fromEntries(Object.entries(current).map(([name, c]) => [c.id, { name, division: c.division }]));
+      const isDefault = (c) => c.isDefault || c.id === a.email;
+      const selects = [];
+      for (const c of cals) {
+        const label = el("label", null, c.name || c.id);
+        const sel = el("select");
+        sel.append(Object.assign(el("option", null, "Not watched"), { value: "" }));
+        for (const [key, name] of Object.entries(info.divisions)) sel.append(Object.assign(el("option", null, name), { value: key }));
+        const known = byId[c.id] || (isDefault(c) ? byId[a.provider === "google" ? "primary" : "default"] : null);
+        sel.value = known ? known.division : "";
+        label.append(sel); panel.append(label);
+        selects.push([c, sel, known]);
+      }
+      const save = el("button", "btn small primary", "Save calendars"); save.type = "button";
+      const status = el("span", "status");
+      save.addEventListener("click", async () => {
+        const calendars = {};
+        for (const [c, sel, known] of selects) {
+          if (!sel.value) continue;
+          const id = known && (known.name in current) ? current[known.name].id : c.id;
+          calendars[c.name || c.id] = { id, division: sel.value };
+        }
+        try { await send(`/api/accounts/${a.provider}/${encodeURIComponent(a.id)}`, "PATCH", { calendars }); loadStatus(); }
+        catch (e) { status.textContent = "Didn't save: " + e.message; }
+      });
+      const r = el("div", "row"); r.append(save, status); panel.append(r);
+    } catch (e) { panel.append(el("p", "empty", "Couldn't load the calendars: " + e.message)); }
+    row.append(panel);
+    btn.disabled = false;
   }
 
   $("nameForm").addEventListener("submit", async (ev) => {
@@ -809,6 +882,7 @@
     if (last < first) { $("schedFormStatus").textContent = "The window has to end after it starts."; return; }
     try {
       await send("/api/settings/brief", "PUT", { ...(state.status?.brief || {}), time: $("briefTime").value });
+      await send("/api/settings/evening", "PUT", { ...(state.status?.evening || {}), time: $("eveningTime").value });
       await send("/api/settings/check", "PUT", { ...(state.status?.check || {}), enabled: $("checkOn").value === "1", firstHour: first, lastHour: last });
       $("schedFormStatus").textContent = "Saved."; loadStatus();
     } catch (e) { $("schedFormStatus").textContent = "Didn't save: " + e.message; }

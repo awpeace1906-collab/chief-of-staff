@@ -1,4 +1,4 @@
-"""Command line: serve, import, export, google, microsoft, agenda, mail, capture, brief, usage."""
+"""Command line: serve, import, export, google, microsoft, accounts, agenda, mail, capture, brief, evening, usage."""
 
 import argparse
 import json
@@ -7,7 +7,7 @@ import sys
 
 import httpx
 
-from . import agent, brain, brief, capture, db, llm, memory, store
+from . import accounts, agent, brain, brief, capture, db, evening, llm, memory, store
 from .google import oauth
 from .google.api import Google
 from .importer import export_all, import_board, import_brain, import_config, import_page
@@ -44,6 +44,11 @@ def main(argv: list[str] | None = None) -> int:
     ms.add_argument("action", choices=["status", "disconnect", "calendars", "agenda", "todo"])
     ms.add_argument("--days", type=int, default=7)
 
+    acc = sub.add_parser("accounts", help="connected accounts (add more in the web app's Settings)")
+    acc.add_argument("action", choices=["list", "remove"], nargs="?", default="list")
+    acc.add_argument("provider", nargs="?", choices=list(accounts.PROVIDERS))
+    acc.add_argument("id", nargs="?")
+
     ag = sub.add_parser("agenda", help="calendar by division")
     ag.add_argument("--days", type=int, default=7)
 
@@ -58,6 +63,7 @@ def main(argv: list[str] | None = None) -> int:
 
     b = sub.add_parser("brief", help="capture, then write the daily brief")
     b.add_argument("--send", action="store_true", help="also email it to the principal")
+    sub.add_parser("evening", help="write the Book for tomorrow (and the weekly review on Sundays)")
 
     u = sub.add_parser("usage", help="AI token use and estimated cost")
     u.add_argument("--days", type=int, default=30)
@@ -95,17 +101,27 @@ def main(argv: list[str] | None = None) -> int:
         if args.action == "disconnect":
             oauth.disconnect(conn)
         _print(oauth.status(conn))
-    elif args.cmd == "microsoft":
+    elif args.cmd == "microsoft":  # the first account; `cos accounts` lists them all
+        first = (accounts.entries(conn, "microsoft") or [{"tokenKey": ms_oauth.TOKEN_KEY}])[0]
+        ms = Microsoft(conn, key=first["tokenKey"], account=first if first.get("id") else None)
         if args.action == "disconnect":
-            ms_oauth.disconnect(conn)
-        if args.action in {"status", "disconnect"}:
-            _print(ms_oauth.status(conn))
+            if first.get("id"):
+                accounts.remove(conn, "microsoft", first["id"])
+            _print({"connected": False})
+        elif args.action == "status":
+            _print(ms_oauth.status(conn, first["tokenKey"]))
         elif args.action == "calendars":
-            _print(Microsoft(conn).calendars())
+            _print(ms.calendars())
         elif args.action == "agenda":
-            _print(Microsoft(conn).agenda(args.days))
+            _print(ms.agenda(args.days))
         else:
-            _print(Microsoft(conn).todo())
+            _print(ms.todo())
+    elif args.cmd == "accounts":
+        if args.action == "remove":
+            if not (args.provider and args.id):
+                parser.error("accounts remove needs a provider and an account id")
+            accounts.remove(conn, args.provider, args.id)
+        _print(accounts.list_accounts(conn))
     elif args.cmd == "agenda":
         _print(Google(conn).agenda(args.days))
     elif args.cmd == "mail":
@@ -118,14 +134,18 @@ def main(argv: list[str] | None = None) -> int:
             msgs = g.intake(limit=args.limit)
         _print([{k: m[k] for k in ("date", "from", "subject", "snippet", "url")} for m in msgs])
     elif args.cmd == "check":
-        ms = Microsoft(conn) if ms_oauth.status(conn)["connected"] else None
-        _print(agent.check(conn, Google(conn), microsoft=ms))
+        _print(agent.check(conn, Google(conn), microsoft=accounts.microsoft_clients(conn) or None))
     elif args.cmd == "brain":
         _print(brain.sync(conn))
     elif args.cmd == "capture":
-        _print(capture.run(conn, Google(conn)))
+        _print(capture.run(conn, Google(conn), microsoft=accounts.microsoft_clients(conn) or None))
+    elif args.cmd == "evening":
+        result = evening.run(conn, Google(conn), microsoft=accounts.microsoft_clients(conn) or None)
+        print(result["tomorrow"])
+        if result.get("week"):
+            print("\n" + result["week"])
     elif args.cmd == "brief":
-        result = brief.run(conn, Google(conn), send=args.send)
+        result = brief.run(conn, Google(conn), send=args.send, microsoft=accounts.microsoft_clients(conn) or None)
         print(result["subject"], "\n")
         print(result["markdown"])
         if result["sent"]:

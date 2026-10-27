@@ -12,28 +12,30 @@ from zoneinfo import ZoneInfo
 import httpx
 
 from ..store import get_setting
-from .oauth import GoogleNotConnected, access_token, expire, status
+from .oauth import TOKEN_KEY, GoogleNotConnected, access_token, expire, status
 
 CAL = "https://www.googleapis.com/calendar/v3"
 GMAIL = "https://gmail.googleapis.com/gmail/v1/users/me"
 
 
 class Google:
-    """One authenticated session; pass `http` to swap the transport in tests."""
+    """One authenticated session; pass `http` to swap the transport in tests. `key` picks the account
+    (default: the principal's main one; see cos/accounts.py for the others)."""
 
-    def __init__(self, conn: sqlite3.Connection, http: httpx.Client | None = None):
+    def __init__(self, conn: sqlite3.Connection, http: httpx.Client | None = None, key: str = TOKEN_KEY):
         self.conn = conn
         self.http = http or httpx.Client(timeout=30)
+        self.key = key
 
     def _get(self, url: str, **params) -> dict:
         params = {k: v for k, v in params.items() if v is not None}
         for attempt in (1, 2):
-            token = access_token(self.conn, self.http)
+            token = access_token(self.conn, self.http, self.key)
             r = self.http.get(url, params=params, headers={"Authorization": f"Bearer {token}"})
             if r.status_code != 401:
                 r.raise_for_status()
                 return r.json()
-            expire(self.conn)  # token rejected early (revoked or rotated): refresh once and retry
+            expire(self.conn, self.key)  # token rejected early (revoked or rotated): refresh once and retry
         raise GoogleNotConnected("Google rejected the stored access; connect again at /oauth/google/start")
 
     # Calendar
@@ -62,15 +64,15 @@ class Google:
                 return out
 
     def _send(self, method: str, url: str, body: dict, **params) -> dict:
-        if not status(self.conn).get("canWriteCalendar"):
+        if not status(self.conn, self.key).get("canWriteCalendar"):
             raise GoogleNotConnected("Google is connected without calendar write permission; reconnect at /oauth/google/start")
         for attempt in (1, 2):
-            token = access_token(self.conn, self.http)
+            token = access_token(self.conn, self.http, self.key)
             r = self.http.request(method, url, params=params or None, json=body, headers={"Authorization": f"Bearer {token}"})
             if r.status_code != 401:
                 r.raise_for_status()
                 return r.json()
-            expire(self.conn)
+            expire(self.conn, self.key)
         raise GoogleNotConnected("Google rejected the stored access; connect again at /oauth/google/start")
 
     def create_event(self, calendar_id: str, event: dict) -> dict:
@@ -89,7 +91,7 @@ class Google:
         today = today or datetime.now(tz).date()
         start = datetime.combine(today, time.min, tz)
         end = start + timedelta(days=days + 1)
-        access_token(self.conn, self.http)  # fail fast when Google isn't connected
+        access_token(self.conn, self.http, self.key)  # fail fast when Google isn't connected
         divisions = get_setting(self.conn, "divisions", {})
         result = {"timezone": str(tz), "from": start.isoformat(), "to": end.isoformat(), "divisions": {}}
         for key, div in divisions.items():
@@ -144,7 +146,7 @@ class Google:
         """Send one email from the principal's Gmail. Callers other than send_to_owner must hold the principal's
         approval of this exact email (an approved Send: proposal). Returns the Gmail message id."""
         owner = get_setting(self.conn, "assistant", {}).get("email")
-        if not status(self.conn).get("canSend"):
+        if not status(self.conn, self.key).get("canSend"):
             raise GoogleNotConnected("Google is connected without send permission; reconnect at /oauth/google/start")
         msg = EmailMessage()
         msg["To"] = to
@@ -154,7 +156,7 @@ class Google:
         msg.set_content(text)
         raw = base64.urlsafe_b64encode(msg.as_bytes()).decode()
         body = {"raw": raw} | ({"threadId": thread_id} if thread_id else {})
-        token = access_token(self.conn, self.http)
+        token = access_token(self.conn, self.http, self.key)
         r = self.http.post(f"{GMAIL}/messages/send", json=body, headers={"Authorization": f"Bearer {token}"})
         r.raise_for_status()
         return r.json()["id"]

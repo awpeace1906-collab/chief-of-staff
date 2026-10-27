@@ -55,6 +55,16 @@ If you use the server/tunnel redirect, also set it in memory (`memory.json` → 
 3. Sign in, allow access. You'll see "Google connected."
 4. Check: `cos google status` and `cos agenda --days 7`.
 
+## More accounts to watch
+
+The account above is the **main** one: the agent emails you from it, sends drafts you approve and makes calendar changes you approve. You can also connect any number of **other** Google accounts (a work or school Google Workspace account, a second Gmail) for the agent to watch:
+
+1. Add each one as a test user on the consent screen (step 3), the same as the main account.
+2. In the web app, **Settings → Other accounts to watch → Add a Google account** (or open `/oauth/google/start?add=1`). Sign in with that account. It asks for read-only access only.
+3. Its mail goes through capture with the main inbox, and its main calendar joins **Me**. **Calendars** picks which of its calendars join which division (or none); **Stop mail** leaves its mail alone; **Remove** revokes access and forgets it.
+
+Nothing is ever sent from a watched account, and its calendars are never changed. Each account's token is stored on its own (`google.tokens/<account>`). `cos accounts` lists them all.
+
 ## Already connected before v0.4?
 
 The app now adds the calendar write permission (`calendar.events`), which it uses to carry out approved proposals. `cos google status` shows `"canWriteCalendar": false` until you connect again at `/oauth/google/start`. Until then, approved calendar proposals stay approved and the error notice says so.

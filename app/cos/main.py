@@ -19,7 +19,8 @@ from fastapi import Body, Cookie, Depends, FastAPI, Form, Header, HTTPException,
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
-from . import __version__, agent, ai, brain, brief, capture, db, llm, location, schedule, scheduler, sms, store
+from . import (__version__, accounts, agent, ai, brain, brief, capture, db, evening, llm, location, schedule, scheduler,
+               sms, store)
 from .google import oauth
 from .google.api import Google
 from .importer import export_all, import_page
@@ -42,7 +43,7 @@ def create_app(db_path: str | None = None, http: httpx.Client | None = None, cli
     work is started (default: a thread); tests pass fakes."""
     runner = runner or (lambda fn: threading.Thread(target=fn, daemon=True).start())
     conn: sqlite3.Connection | None = None
-    pending: dict[str, tuple[str, float]] = {}  # OAuth state -> (PKCE verifier, created)
+    pending: dict[str, dict] = {}  # OAuth state -> {verifier, at, watch}
     run_lock = threading.Lock()  # one capture/brief at a time, manual or scheduled
 
     @asynccontextmanager
@@ -160,26 +161,48 @@ def create_app(db_path: str | None = None, http: httpx.Client | None = None, cli
 
     # Google: connect, status, Calendar, Gmail
 
-    @app.get("/oauth/google/start")
-    def google_start(token: str | None = None, cos_session: str | None = Cookie(default=None), c=Depends(get_conn)):
-        # Opened in a browser: signed in to the web app, or the API token as ?token=.
-        require_token(f"Bearer {token}" if token else None, cos_session)
-        url, state, verifier = google_call(lambda: oauth.start(c))
+    def remember(state: str, verifier: str, watch: bool = False) -> None:
         now_ = time.time()
-        for k in [k for k, (_, t) in pending.items() if now_ - t > OAUTH_PENDING_TTL]:
+        for k in [k for k, v in pending.items() if now_ - v["at"] > OAUTH_PENDING_TTL]:
             del pending[k]
-        pending[state] = (verifier, now_)
+        pending[state] = {"verifier": verifier, "at": now_, "watch": watch}
+
+    def recall(state: str) -> dict:
+        entry = pending.pop(state, None)
+        if entry is None or time.time() - entry["at"] > OAUTH_PENDING_TTL:
+            raise HTTPException(400, "unknown or expired sign-in attempt; start again")
+        return entry
+
+    def done_page(text: str) -> str:
+        return f"<!doctype html><meta name=viewport content='width=device-width'><p>{html.escape(text)} You can close this tab.</p>"
+
+    @app.get("/oauth/google/start")
+    def google_start(token: str | None = None, add: bool = False, cos_session: str | None = Cookie(default=None),
+                     c=Depends(get_conn)):
+        """Opened in a browser: signed in to the web app, or the API token as ?token=. `add=1` connects another
+        Google account to watch (read-only) instead of the main one."""
+        require_token(f"Bearer {token}" if token else None, cos_session)
+        url, state, verifier = google_call(lambda: oauth.start(c, watch=add))
+        remember(state, verifier, watch=add)
         return RedirectResponse(url)
 
     @app.get("/oauth/google/callback", response_class=HTMLResponse)
     def google_callback(state: str, code: str | None = None, error: str | None = None, c=Depends(get_conn)):
-        entry = pending.pop(state, None)
-        if entry is None or time.time() - entry[1] > OAUTH_PENDING_TTL:
-            raise HTTPException(400, "unknown or expired sign-in attempt; start again")
+        entry = recall(state)
         if error or not code:
             raise HTTPException(400, f"Google sign-in failed: {error or 'no code'}")
-        google_call(lambda: oauth.finish(c, code, entry[0], http))
-        return "<!doctype html><p>Google connected. You can close this tab.</p>"
+        if not entry["watch"]:
+            google_call(lambda: oauth.finish(c, code, entry["verifier"], http))
+            return done_page("Google connected.")
+        temp = f"{oauth.TOKEN_KEY}/pending-{secrets.token_hex(4)}"
+        stored = google_call(lambda: oauth.finish(c, code, entry["verifier"], http, key=temp))
+        try:
+            account = accounts.adopt(c, "google", temp, stored.get("account") or "")
+        except ValueError as e:
+            db.put_secret(c, temp, None)
+            c.commit()
+            raise HTTPException(400, str(e))
+        return done_page(f"{account['email']} connected. {store.assistant_name(c)} will watch its mail and calendar.")
 
     @app.get("/api/google/status", dependencies=api)
     def google_status(c=Depends(get_conn)):
@@ -264,7 +287,7 @@ def create_app(db_path: str | None = None, http: httpx.Client | None = None, cli
             run_lock.release()
 
     def microsoft_if_connected(c):
-        return Microsoft(c, http) if ms_oauth.status(c)["connected"] else None
+        return accounts.microsoft_clients(c, http) or None
 
     @app.post("/api/capture/run", dependencies=api)
     def capture_run(c=Depends(get_conn)):
@@ -274,6 +297,11 @@ def create_app(db_path: str | None = None, http: httpx.Client | None = None, cli
     def brief_run(send: bool = False, c=Depends(get_conn)):
         return exclusive(lambda: brief.run(c, Google(c, http), client=client, send=send,
                                            microsoft=microsoft_if_connected(c)))
+
+    @app.post("/api/evening/run", dependencies=api)
+    def evening_run(c=Depends(get_conn)):
+        """Write the Book for tomorrow now (and the week card, on a Sunday)."""
+        return exclusive(lambda: evening.run(c, Google(c, http), client=client, microsoft=microsoft_if_connected(c)))
 
     @app.post("/api/check/run", dependencies=api)
     def check_run(c=Depends(get_conn)):
@@ -338,6 +366,7 @@ def create_app(db_path: str | None = None, http: httpx.Client | None = None, cli
             "assistant": store.get_setting(c, "assistant", {}) or {},
             "google": oauth.status(c),
             "microsoft": ms_oauth.status(c),
+            "accounts": accounts.list_accounts(c),
             "anthropicKey": bool(os.environ.get("ANTHROPIC_API_KEY")),
             "ai": routes,
             "brain": {"configured": bool(os.environ.get("BRAIN_GIST_TOKEN")),
@@ -345,8 +374,11 @@ def create_app(db_path: str | None = None, http: httpx.Client | None = None, cli
             "sms": {"configured": sms.configured(c), "provider": sms.settings(c).get("provider"),
                     "briefByText": bool(sms.settings(c).get("briefByText"))},
             "scheduler": {"running": os.environ.get("COS_SCHEDULER") == "1", "lastBriefDay": sched.get("lastBriefDay"),
-                          "lastCheckSlot": sched.get("lastCheckSlot"), "lastError": sched.get("lastError")},
+                          "lastCheckSlot": sched.get("lastCheckSlot"), "lastError": sched.get("lastError"),
+                          "lastEveningDay": sched.get("lastEveningDay"), "eveningError": sched.get("eveningError")},
             "brief": store.get_setting(c, "brief", {}) or {},
+            "evening": {"time": scheduler.DAILY["evening"]["default"], "enabled": True}
+                       | (store.get_setting(c, "evening", {}) or {}),
             "check": scheduler.CHECK_DEFAULT | (store.get_setting(c, "check", {}) or {}),
             "usage30d": llm.usage_summary(c, 30)["estimatedUsd"],
         }
@@ -560,51 +592,110 @@ def create_app(db_path: str | None = None, http: httpx.Client | None = None, cli
 
     @app.get("/oauth/microsoft/start")
     def microsoft_start(token: str | None = None, cos_session: str | None = Cookie(default=None), c=Depends(get_conn)):
+        """Connect a Microsoft 365 account to watch. Each sign-in adds one (or refreshes one already listed)."""
         require_token(f"Bearer {token}" if token else None, cos_session)
         url, state, verifier = ms_call(lambda: ms_oauth.start(c))
-        now_ = time.time()
-        for k in [k for k, (_, t) in pending.items() if now_ - t > OAUTH_PENDING_TTL]:
-            del pending[k]
-        pending[state] = (verifier, now_)
+        remember(state, verifier)
         return RedirectResponse(url)
 
     @app.get("/oauth/microsoft/callback", response_class=HTMLResponse)
     def microsoft_callback(state: str, code: str | None = None, error: str | None = None,
                            error_description: str | None = None, c=Depends(get_conn)):
-        entry = pending.pop(state, None)
-        if entry is None or time.time() - entry[1] > OAUTH_PENDING_TTL:
-            raise HTTPException(400, "unknown or expired sign-in attempt; start again")
+        entry = recall(state)
         if error or not code:
             raise HTTPException(400, f"Microsoft sign-in failed: {error_description or error or 'no code'}")
-        ms_call(lambda: ms_oauth.finish(c, code, entry[0], http))
-        account = ms_call(lambda: Microsoft(c, http).me())
-        who = html.escape(account.get("mail") or account.get("userPrincipalName") or "your account")
-        return f"<!doctype html><p>Microsoft 365 connected ({who}). You can close this tab.</p>"
+        temp = f"{ms_oauth.TOKEN_KEY}/pending-{secrets.token_hex(4)}"
+        ms_call(lambda: ms_oauth.finish(c, code, entry["verifier"], http, key=temp))
+        try:
+            me = ms_call(lambda: Microsoft(c, http, key=temp).me())
+            account = accounts.adopt(c, "microsoft", temp, me.get("mail") or me.get("userPrincipalName") or "")
+        except (HTTPException, ValueError) as e:
+            db.put_secret(c, temp, None)
+            c.commit()
+            raise e if isinstance(e, HTTPException) else HTTPException(400, str(e))
+        return done_page(f"Microsoft 365 connected ({account['email']}).")
 
     @app.get("/api/microsoft/status", dependencies=api)
     def microsoft_status(c=Depends(get_conn)):
-        return ms_oauth.status(c)
+        """The first Microsoft 365 account, for older clients; /api/accounts lists them all."""
+        clients = accounts.entries(c, "microsoft")
+        return ms_oauth.status(c, clients[0]["tokenKey"]) if clients else {"connected": False}
 
     @app.post("/api/microsoft/disconnect", dependencies=api)
     def microsoft_disconnect(c=Depends(get_conn)):
-        ms_oauth.disconnect(c)
+        """Disconnect every Microsoft 365 account (DELETE /api/accounts/microsoft/{id} removes one)."""
+        for a in accounts.entries(c, "microsoft"):
+            accounts.remove(c, "microsoft", a["id"])
         return {"ok": True}
+
+    # Connected accounts: the main Google account plus every watched Google and Microsoft 365 account
+
+    def account_or_404(c, provider: str, account_id: str) -> dict:
+        if provider not in accounts.PROVIDERS:
+            raise HTTPException(404, f"unknown provider '{provider}'")
+        try:
+            return accounts.get(c, provider, account_id)
+        except KeyError:
+            raise HTTPException(404, "no such account")
+
+    @app.get("/api/accounts", dependencies=api)
+    def list_accounts(c=Depends(get_conn)):
+        return {"accounts": accounts.list_accounts(c),
+                "divisions": {k: d.get("label", k) for k, d in store.divisions(c).items()}
+                or {store.owner_division(c): "Me"}}
+
+    @app.patch("/api/accounts/{provider}/{account_id}", dependencies=api)
+    def update_account(provider: str, account_id: str, patch: dict = Body(...), c=Depends(get_conn)):
+        """{label?, mail?, calendars?: {name: {id, division}}}"""
+        account_or_404(c, provider, account_id)
+        try:
+            return accounts.update(c, provider, account_id, patch)
+        except ValueError as e:
+            raise HTTPException(422, str(e))
+
+    @app.delete("/api/accounts/{provider}/{account_id}", dependencies=api)
+    def remove_account(provider: str, account_id: str, c=Depends(get_conn)):
+        account_or_404(c, provider, account_id)
+        accounts.remove(c, provider, account_id, http)
+        return {"ok": True}
+
+    @app.get("/api/accounts/{provider}/{account_id}/calendars", dependencies=api)
+    def account_calendars(provider: str, account_id: str, c=Depends(get_conn)):
+        """The account's calendars, to pick which ones join a division."""
+        a = account_or_404(c, provider, account_id)
+        if provider == "google":
+            return google_call(lambda: Google(c, http, key=a["tokenKey"]).calendars())
+        return ms_call(lambda: Microsoft(c, http, key=a["tokenKey"], account=a).calendars())
+
+    def first_microsoft(c) -> Microsoft:
+        clients = accounts.microsoft_clients(c, http)
+        if not clients:
+            raise HTTPException(409, "Microsoft 365 is not connected; open /oauth/microsoft/start")
+        return clients[0]
 
     @app.get("/api/microsoft/calendars", dependencies=api)
     def microsoft_calendars(c=Depends(get_conn)):
-        return ms_call(lambda: Microsoft(c, http).calendars())
+        return ms_call(lambda: first_microsoft(c).calendars())
 
     @app.get("/api/microsoft/agenda", dependencies=api)
     def microsoft_agenda(days: int = 7, c=Depends(get_conn)):
-        return ms_call(lambda: Microsoft(c, http).agenda(max(0, min(days, 31))))
+        """All Microsoft 365 accounts' calendars, by division."""
+        clients = accounts.microsoft_clients(c, http)
+        if not clients:
+            raise HTTPException(409, "Microsoft 365 is not connected; open /oauth/microsoft/start")
+        tz = ZoneInfo(store.get_setting(c, "timezone", "UTC"))
+        return accounts.outlook_agenda(clients, max(0, min(days, 31)), datetime.now(tz).date())
 
     @app.get("/api/microsoft/mail/search", dependencies=api)
     def microsoft_mail(q: str, limit: int = 25, c=Depends(get_conn)):
-        return ms_call(lambda: Microsoft(c, http).search(q, max(1, min(limit, 50))))
+        return ms_call(lambda: first_microsoft(c).search(q, max(1, min(limit, 50))))
 
     @app.get("/api/microsoft/todo", dependencies=api)
     def microsoft_todo(c=Depends(get_conn)):
-        return ms_call(lambda: Microsoft(c, http).todo())
+        clients = accounts.microsoft_clients(c, http)
+        if not clients:
+            raise HTTPException(409, "Microsoft 365 is not connected; open /oauth/microsoft/start")
+        return ms_call(lambda: [t for ms in clients for t in ms.todo()])
 
     # The web app (installable on a phone's home screen)
 
@@ -649,12 +740,13 @@ def create_app(db_path: str | None = None, http: httpx.Client | None = None, cli
         open_items = len(store.list_items(c))
         rules_n = len(store.list_rules(c))
         google = "connected" if oauth.status(c)["connected"] else "not connected"
-        microsoft = "connected" if ms_oauth.status(c)["connected"] else "not connected"
+        n = sum(1 for a in accounts.list_accounts(c) if a["role"] == "watch" and a["connected"])
+        microsoft = f"{n} more account{'s' if n != 1 else ''} watched" if n else "no other accounts"
         return f"""<!doctype html><html><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>Chief of Staff · status</title>
 <style>body{{font:16px system-ui;margin:2rem auto;max-width:36rem;padding:0 1rem}}</style></head>
 <body><h1>Chief of Staff</h1><p>Assistant: <b>{name}</b> · v{__version__}</p>
-<p>{open_items} open board items · {rules_n} rules · Google {google} · Microsoft 365 {microsoft}</p></body></html>"""
+<p>{open_items} open board items · {rules_n} rules · Google {google} · {microsoft}</p></body></html>"""
 
     def _tz(c) -> ZoneInfo:
         return ZoneInfo(store.get_setting(c, "timezone", "UTC"))

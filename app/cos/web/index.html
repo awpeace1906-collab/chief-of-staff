@@ -164,6 +164,11 @@ textarea { resize: vertical; min-height: 4.5rem; }
 .conn .state { font-size: 0.88rem; color: var(--muted); grid-column: 1; overflow-wrap: anywhere; }
 .conn .state.ok { color: var(--ok); } .conn .state.bad { color: var(--warn); }
 .conn .btn { grid-row: 1 / span 2; grid-column: 2; text-decoration: none; display: inline-grid; place-items: center; }
+.conn .acts { grid-row: 1 / span 2; grid-column: 2; display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.conn .acts .btn { grid-row: auto; grid-column: auto; }
+.conn .cals { grid-column: 1 / -1; display: grid; gap: 6px; margin-top: 6px; }
+.conn .cals label { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; font-size: 0.9rem; }
+a.btn.small { text-decoration: none; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
 /* conversation */
@@ -350,6 +355,10 @@ textarea { resize: vertical; min-height: 4.5rem; }
     <div class="group">
       <h2>Connections</h2>
       <div id="conns" class="group"><p class="empty">Loading…</p></div>
+      <h2>Other accounts to watch</h2>
+      <p class="note">Mail from these accounts is read for commitments, and the calendars you pick join your agenda. Nothing is ever sent from them.</p>
+      <div id="watched" class="group"></div>
+      <div class="row"><a class="btn small" href="/oauth/google/start?add=1">Add a Google account</a> <a class="btn small" href="/oauth/microsoft/start">Add a Microsoft 365 account</a></div>
     </div>
     <form class="card add" id="nameForm" autocomplete="off">
       <h2>Your assistant</h2>
@@ -363,6 +372,9 @@ textarea { resize: vertical; min-height: 4.5rem; }
       <div class="fields">
         <label for="briefTime">Daily brief
           <input id="briefTime" type="time" required>
+        </label>
+        <label for="eveningTime">The Book (evening)
+          <input id="eveningTime" type="time" required>
         </label>
         <label for="checkOn">Hourly check
           <select id="checkOn"><option value="1">On</option><option value="0">Off</option></select>
