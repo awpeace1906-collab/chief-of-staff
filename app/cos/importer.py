@@ -44,7 +44,7 @@ def import_config(conn: sqlite3.Connection, config_dir: Path) -> dict:
         prefix = memory.identity(cfg)["id"]
         cfg["assistant"] = cfg["assistant"] | {"id": prefix}  # pin the id the first time it's read
         for key in ("assistant", "timezone", "brief", "approvals", "divisions", "hosting", "openItems", "google",
-                    "microsoft", "sms", "appUrl", "check", "home", "location"):
+                    "microsoft", "sms", "appUrl", "check", "home", "location", "people"):
             if key in cfg:
                 put_setting(conn, key, cfg[key], actor="system")
                 counts["settings"] += 1

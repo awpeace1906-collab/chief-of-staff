@@ -10,7 +10,7 @@ from zoneinfo import ZoneInfo
 
 import re
 
-from . import accountability, accounts, capture, llm, location, schedule, store
+from . import accountability, accounts, capture, llm, location, people, schedule, store
 from .db import audit, now
 from .google.api import Google
 
@@ -56,6 +56,8 @@ Decisions: anything that needs the principal's choice, rather than a task, goes 
 id, title (a question), deadline (YYYY-MM-DD), context (1–2 lines), 2–3 options (id, label, and detail: its
 trade-off in one line), recommendation (an option id, or "" when it's purely their call), itemId (or "").
 Never file one that's already in `openDecisions` or `decidedDecisions`.
+
+{people}
 
 Rules:
 - Never assume where the principal is. Start every drive time, leave-by time and coverage call from
@@ -104,6 +106,7 @@ SCHEMA = {
                 "additionalProperties": False,
             },
         },
+        "newPeople": people.SCHEMA,
         "decisions": {
             "type": "array",
             "items": {
@@ -130,7 +133,7 @@ SCHEMA = {
             },
         },
     },
-    "required": ["subject", "markdown", "proposals", "decisions"],
+    "required": ["subject", "markdown", "proposals", "decisions", "newPeople"],
     "additionalProperties": False,
 }
 
@@ -166,6 +169,7 @@ def run(conn: sqlite3.Connection, google: Google, client=None, send: bool = Fals
         tz=tz.key,
         divisions=", ".join(d.get("label", k) for k, d in divisions.items()) or "me",
         rules="\n".join(f"- {r['content']}" for r in store.list_rules(conn)) or "- (none)",
+        people=people.PROMPT.format(where="calendar events (`agenda`)"),
     )
     user = json.dumps({
         "now": today.isoformat(),
@@ -180,6 +184,7 @@ def run(conn: sqlite3.Connection, google: Google, client=None, send: bool = Fals
         "divisionNotes": {k: d.get("notes") for k, d in divisions.items() if d.get("notes")},
         "coveragePeople": {k: d.get("coverage") for k, d in divisions.items() if d.get("coverage")},
         "pendingProposals": store.list_proposals(conn, ("pending", "approved")),
+        **people.context(conn),
         "openDecisions": [{k: d.get(k) for k in ("id", "title", "deadline", "recommendation")}
                           for d in store.list_records(conn, "decision") if d.get("status") == "open"],
         "decidedDecisions": [d["id"] for d in store.list_records(conn, "decision") if d.get("status") != "open"],
@@ -208,6 +213,8 @@ def run(conn: sqlite3.Connection, google: Google, client=None, send: bool = Fals
         except ValueError:
             pass  # an empty proposal, or that number was already decided today
     decisions = file_decisions(conn, result.get("decisions") or [])
+    people.note(conn, result.get("newPeople") or [], "calendar", today.date())
+    decisions += people.ask(conn, today.date())
 
     sent, send_error = False, None
     if send:

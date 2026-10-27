@@ -54,6 +54,7 @@ Secrets (API keys, tokens) are in neither: they live in the host's secret store.
 | Microsoft 365 (personal account) | Built into the app via Microsoft Graph, read-only ([docs/setup/microsoft.md](docs/setup/microsoft.md)) |
 | Several accounts | In the app: the main Google account plus any number of other Google and Microsoft 365 accounts, watched for mail and chosen calendars, never sent from ([docs/setup/google.md](docs/setup/google.md#more-accounts-to-watch)) |
 | AI providers | Claude by default, per-task routes; local models optional ([docs/features/ai-providers.md](docs/features/ai-providers.md)) |
+| New people | Names that keep coming up in mail or on calendars are asked about in the Situation Room; a yes (or asking the agent) adds them to the household ([docs/features/people.md](docs/features/people.md)) |
 | Location (where the principal is, from the phone) | In the app: `POST /api/location` from a phone automation; never assumed ([docs/features/location.md](docs/features/location.md)) |
 
 ## Rule for changes

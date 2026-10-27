@@ -19,8 +19,8 @@ from fastapi import Body, Cookie, Depends, FastAPI, Form, Header, HTTPException,
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
-from . import (__version__, accounts, agent, ai, brain, brief, capture, db, evening, llm, location, schedule, scheduler,
-               sms, store)
+from . import (__version__, accounts, agent, ai, brain, brief, capture, db, evening, llm, location, people, schedule,
+               scheduler, sms, store)
 from .google import oauth
 from .google.api import Google
 from .importer import export_all, import_page
@@ -627,6 +627,21 @@ def create_app(db_path: str | None = None, http: httpx.Client | None = None, cli
         for a in accounts.entries(c, "microsoft"):
             accounts.remove(c, "microsoft", a["id"])
         return {"ok": True}
+
+    # People the agent tracks, and names it noticed
+
+    @app.get("/api/people", dependencies=api)
+    def list_people(c=Depends(get_conn)):
+        return {"people": people.known(c), "candidates": store.get_setting(c, "peopleCandidates", {}) or {}}
+
+    @app.post("/api/people", dependencies=api, status_code=201)
+    def add_person(body: dict = Body(...), c=Depends(get_conn)):
+        """{name, role, division}: the principal adds someone directly."""
+        try:
+            return {"result": people.add(c, str(body.get("name") or ""), str(body.get("role") or "other"),
+                                         str(body.get("division") or ""))}
+        except ValueError as e:
+            raise HTTPException(422, str(e))
 
     # Connected accounts: the main Google account plus every watched Google and Microsoft 365 account
 

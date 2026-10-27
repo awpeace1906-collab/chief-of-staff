@@ -147,6 +147,7 @@ docker compose exec cos cos import --memory
 | POST | `/api/import/page` | Import the old page's export |
 | POST | `/api/check/run` | Run the hourly check now |
 | POST | `/api/evening/run` | Write the Book for tomorrow now (and the week card on a Sunday) |
+| GET/POST | `/api/people` | The people tracked and the names noticed; add someone `{name, role, division}` ([people](../docs/features/people.md)) |
 | GET | `/api/accounts` | The main Google account and every watched account, plus the divisions to map calendars to |
 | PATCH | `/api/accounts/{provider}/{id}` | A watched account's `label`, `mail` (capture on/off) or `calendars` (`{name: {id, division}}`) |
 | DELETE | `/api/accounts/{provider}/{id}` | Stop watching an account (Google access is revoked) |
