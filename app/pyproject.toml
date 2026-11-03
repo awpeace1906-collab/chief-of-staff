@@ -13,6 +13,8 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8"]
+push = ["pyjwt[crypto]>=2.8", "httpx[http2]>=0.27"]
+voice = ["faster-whisper>=1.0"]
 
 [project.scripts]
 cos = "cos.cli:run"

@@ -8,6 +8,7 @@
 | Board | Commitments | Private gist `cos-board.json` (`{ chief of staff } board`), same token | Read + write |
 | Another brief service (optional) | Cross-check during a transition | Reads its brief email | Read |
 | Phone number (VoIP.ms / Telnyx) | The agent's own text, voice-note and call line | Webhooks to the Chief of Staff server ([features/voice-and-messaging.md](features/voice-and-messaging.md)) | Read + write |
+| Apple Push Notification service | Wakes the iPhone app after each check | Token-based APNs key on the server (`APNS_*` env, [setup](setup/apns.md)) | Write (silent pushes) |
 | Granola | Meeting notes → commitments | Claude connector | Read |
 | Flights | Travel for the coverage check | Airline and booking emails, TripIt forwards; live status in the app | Read |
 | The agent's inbox (e.g. AgentMail) | Intake for digests forwarded from siloed accounts | AgentMail connector | Read; mark handled messages read |

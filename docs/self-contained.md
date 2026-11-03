@@ -43,7 +43,7 @@ The app is the interface between the principal and their agent: the phone (and c
 
 - The server is the same app in server mode (below). A household can run it on its own hardware ([deployment.md](deployment.md)).
 - Data goes to the server only when a server task needs it. For example, a scheduled run gets the starting point for drive times, not a location history ([features/location.md](features/location.md)).
-- Today the device side is the installable web app (PWA). A native iPhone app comes later, for location, notifications and offline use.
+- Today the device side is the installable web app (PWA), plus an iPhone shell around it (`ios-shell/`, [setup/ios.md](setup/ios.md)) that adds silent push, background sync, the phone's calendar and voice notes. Location and full offline use come later.
 
 ## Shape of the app
 

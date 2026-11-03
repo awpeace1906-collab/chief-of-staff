@@ -15,12 +15,12 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 import httpx
-from fastapi import Body, Cookie, Depends, FastAPI, Form, Header, HTTPException, Request
+from fastapi import Body, Cookie, Depends, FastAPI, File, Form, Header, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
-from . import (__version__, accounts, agent, ai, brain, brief, capture, db, evening, llm, location, people, schedule,
-               scheduler, sms, store)
+from . import (__version__, accounts, agent, ai, brain, brief, capture, db, evening, llm, location, people, push,
+               schedule, scheduler, sms, store, voice)
 from .google import oauth
 from .google.api import Google
 from .importer import export_all, import_page
@@ -307,6 +307,31 @@ def create_app(db_path: str | None = None, http: httpx.Client | None = None, cli
     def check_run(c=Depends(get_conn)):
         """Run the hourly check now: approved proposals, new messages, new mail."""
         return exclusive(lambda: agent.check(c, Google(c, http), client=client, microsoft=microsoft_if_connected(c)))
+
+    # The iOS shell: device tokens for silent pushes, and speech to text
+
+    @app.post("/api/push/register", dependencies=api)
+    def push_register(body: dict = Body(...), c=Depends(get_conn)):
+        try:
+            n = push.register(c, body.get("token"))
+        except ValueError as e:
+            raise HTTPException(422, str(e))
+        return {"ok": True, "tokens": n}
+
+    @app.get("/api/push/status", dependencies=api)
+    def push_status(c=Depends(get_conn)):
+        return {"configured": push.configured(), "tokens": len(push.tokens(c))}
+
+    @app.post("/api/voice/transcribe", dependencies=api)
+    def voice_transcribe(audio: UploadFile = File(...)):
+        data = audio.file.read()
+        if not data:
+            raise HTTPException(422, "empty audio")
+        suffix = Path(audio.filename or "").suffix or ".m4a"
+        try:
+            return {"text": voice.transcribe(data, suffix=suffix)}
+        except voice.VoiceUnavailable as e:
+            raise HTTPException(501, str(e))
 
     # Text messaging: inbound webhook, and what happens next
 
