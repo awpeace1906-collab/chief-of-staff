@@ -55,6 +55,7 @@ Secrets (API keys, tokens) are in neither: they live in the host's secret store.
 | Several accounts | In the app: the main Google account plus any number of other Google and Microsoft 365 accounts, watched for mail and chosen calendars, never sent from ([docs/setup/google.md](docs/setup/google.md#more-accounts-to-watch)) |
 | AI providers | Claude by default, per-task routes; local models optional ([docs/features/ai-providers.md](docs/features/ai-providers.md)) |
 | New people | Names that keep coming up in mail or on calendars are asked about in the Situation Room; a yes (or asking the agent) adds them to the household ([docs/features/people.md](docs/features/people.md)) |
+| iPhone app | Capacitor shell in `ios-shell/` around the live web app: silent push after each check, background sync, the phone's calendar (EventKit), voice notes transcribed on the server. Built and run from Xcode; not on the App Store yet ([docs/setup/ios.md](docs/setup/ios.md), [push](docs/setup/apns.md)) |
 | Location (where the principal is, from the phone) | In the app: `POST /api/location` from a phone automation; never assumed ([docs/features/location.md](docs/features/location.md)) |
 
 ## Rule for changes

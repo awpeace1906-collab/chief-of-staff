@@ -491,4 +491,11 @@ def check(conn: sqlite3.Connection, google: Google, client=None, microsoft=None,
         store.add_message(conn, "assistant", f"Captured {added} new to-do{'s' if added != 1 else ''} from your mail.")
     audit(conn, "assistant", "check.run", errors=len(report["errors"]))
     conn.commit()
+    try:  # wake the iOS shell; push must never fail the check
+        from . import push
+        if push.configured() and push.tokens(conn):
+            report["push"] = push.notify_all(conn)
+    except Exception as e:
+        audit(conn, "system", "push.failed", error=f"{e.__class__.__name__}: {e}")
+        conn.commit()
     return report

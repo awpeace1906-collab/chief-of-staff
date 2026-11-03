@@ -153,6 +153,9 @@ docker compose exec cos cos import --memory
 | DELETE | `/api/accounts/{provider}/{id}` | Stop watching an account (Google access is revoked) |
 | GET | `/api/accounts/{provider}/{id}/calendars` | That account's calendars, to pick from |
 | GET | `/api/status` | Connections, schedule and 30-day AI cost (the Settings screen) |
+| POST | `/api/push/register` | The iPhone app registers its APNs device token `{token}` (hex, 64+ characters) ([setup](../docs/setup/apns.md)) |
+| GET | `/api/push/status` | `{configured, tokens}`: whether the `APNS_*` variables are set, and how many iPhones are registered |
+| POST | `/api/voice/transcribe` | Multipart `audio` → `{text}`, with local Whisper (`pip install -e '.[voice]'`); 501 if it isn't installed |
 | GET/POST | `/hooks/sms/{telnyx\|voipms}/{COS_HOOK_SECRET}` | Inbound texts from the carrier |
 | POST | `/api/brain/sync` | Sync rules with Brain |
 | GET | `/oauth/microsoft/start` | Begin Microsoft sign-in (browser) |
@@ -175,7 +178,7 @@ pytest
 | `cos/ai.py` | AI providers and per-task routes |
 | `cos/importer.py` | Import current setup; export everything |
 | `cos/main.py` | HTTP API, sign-in, web app and status page |
-| `cos/web/` | The web app: `index.html`, `login.html`, `sw.js`, `static/` (app.js, manifest, icons) |
+| `cos/web/` | The web app: `index.html`, `login.html`, `sw.js`, `static/` (app.js, voice-ios.js for the iPhone app, manifest, icons) |
 | `cos/microsoft/oauth.py` | Microsoft sign-in (PKCE), rotating refresh tokens |
 | `cos/microsoft/api.py` | Outlook calendar (by division), mail search, To Do |
 | `cos/google/oauth.py` | Google sign-in, token refresh, revoke |
@@ -187,4 +190,6 @@ pytest
 | `cos/agent.py` | Carry out approved proposals; answer messages; email intake; the check |
 | `cos/brain.py` | Two-way Brain sync (brain/v1) |
 | `cos/sms.py` | Texting: providers, owner-only inbound, approve/decline by number, brief text |
+| `cos/push.py` | Silent APNs pushes to the iPhone app after each check; device tokens |
+| `cos/voice.py` | Speech to text with local Whisper (faster-whisper, `base.en`) |
 | `cos/cli.py` | `cos serve`, `import`, `export`, `google`, `microsoft`, `agenda`, `mail`, `capture`, `brief`, `usage` |

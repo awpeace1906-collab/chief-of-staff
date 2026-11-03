@@ -1,0 +1,21 @@
+{
+  "name": "chief-of-staff-ios",
+  "version": "0.1.0",
+  "private": true,
+  "description": "iOS shell (Capacitor 6) for the Chief of Staff web app",
+  "scripts": {
+    "sync": "cap sync ios",
+    "open": "cap open ios",
+    "add:ios": "cap add ios"
+  },
+  "dependencies": {
+    "@capacitor/core": "^6.2.3",
+    "@capacitor/ios": "^6.2.3",
+    "@capacitor/preferences": "^6.0.4",
+    "@capacitor/push-notifications": "^6.0.5"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.2.3",
+    "typescript": "^5.9.3"
+  }
+}

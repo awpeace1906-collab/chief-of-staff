@@ -6,3 +6,9 @@ data/
 *.egg-info/
 .pytest_cache/
 app/.env
+
+# iOS shell (Capacitor)
+ios-shell/node_modules/
+ios-shell/ios/App/Pods/
+ios-shell/ios/App/App/public/
+ios-shell/ios/DerivedData/
