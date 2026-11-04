@@ -88,6 +88,17 @@ actor SyncEngine {
         }
     }
 
+    /// One quick GET /health from the app process itself. Requests from the web view run in WebKit's own
+    /// process, and iOS may block them on the local network without ever showing the Local Network prompt;
+    /// a request from the app shows the prompt. Returns true if the server answered.
+    func pingServer() async -> Bool {
+        guard let base = Self.baseURL(), let url = URL(string: "/health", relativeTo: base) else { return false }
+        var req = URLRequest(url: url)
+        req.timeoutInterval = 10
+        guard let resp = try? await fetch(req) as? HTTPURLResponse else { return false }
+        return (200..<300).contains(resp.statusCode)
+    }
+
     // MARK: Configuration
 
     static func baseURL() -> URL? {
