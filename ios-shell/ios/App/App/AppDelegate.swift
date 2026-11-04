@@ -18,6 +18,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         registerBackgroundTasks()
+        reachServerFromApp()
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { granted, _ in
             // Silent (content-available) pushes need only remote-notification registration, so register either way.
             DispatchQueue.main.async { application.registerForRemoteNotifications() }
@@ -29,6 +30,26 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func applicationDidEnterBackground(_ application: UIApplication) {
         scheduleRefresh()
         scheduleProcessing()
+    }
+
+    // MARK: Local network
+
+    /// Ask iOS for local network access from the app itself (see SyncEngine.pingServer), then reload the
+    /// web view once the server answers, in case its first load was blocked while the prompt was up.
+    private func reachServerFromApp() {
+        Task {
+            for attempt in 0..<6 {
+                if await SyncEngine.shared.pingServer() {
+                    if attempt > 0 {
+                        await MainActor.run {
+                            (self.window?.rootViewController as? CAPBridgeViewController)?.webView?.reload()
+                        }
+                    }
+                    return
+                }
+                try? await Task.sleep(nanoseconds: 5_000_000_000)  // the prompt may still be on screen
+            }
+        }
     }
 
     // MARK: Background tasks

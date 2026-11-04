@@ -39,7 +39,7 @@ For an iPhone on Wi-Fi, the server must listen on the network, not just the Mac 
 COS_SERVER_URL=http://<Mac name>.local:8700 npx cap sync ios
 ```
 
-The first launch asks to find devices on your local network; allow it. `Info.plist` has `NSAllowsLocalNetworking` so plain `http` works for `.local` names and IP addresses only; anything on the internet must be HTTPS.
+The first launch asks to find devices on your local network; allow it. The app makes that request itself (`SyncEngine.pingServer()` at launch), because iOS may block the web view's own requests on the local network without ever showing the prompt, which leaves a black screen. If the screen stays black, check Settings → Privacy & Security → Local Network → Chief of Staff, and that Safari on the phone can open `http://<Mac name>.local:8700/health`. `Info.plist` has `NSAllowsLocalNetworking` so plain `http` works for `.local` names and IP addresses only; anything on the internet must be HTTPS.
 
 `COS_SECURE_COOKIE=0` is for plain-`http` development only. By default the sign-in cookie is marked Secure (HTTPS only), and the iOS WebView drops Secure cookies on `http://localhost`, so sign-in loops back to the access key page. A hosted HTTPS server keeps the default.
 
