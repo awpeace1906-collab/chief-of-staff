@@ -31,8 +31,12 @@ def _load():
         if _model is None:
             try:
                 from faster_whisper import WhisperModel
-            except ImportError as e:
+            except ModuleNotFoundError as e:
+                if e.name != "faster_whisper":
+                    raise VoiceUnavailable(f"faster-whisper is installed but could not load: {e}") from e
                 raise VoiceUnavailable("voice transcription needs faster-whisper: pip install -e '.[voice]'") from e
+            except ImportError as e:
+                raise VoiceUnavailable(f"faster-whisper is installed but could not load: {e}") from e
             _model = WhisperModel(os.environ.get("COS_WHISPER_MODEL") or MODEL, device="cpu", compute_type="int8")
         return _model
 

@@ -332,6 +332,8 @@ def create_app(db_path: str | None = None, http: httpx.Client | None = None, cli
             return {"text": voice.transcribe(data, suffix=suffix)}
         except voice.VoiceUnavailable as e:
             raise HTTPException(501, str(e))
+        except Exception as e:  # say what failed instead of a bare 500
+            raise HTTPException(500, f"transcription failed: {e.__class__.__name__}: {e}")
 
     # Text messaging: inbound webhook, and what happens next
 
