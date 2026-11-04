@@ -1,5 +1,5 @@
 // Keeps the app shell available offline; data always comes fresh from the server.
-const CACHE = "cos-shell-v1";
+const CACHE = "cos-shell-v2";
 const SHELL = ["/", "/static/app.js", "/static/manifest.webmanifest", "/static/icon.svg"];
 
 self.addEventListener("install", (e) => {
