@@ -34,7 +34,7 @@ curl -H "Authorization: Bearer $COS_API_TOKEN" http://127.0.0.1:8700/api/push/st
 # {"configured": true, "tokens": 1}
 ```
 
-`configured` means all four `APNS_*` variables are set. `tokens` counts registered iPhones. The app registers itself when the web app calls `COSNative.registerPush()`, which posts to `POST /api/push/register`.
+`configured` means all four `APNS_*` variables are set. `tokens` counts registered iPhones. The app registers itself on every signed-in launch (`COSNative.registerPush()` posts the token to `POST /api/push/register`), once notifications are allowed.
 
 Then `POST /api/check/run`; the phone should wake.
 

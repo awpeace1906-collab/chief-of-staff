@@ -9,7 +9,7 @@ The iPhone app is a thin native shell, built with Capacitor 6, around the same w
 | Calendar (EventKit) | Reads and adds events on the phone's own calendars | `CalendarPlugin.swift` |
 | Voice | Records a voice note; the server transcribes it with local Whisper | `VoicePlugin.swift`, server `cos/voice.py` |
 
-Pages in the web app reach these through `window.COSNative` (`app/cos/web/static/voice-ios.js`). That script does nothing in a browser, so the PWA is unchanged.
+Pages in the web app reach these through `window.COSNative` (`app/cos/web/static/voice-ios.js`). Inside the shell, that script also registers the iPhone for pushes once you're signed in, and adds a **🎤 Speak** button to the Talk tab: tap to record, tap **Stop**, and the words land in the message box to Ask or Send. In a browser the script does nothing, so the PWA is unchanged.
 
 ## The server URL
 
@@ -20,7 +20,7 @@ The URL is set when you sync, from `COS_SERVER_URL` (default `http://localhost:8
 | Where the app runs | `COS_SERVER_URL` |
 |---|---|
 | Simulator, server on the same Mac | `http://localhost:8700` |
-| iPhone on the same Wi-Fi as the Mac | `http://<Mac's LAN IP>:8700` |
+| iPhone on the same Wi-Fi as the Mac | `http://<Mac name>.local:8700` (System Settings → General → Sharing → Local hostname), or `http://<Mac's LAN IP>:8700` |
 | Hosted | `https://<your host>` (production must be HTTPS) |
 
 `ios-shell/www/index.html` is only the "Can't reach your Chief of Staff server" fallback page.
@@ -32,6 +32,14 @@ cd app && python3.12 -m venv .venv && source .venv/bin/activate   # Python 3.12 
 pip install -e '.[push,voice]'
 COS_SECURE_COOKIE=0 COS_API_TOKEN=<your key> COS_SCHEDULER=0 cos serve   # port 8700
 ```
+
+For an iPhone on Wi-Fi, the server must listen on the network, not just the Mac itself: add `COS_HOST=0.0.0.0`. Then sync with the Mac's address and rebuild:
+
+```bash
+COS_SERVER_URL=http://<Mac name>.local:8700 npx cap sync ios
+```
+
+The first launch asks to find devices on your local network; allow it. `Info.plist` has `NSAllowsLocalNetworking` so plain `http` works for `.local` names and IP addresses only; anything on the internet must be HTTPS.
 
 `COS_SECURE_COOKIE=0` is for plain-`http` development only. By default the sign-in cookie is marked Secure (HTTPS only), and the iOS WebView drops Secure cookies on `http://localhost`, so sign-in loops back to the access key page. A hosted HTTPS server keeps the default.
 
@@ -75,9 +83,9 @@ Set them once with `SyncEngine.configure(base:token:)`. For now that's from the 
 
 ## Check it on the iPhone
 
-- **Push:** `/api/push/status` shows at least one token. Then `POST /api/check/run` from the Mac should wake the phone.
+- **Push:** after you sign in and allow notifications, `/api/push/status` shows at least one token. Then `POST /api/check/run` from the Mac should wake the phone.
 - **Calendar:** in Safari → Develop → [your iPhone] → the app's page, run `COSNative.calendarAccess('full')`, then `COSNative.createEvent({title, start, end})`. The event appears in the Calendar app.
-- **Voice:** run `COSNative.startRecording()`, speak, then `COSNative.stopRecording()`. It returns the text from `/api/voice/transcribe`.
+- **Voice:** in the Talk tab, tap **🎤 Speak**, say something, tap **Stop**. The text appears in the message box. From the console: `COSNative.startRecording()`, then `COSNative.stopRecording()`.
 - **Background:** lock the phone, trigger a check, then open the app and confirm the data is fresh.
 
 ## Limits

@@ -51,6 +51,13 @@
 	<string>Chief of Staff reads your calendar to plan your day and adds events you approve.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Chief of Staff uses the microphone when you dictate a note or a request.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Chief of Staff connects to your Chief of Staff server on this network.</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>
