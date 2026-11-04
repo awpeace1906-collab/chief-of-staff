@@ -72,4 +72,55 @@
       return pushPromise;
     }
   };
+
+  // Register this iPhone for silent pushes once signed in (this script only runs on signed-in pages).
+  window.COSNative.registerPush().catch(function (e) {
+    if (window.console) console.log("push registration: " + e.message);
+  });
+
+  // A mic button in the Talk tab: tap to record, tap again to stop. The words go into the message box,
+  // to Ask or Send as usual. Added here, not in app.js, so the web app in a browser is unchanged.
+  function addMicButton() {
+    var say = document.getElementById("say"), askBtn = document.getElementById("askBtn");
+    if (!say || !askBtn || document.getElementById("micBtn")) return;
+    var status = document.getElementById("talkStatus");
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.id = "micBtn";
+    btn.className = "btn";
+    btn.setAttribute("aria-label", "Dictate a message");
+    btn.textContent = "🎤 Speak";
+    var recording = false, working = false;
+    function show(text) { if (status) status.textContent = text; }
+    btn.addEventListener("click", function () {
+      if (working) return;
+      if (!recording) {
+        working = true;
+        window.COSNative.startRecording().then(function () {
+          recording = true;
+          btn.textContent = "■ Stop";
+          btn.classList.add("primary");
+          show("Listening… tap Stop when you're done.");
+        }, function (e) { show(e.message); }).then(function () { working = false; });
+        return;
+      }
+      working = true;
+      recording = false;
+      btn.textContent = "🎤 Speak";
+      btn.classList.remove("primary");
+      btn.disabled = true;
+      show("Transcribing…");
+      window.COSNative.stopRecording().then(function (text) {
+        if (!text) { show("Didn't catch that. Try again."); return; }
+        say.value = say.value.trim() ? say.value.trim() + " " + text : text;
+        say.dispatchEvent(new Event("input", { bubbles: true }));
+        say.focus();
+        show("");
+      }, function (e) { show(e.message); }).then(function () { working = false; btn.disabled = false; });
+    });
+    askBtn.parentNode.insertBefore(btn, askBtn);
+  }
+
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", addMicButton);
+  else addMicButton();
 })();
