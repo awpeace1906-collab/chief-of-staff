@@ -137,3 +137,28 @@ def test_voice_unavailable(client, monkeypatch):
 
 def test_voice_empty(client):
     assert client.post("/api/voice/transcribe", files={"audio": ("v.m4a", b"", "audio/mp4")}).status_code == 422
+
+
+def test_voice_reports_broken_dependency(monkeypatch):
+    import builtins
+
+    real = builtins.__import__
+
+    def fake_import(name, *a, **k):
+        if name == "faster_whisper":
+            raise ImportError("cannot import name 'x' from 'ctranslate2'")
+        return real(name, *a, **k)
+
+    monkeypatch.setattr(voice, "_model", None)
+    monkeypatch.setattr(builtins, "__import__", fake_import)
+    with pytest.raises(voice.VoiceUnavailable, match="installed but could not load"):
+        voice._load()
+
+
+def test_voice_failure_says_why(client, monkeypatch):
+    def boom(data, suffix):
+        raise TypeError("open() got an unexpected keyword argument 'metadata_errors'")
+
+    monkeypatch.setattr(voice, "transcribe", boom)
+    r = client.post("/api/voice/transcribe", files={"audio": ("v.m4a", b"\x00", "audio/mp4")})
+    assert r.status_code == 500 and "metadata_errors" in r.json()["detail"]

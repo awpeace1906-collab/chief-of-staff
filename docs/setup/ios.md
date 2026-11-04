@@ -28,8 +28,12 @@ The URL is set when you sync, from `COS_SERVER_URL` (default `http://localhost:8
 Run a development server on the Mac:
 
 ```bash
-cd app && pip install -e '.[push,voice]' && COS_SCHEDULER=0 cos serve   # port 8700
+cd app && python3.12 -m venv .venv && source .venv/bin/activate   # Python 3.12 or newer
+pip install -e '.[push,voice]'
+COS_SECURE_COOKIE=0 COS_API_TOKEN=<your key> COS_SCHEDULER=0 cos serve   # port 8700
 ```
+
+`COS_SECURE_COOKIE=0` is for plain-`http` development only. By default the sign-in cookie is marked Secure (HTTPS only), and the iOS WebView drops Secure cookies on `http://localhost`, so sign-in loops back to the access key page. A hosted HTTPS server keeps the default.
 
 ## Build it (on a Mac)
 
