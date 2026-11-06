@@ -27,6 +27,7 @@ Emailed to the principal (subject starts with the agent's name) and posted in th
 6. **Roundup**: one line per digest source, only when it matters ([digests.md](digests.md))
 7. **Closed since yesterday**, with the evidence
 8. Parity line while another brief service runs in parallel; `Brain offline: <reason>` if memory couldn't load
+9. **Handled** (planned): on the first brief of each month and in the weekly review, a one-line tally from the audit log: meetings scheduled, proposals carried out, drafts sent, calls placed, items closed with evidence, and runs under standing approvals, with the month's and all-time totals. Counted, never estimated; no "hours saved" guess
 
 ## Rules
 
