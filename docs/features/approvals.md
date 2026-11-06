@@ -14,6 +14,8 @@
 
 A proposal never adds an event that's already on a calendar. The agent checks all division calendars first; when the email and the existing event disagree, it proposes fixing the existing event (see `calendarRules` in memory).
 
+Planned: an **Always** answer that turns an approval into a standing rule, traced to the person who gave it, with tiers that keep outward actions always asking. See [agent-number-approvals-vault.md](agent-number-approvals-vault.md).
+
 ## Never without approval
 
 - Creating, moving or deleting calendar events
