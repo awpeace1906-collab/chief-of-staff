@@ -1,4 +1,4 @@
-# Agent's number, standing approvals and the vault
+# Agent's number, calls, standing approvals and the vault
 
 **Status:** design sketch. Nothing here is built yet. It adapts patterns from consumer texting agents: an agent you text like a person, allow/always/deny approvals, and a vault the model never sees. Their hosting model is left out: the principal's data stays on the principal's own server, per principle 7 in [vision.md](../vision.md) ("Local first, server when needed").
 
@@ -28,10 +28,26 @@ The agent gets its own phone number that the household texts and, later, calls l
 | **Texting** (first) | Texts to and from the agent | A prepaid talk-and-text SIM in a spare Android phone running an open-source SMS-gateway app. The gateway posts inbound texts to `/hooks/sms/gateway/{COS_HOOK_SECRET}` and sends replies through its local API, over Tailscale (or the app's existing tunnel). No open ports |
 | **Voice notes** | Audio sent by text | Works if the gateway app passes MMS (pictures and audio) through: a setup test item. Audio is transcribed locally (Whisper) and handled as a text |
 | **Calls** (later) | Ring the agent | Speech → text (Whisper) → Claude → speech (Piper), as in [voice-and-messaging.md](voice-and-messaging.md). Whether the call path runs through a voice provider or a cellular modem is decided when it's built |
+| **Calls out** (with calls) | The agent rings a business for the principal | See "Calls the agent places" below |
 
 Because it's a real personal line, its texts are ordinary person-to-person messages: no A2P 10DLC business registration, and the only cost is the prepaid plan. The Telnyx and VoIP.ms adapters in [../setup/sms.md](../setup/sms.md) stay as alternatives for a hosted app with no phone at home.
 
 The gateway becomes a third provider in `sms.py` (`parse_inbound("gateway", payload)`, `send(...)`). Commands are unchanged: `list`, `approve 1, 3`, `decline 2`, plus the new answers in section 2.
+
+### Calls the agent places
+
+The agent can phone a business for the principal (a clinic, a restaurant, a hotel, an airline, a utility), wait through the phone menu until a person answers, do the one job it was given, and report back. It is a proposal like any other:
+
+> **Call:** Hotel front desk, ask for early check-in on arrival day (arriving 10am). Accept anything before 1pm; a fee up to $40 is fine. Don't change the reservation.
+
+- **Proposal kind `call`:** `to` (name and number, from the item, the email or a lookup the agent names), `goal`, `limits` (what it may agree to, what it may share), `fallback` (leave a voicemail or not, call back when).
+- **Always tier 3:** it speaks for the principal to someone outside, so it always asks and needs the second factor when approved by text. The agent may *propose* a call on its own ("you land early; want me to call about early check-in?"); it never places one unasked.
+- **Says who it is.** The opening line names it as an assistant calling for the principal, and that the call is transcribed. It never claims to be the principal.
+- **Stays inside its limits.** Anything outside them (a different date, a higher fee, a question it can't answer from the proposal) gets "I'll check and call back", and comes back as a new proposal.
+- **Never shares:** clinical or patient details, card or account numbers, SSN, passwords or codes. Anything that needs them is handed back to the principal.
+- **Only businesses and people who expect it.** No calls to a third party's personal phone unless the principal says that person expects it (AI-voice calls fall under the TCPA in the US).
+- **Afterwards:** a short summary and the full transcript are filed on the item, and the outcome closes it or opens a follow-up. The privacy ceiling applies: by text, a notice and a link. Transcripts stay on the principal's server.
+- **Pipeline:** the same speech path as inbound calls (Whisper → Claude → Piper) on an outbound leg; the phone menu is handled by listening and sending keypad tones.
 
 ### Line hygiene (checklist)
 
@@ -100,7 +116,7 @@ Not every action can become standing. Each proposal kind has a tier, set in the 
 | **0: read** | Read calendars and email, build the brief | Never asks (as today) |
 | **1: own calendar** | Add a block to the principal's own calendar, a travel buffer, a day-view block | Yes |
 | **2: shared** | Change a family or caregiver calendar, add a list item for someone else | Yes, but only the division owner can set it, and it expires (default 90 days) |
-| **3: outward** | Send email to anyone but the principal, invite or notify others, pay, sign, cancel | **No.** Always asks, every time. The phone read-back guard from voice-and-messaging.md stays |
+| **3: outward** | Send email to anyone but the principal, invite or notify others, place a call, pay, sign, cancel | **No.** Always asks, every time. The phone read-back guard from voice-and-messaging.md stays |
 
 ### Standing approvals are rules, traced to a person
 
@@ -127,6 +143,16 @@ An "Always" writes a rule into memory's `standingApprovals` (a branch and a PR, 
 - **Revocable:** `rules` lists them by text or on the page; `revoke sa-…` deletes it. A deleted id is never re-added (same rule as Brain).
 - **Brain:** a standing approval is also written to Brain as a rule, following [integrations.md](../integrations.md) exactly (read-modify-PATCH the whole file, keep others' entries).
 
+### Learned rules
+
+The agent watches how the principal answers and suggests rules from it, instead of waiting to be told:
+
+- **Edits:** the same kind of change made twice on the same kind of proposal (a Change… that moves a gym block to 6am, a draft whose sign-off is always rewritten, a travel buffer always lengthened to 45 minutes).
+- **Declines:** the same kind of proposal declined twice.
+- **Always:** a scope the principal keeps widening by hand.
+
+When it sees one, it proposes the rule (`kind: rule`, title "Rule: …", with the proposals it learned from). Approving writes it to memory's rules and to Brain, like a rule the principal stated, with `learnedFrom` (those proposal ids) and `grantedBy`. Nothing is learned silently: an unapproved pattern changes nothing. At most one rule suggestion per brief, a declined suggestion isn't offered again, and a learned rule can't reach past the tier caps above (no learned rule makes a tier-3 action run unasked).
+
 ### Second factor
 
 Texts are easy to fake and numbers can be stolen (SIM swap, port-out). So the size of an approval decides what proof it needs:
@@ -149,6 +175,10 @@ The approval tests (`app/tests`) get cases for:
 6. A secret texted to the agent → not echoed, not stored, not sent to the model.
 7. A caregiver texting "always 2" → refused.
 8. A $40 approval by text alone → runs; a $60 one → asks for the second factor.
+9. A `call` proposal approved by text with no PIN → asks for the second factor; no call is placed.
+10. During a call, the other side offers something outside the limits → the agent doesn't agree; a new proposal comes back.
+11. A call where the other side asks for a card number or clinical details → refused; handed back to the principal.
+12. The same edit made twice → one "Rule:" proposal; declined → not offered again; a learned rule for a tier-3 action → never proposed.
 
 ### Where the check runs
 
@@ -182,12 +212,15 @@ The existing callers of `get_secret` (Google, Microsoft, SMS, APNs) move behind 
 1. **Vault first** (smallest; makes the rest safe): `vault.py`, move current secret callers, add redaction, tests that no secret reaches a prompt or log.
 2. **Gateway provider:** the Android SMS gateway in `sms.py`, over Tailscale; line-hygiene checklist; MMS test.
 3. **Privacy ceiling and guest mode:** classify replies, notice-plus-link, member matching from `channels`.
-4. **Policy, tiers and second factor:** `policy.decide`, PINs, Always / Never; `standingApprovals` and `channels` in memory (and `docs/memory.md`, `examples/memory/`); the test scenarios above.
+4. **Policy, tiers and second factor:** `policy.decide`, PINs, Always / Never, learned rules; `standingApprovals` and `channels` in memory (and `docs/memory.md`, `examples/memory/`); the test scenarios above.
 5. **Household roles:** partner and caregiver permissions.
-6. **Calls:** Whisper → Claude → Piper; provider or modem decided then.
+6. **Calls:** Whisper → Claude → Piper, inbound first, then calls the agent places; provider or modem decided then.
+
+The **tally** in the brief ([morning-brief.md](morning-brief.md)) needs only the audit log, so it can ship any time, ahead of this order.
 
 ## Open questions
 
 - Should a partner's standing approval in a shared division need the principal's confirmation once?
 - Default expiry for tier-1 rules: none, or a yearly review in the brief?
 - Which personal categories, if any, should the principal opt into by default?
+- Should the agent leave voicemails on calls it places, or only call back?
