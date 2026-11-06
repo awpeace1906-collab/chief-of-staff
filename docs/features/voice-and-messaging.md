@@ -2,7 +2,7 @@
 
 **Status:** texting is built (v0.5, [setup](../setup/sms.md)): Telnyx or VoIP.ms, principal-only, "list", "approve 1, 3", "decline 2", messages answered by text, and the brief by text. Voice notes and calls are still spec.
 
-Planned: Telegram, Signal and (later) iMessage channels behind one adapter, plus household members with their own permissions. See [channels-standing-approvals-vault.md](channels-standing-approvals-vault.md).
+Planned: the agent's own number (a prepaid SIM in an Android SMS gateway), a privacy ceiling on what goes out by text, and household members with their own permissions. See [agent-number-approvals-vault.md](agent-number-approvals-vault.md).
 
 Talk to the agent like a person: text it, send a voice note, or call it.
 
