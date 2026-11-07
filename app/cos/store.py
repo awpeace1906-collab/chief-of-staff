@@ -207,6 +207,14 @@ def update_proposal(conn: sqlite3.Connection, proposal_id: str, patch: dict, act
     p = get_proposal(conn, proposal_id)
     if p is None:
         raise KeyError(proposal_id)
+    if patch.get("acknowledged"):  # "Got it" on a failed proposal: it leaves the list, the record stays
+        if p["status"] != "failed":
+            raise ValueError("only a failed proposal can be acknowledged")
+        p.setdefault("acknowledgedAt", now())
+        _write_proposal(conn, p)
+        audit(conn, actor, "proposal.acknowledge", id=proposal_id)
+        conn.commit()
+        return p
     status = patch.get("status", p["status"])
     if status not in PROPOSAL_STATUSES:
         raise ValueError(f"unknown status '{status}'")

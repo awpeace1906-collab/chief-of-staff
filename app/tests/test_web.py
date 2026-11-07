@@ -70,6 +70,21 @@ def test_proposal_flow(client):
     assert client.patch("/api/proposals/nope", headers=auth(), json={"status": "approved"}).status_code == 404
 
 
+def test_failed_proposal_is_acknowledged_not_deleted(client):
+    p = client.post("/api/proposals", headers=auth(), json={"day": "2026-10-20", "title": "Add: block"}).json()
+    # only a failed proposal can be acknowledged
+    assert client.patch(f"/api/proposals/{p['id']}", headers=auth(), json={"acknowledged": True}).status_code == 409
+    client.patch(f"/api/proposals/{p['id']}", headers=auth(), json={"status": "approved"})
+    client.patch(f"/api/proposals/{p['id']}?as_assistant=1", headers=auth(),
+                 json={"status": "failed", "result": "The slot passed"})
+    ack = client.patch(f"/api/proposals/{p['id']}", headers=auth(), json={"acknowledged": True}).json()
+    assert ack["status"] == "failed" and ack["acknowledgedAt"] and ack["result"] == "The slot passed"
+    again = client.patch(f"/api/proposals/{p['id']}", headers=auth(), json={"acknowledged": True}).json()
+    assert again["acknowledgedAt"] == ack["acknowledgedAt"]  # tapping twice keeps the first time
+    kept = {x["id"]: x for x in client.get("/api/proposals?days=10000", headers=auth()).json()}
+    assert kept[p["id"]]["acknowledgedAt"] == ack["acknowledgedAt"]  # still there, just seen
+
+
 def test_messages(client):
     m = client.post("/api/messages", headers=auth(), json={"text": "  Move Lee to remote  "}).json()
     assert m["from"] == "owner" and m["status"] == "new" and m["text"] == "Move Lee to remote"

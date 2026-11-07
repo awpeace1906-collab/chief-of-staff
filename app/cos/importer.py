@@ -148,7 +148,7 @@ def import_page(conn: sqlite3.Connection, data: dict) -> dict:
             "id": f"{p['day']}-{p['n']}", "day": p["day"], "n": int(p["n"]),
             "status": p.get("status") if p.get("status") in {"pending", "approved", "declined", "done", "failed"} else "pending",
             "createdAt": p.get("createdAt") or now()}
-        row |= {k: p[k] for k in ("changes", "result", "decidedAt", "draftBody") if p.get(k)}
+        row |= {k: p[k] for k in ("changes", "result", "decidedAt", "draftBody", "acknowledgedAt") if p.get(k)}
         if isinstance(p.get("draft"), dict) and p["draft"].get("to"):
             row["draft"] = {k: str(p["draft"].get(k) or "") for k in DRAFT_FIELDS}
         _write_proposal(conn, row)
