@@ -86,4 +86,5 @@ See [docs/self-contained.md](docs/self-contained.md).
 
 - [ ] The agent's own number, privacy ceiling, standing approvals, second factor, vault, calls the agent places, learned rules, Handled tally ([docs/features/agent-number-approvals-vault.md](docs/features/agent-number-approvals-vault.md))
 - [ ] Capture anywhere: files and photos (share sheet, paperclip, email, MMS), brain dump, Markdown export ([docs/features/capture-anywhere.md](docs/features/capture-anywhere.md))
-- [ ] Later: memory connector, the agent's memory in any AI chat over MCP ([docs/features/memory-connector.md](docs/features/memory-connector.md))
+- [x] Memory connector, phase 1: the agent's memory over MCP for Claude Code (`/mcp`, off by default) ([docs/features/memory-connector.md](docs/features/memory-connector.md))
+- [ ] Memory connector, phase 2: OAuth sign-in and privacy limits for claude.ai and ChatGPT, once hosted

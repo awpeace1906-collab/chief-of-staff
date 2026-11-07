@@ -16,6 +16,7 @@ v0.4: its own web app, plus Microsoft 365. One process, one SQLite file.
   - **Talk:** **Ask** answers right away from the board and brief; **Send** queues a message for the assistant.
 
   Sign-in uses the access key (`COS_API_TOKEN`); the device then stays signed in for 90 days. `cos import --page` brings over the old Claude-hosted page's data.
+- **Memory connector** (off by default): the agent's memory over MCP at `/mcp` for Claude Code: `today`, `week`, `recall`, and with `scope: "propose"` also `remember` and `propose`, which only file messages and pending proposals ([docs](../docs/features/memory-connector.md)).
 - **Flight watch:** live flight status (AeroDataBox, `AERODATABOX_KEY`) and the FAA's public airport status feed (ground stops, delays, closures), checked every 20 minutes from 6 hours before each trip leg. A real change messages the principal and files a re-plan; a cancellation or an overnight delay also emails a 3-line alert It runs in the background on the scheduler ([docs](../docs/features/planning-on-the-fly.md#live-flight-status-and-public-atc-data-the-app)).
 - **Catch-up:** the page's newer features, in the engine, the web app and the app's own runs ([docs/features/evening-and-week.md](../docs/features/evening-and-week.md#the-app)):
   - **The runs file them:** capture files trips (flight legs included), binders and expenses from mail; the brief files Situation Room decisions and reply drafts; the **evening run** (`evening.time`, default 18:47; `cos evening`) writes the Book and, on Sundays, the weekly review.

@@ -116,5 +116,9 @@
         "Outlook": "default"
       }
     }
+  },
+  "connector": {
+    "enabled": false,
+    "scope": "read"
   }
 }

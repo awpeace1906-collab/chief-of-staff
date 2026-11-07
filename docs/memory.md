@@ -33,7 +33,7 @@ A starting point is in [`examples/memory/`](../examples/memory/), with a fiction
 | `mailRules`, `calendarRules`, `notificationRules`, `emailRules` | Imported as rules |
 | `home` | `{label, lat?, lon?, airport?}`: the fallback starting point when the phone's location isn't fresh ([location](features/location.md)) |
 | `location` | `{freshHours?, homeRadiusKm?}`: how long a phone report counts, and how near home reads as home |
-| `google`, `microsoft`, `hosting`, `sms`, `appUrl`, `check` | Connection and hosting settings (no secrets) |
+| `google`, `microsoft`, `hosting`, `sms`, `appUrl`, `check`, `connector` | Connection and hosting settings (no secrets). `connector`: `{enabled, scope: "read" \| "propose"}` for the memory connector ([features/memory-connector.md](features/memory-connector.md)) |
 | `openItems` | Seed to-dos for a first import |
 
 The app imports these as settings and rules (`cos import --memory`). Unknown keys are kept in the file and ignored by the app, so the agent can store more context there.

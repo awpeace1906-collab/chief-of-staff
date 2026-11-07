@@ -16,11 +16,11 @@ from zoneinfo import ZoneInfo
 
 import httpx
 from fastapi import Body, Cookie, Depends, FastAPI, File, Form, Header, HTTPException, Request, UploadFile
-from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 
-from . import (__version__, accounts, agent, ai, brain, brief, capture, db, evening, llm, location, people, push,
-               schedule, scheduler, sms, store, voice)
+from . import (__version__, accounts, agent, ai, brain, brief, capture, connector, db, evening, llm, location,
+               people, push, schedule, scheduler, sms, store, voice)
 from .google import oauth
 from .google.api import Google
 from .importer import export_all, import_page
@@ -31,6 +31,13 @@ OAUTH_PENDING_TTL = 600
 WEB = Path(__file__).parent / "web"
 SESSION_COOKIE = "cos_session"
 SESSION_DAYS = 90
+
+
+def _same_host(origin: str, host: str) -> bool:
+    """An Origin header is allowed only from the app's own host or this machine."""
+    from urllib.parse import urlsplit
+    o = (urlsplit(origin).hostname or "").lower()
+    return o in {"localhost", "127.0.0.1", "::1"} or o == host.split(":")[0].lower()
 
 
 def _session_value(token: str) -> str:
@@ -95,6 +102,34 @@ def create_app(db_path: str | None = None, http: httpx.Client | None = None, cli
     @app.get("/health")
     def health():
         return {"ok": True, "version": __version__}
+
+    @app.api_route("/mcp", methods=["GET", "POST", "DELETE"])
+    async def mcp(request: Request, authorization: str | None = Header(default=None),
+                  origin: str | None = Header(default=None), user_agent: str | None = Header(default=None)):
+        """The memory connector (docs/features/memory-connector.md): MCP over Streamable HTTP, JSON responses,
+        stateless. Bearer token only (never the web app's cookie), and browsers from other sites are refused."""
+        c = conn
+        if not connector.settings(c)["enabled"]:
+            raise HTTPException(404, "the memory connector is off (Settings: connector.enabled)")
+        token = os.environ.get("COS_API_TOKEN")
+        sent = (authorization or "").removeprefix("Bearer ").strip()
+        if token and not (sent and secrets.compare_digest(sent, token)):
+            raise HTTPException(401, "missing or wrong API token", headers={"WWW-Authenticate": "Bearer"})
+        if origin and not _same_host(origin, request.headers.get("host", "")):
+            raise HTTPException(403, "cross-site requests are refused")
+        if request.method != "POST":
+            return Response(status_code=405, headers={"Allow": "POST"})
+        try:
+            body = await request.json()
+        except ValueError:
+            return JSONResponse({"jsonrpc": "2.0", "id": None, "error": {"code": -32700, "message": "parse error"}},
+                                status_code=400)
+        client = (user_agent or "")[:80]
+        if isinstance(body, list):
+            out = [r for r in (connector.handle(c, m, client) for m in body) if r is not None]
+            return JSONResponse(out) if out else Response(status_code=202)
+        out = connector.handle(c, body, client)
+        return JSONResponse(out) if out is not None else Response(status_code=202)
 
     @app.get("/api/settings", dependencies=api)
     def get_settings(c=Depends(get_conn)):
@@ -407,6 +442,7 @@ def create_app(db_path: str | None = None, http: httpx.Client | None = None, cli
             "evening": {"time": scheduler.DAILY["evening"]["default"], "enabled": True}
                        | (store.get_setting(c, "evening", {}) or {}),
             "check": scheduler.CHECK_DEFAULT | (store.get_setting(c, "check", {}) or {}),
+            "connector": connector.settings(c),
             "usage30d": llm.usage_summary(c, 30)["estimatedUsd"],
         }
 
