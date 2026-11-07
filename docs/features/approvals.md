@@ -10,6 +10,10 @@
 2. The principal answers on the page's Today tab (**Approve**, **Change…** to approve with edits, or **Decline**), or in the Claude session: `approve 1, 3`, `approve all`, or edits ("approve 2 but make it 7pm").
 3. Only then does the agent create the event, send the email or change the calendar, and confirm what it did.
 
+## When the agent couldn't do it
+
+A proposal the agent couldn't carry out (the slot passed before approval, a connector failed, it was superseded) is marked `failed` with the reason in `result`, and stays under **Needs your OK** with a **Got it** button. Tapping it sets `acknowledgedAt`: the card leaves the list and shows for two days under Recently handled, marked "seen". The record is never deleted, so the history of what didn't happen and why stays in the page's memory.
+
 ## No duplicates
 
 A proposal never adds an event that's already on a calendar. The agent checks all division calendars first; when the email and the existing event disagree, it proposes fixing the existing event (see `calendarRules` in memory).
@@ -37,6 +41,6 @@ The app needs a one-tap approve on each proposal (push notification or the brief
 
 ## Proposal shape (page)
 
-`proposals/<YYYY-MM-DD>-<n>`: `day`, `n`, `kind` (calendar | email | list | other), `division` (a key from memory's divisions), `calendar` (name), `title` (starts with a verb: "Add: …", "Fix: …", "Move: …", "Send: …"), `when` (home time, plus local when traveling), `where`, `change` (for edits: "old → new"), `summary` (one line: why), `status` (pending | approved | declined | done | failed), `changes` (the principal's edits when approving with changes), `result`. Also `draft {to, subject, body, threadId}` and `draftBody` (the principal's edit) for Send:, and `eventId`, `start`, `end`, `timeZone` for Move: and day-view blocks.
+`proposals/<YYYY-MM-DD>-<n>`: `day`, `n`, `kind` (calendar | email | list | other), `division` (a key from memory's divisions), `calendar` (name), `title` (starts with a verb: "Add: …", "Fix: …", "Move: …", "Send: …"), `when` (home time, plus local when traveling), `where`, `change` (for edits: "old → new"), `summary` (one line: why), `status` (pending | approved | declined | done | failed), `acknowledgedAt` (a failed proposal the principal has seen), `changes` (the principal's edits when approving with changes), `result`. Also `draft {to, subject, body, threadId}` and `draftBody` (the principal's edit) for Send:, and `eventId`, `start`, `end`, `timeZone` for Move: and day-view blocks.
 
 The page shows the agent's name from `settings/profile.agentName`; it's the principal's choice, not hard-coded.
