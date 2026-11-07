@@ -4,6 +4,8 @@
 
 Planned: the agent's own number (a prepaid SIM in an Android SMS gateway), a privacy ceiling on what goes out by text, and household members with their own permissions. See [agent-number-approvals-vault.md](agent-number-approvals-vault.md).
 
+Planned: a 2-minute brain dump in Talk, and photos and PDFs sent to the agent. See [capture-anywhere.md](capture-anywhere.md).
+
 Talk to the agent like a person: text it, send a voice note, or call it.
 
 ## What you can do

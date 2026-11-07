@@ -81,3 +81,9 @@ See [docs/self-contained.md](docs/self-contained.md).
 - [ ] Settings → Advanced → Hosting: cloud / hybrid / self-hosted, with telephony, speech, AI endpoint, storage and intake options
 - [ ] Docker image (self-hosted) and one-line installer (hybrid)
 - [ ] Company installs: SSO, per-user agents, audit log, retention, integration API
+
+## Designed, not built
+
+- [ ] The agent's own number, privacy ceiling, standing approvals, second factor, vault, calls the agent places, learned rules, Handled tally ([docs/features/agent-number-approvals-vault.md](docs/features/agent-number-approvals-vault.md))
+- [ ] Capture anywhere: files and photos (share sheet, paperclip, email, MMS), brain dump, Markdown export ([docs/features/capture-anywhere.md](docs/features/capture-anywhere.md))
+- [ ] Later: memory connector, the agent's memory in any AI chat over MCP ([docs/features/memory-connector.md](docs/features/memory-connector.md))

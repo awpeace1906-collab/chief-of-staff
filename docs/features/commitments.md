@@ -72,3 +72,5 @@ The brief's **You owe** section comes from the board: overdue, due today, due wi
 If the principal runs another brief service in parallel, each brief ends with a one-line scorecard:
 `Parity: agent 5 / other 5 · missed by the agent: 0 · missed by the other: 1`
 Misses are logged in the principal's memory notes to tune [prompts/capture.md](../../prompts/capture.md).
+
+Planned: capture from shared photos, screenshots and PDFs, and from a spoken brain dump ([capture-anywhere.md](capture-anywhere.md)).
