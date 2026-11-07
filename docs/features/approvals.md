@@ -12,7 +12,7 @@
 
 ## When the agent couldn't do it
 
-A proposal the agent couldn't carry out (the slot passed before approval, a connector failed, it was superseded) is marked `failed` with the reason in `result`, and stays under **Needs your OK** with a **Got it** button. Tapping it sets `acknowledgedAt`: the card leaves the list and shows for two days under Recently handled, marked "seen". The record is never deleted, so the history of what didn't happen and why stays in the page's memory.
+A proposal the agent couldn't carry out (the slot passed before approval, a connector failed, it was superseded) is marked `failed` with the reason in `result`, and stays under **Needs your OK** with a **Got it** button. Tapping it sets `acknowledgedAt`: the card leaves the list and shows for two days under Recently handled, marked "seen". The record is never deleted, so the history of what didn't happen and why stays in the page's memory. The app's web app does the same: **Got it** sends `PATCH /api/proposals/<id>` with `{"acknowledged": true}` (only on a failed proposal), which records `acknowledgedAt` and an audit entry.
 
 ## No duplicates
 

@@ -416,7 +416,14 @@
       });
       row.append(yes, edit, no);
     } else {
-      row.append(el("span", "pill " + p.status, PILL[p.status] || p.status));
+      row.append(el("span", "pill " + p.status, (PILL[p.status] || p.status) + (p.status === "failed" && p.acknowledgedAt ? " · seen" : "")));
+      if (p.status === "failed" && !p.acknowledgedAt) {
+        // "Got it": the card leaves Needs your OK; the record stays (Recently handled, and the database)
+        const ok = el("button", "btn small", "Got it"); ok.type = "button"; ok.disabled = !state.canWrite;
+        ok.setAttribute("aria-label", "Got it, clear: " + (p.title || ""));
+        ok.addEventListener("click", () => decide(p, { acknowledged: true }, [ok]));
+        row.append(ok);
+      }
     }
     inner.append(row); c.append(el("div", "band"), inner);
     return c;
@@ -427,8 +434,8 @@
     const box = $("proposals"); box.textContent = "";
     const order = (a, b) => String(b.day).localeCompare(String(a.day)) || (a.n || 0) - (b.n || 0);
     const pending = state.proposals.filter((p) => p.status === "pending").sort(order);
-    const active = state.proposals.filter((p) => p.status === "approved" || p.status === "failed").sort(order);
-    const recent = state.proposals.filter((p) => p.status === "done" || p.status === "declined").sort(order);
+    const active = state.proposals.filter((p) => p.status === "approved" || (p.status === "failed" && !p.acknowledgedAt)).sort(order);
+    const recent = state.proposals.filter((p) => p.status === "done" || p.status === "declined" || (p.status === "failed" && p.acknowledgedAt)).sort(order);
     $("nProps").textContent = pending.length;
     $("todayBadge").textContent = pending.length ? String(pending.length) : "";
     $("propHint").textContent = pending.length ? "Nothing happens until you approve." : "";
