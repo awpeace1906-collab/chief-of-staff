@@ -34,6 +34,8 @@ fly secrets set COS_API_TOKEN=$(openssl rand -hex 24) ANTHROPIC_API_KEY=... \
   GOOGLE_CLIENT_ID=... GOOGLE_CLIENT_SECRET=... MS_CLIENT_ID=... MS_CLIENT_SECRET=...
 # optional: live flight status (RapidAPI key for AeroDataBox); the FAA airport feed needs no key
 fly secrets set AERODATABOX_KEY=...
+# optional: texting on Telnyx (go-live steps in docs/setup/sms.md; `cos sms status --live` checks them)
+fly secrets set TELNYX_API_KEY=... TELNYX_PUBLIC_KEY=... COS_HOOK_SECRET=$(openssl rand -hex 16)
 fly deploy
 # load the agent's memory and the old page's data
 fly ssh sftp shell        # put ../../<agent>-memory/memory.json /data/<agent>-memory/memory.json; put .../digests.json /data/<agent>-memory/digests.json; put page.json /data/page.json

@@ -396,10 +396,19 @@ def create_app(db_path: str | None = None, http: httpx.Client | None = None, cli
         expected = os.environ.get("COS_HOOK_SECRET")
         if not expected or not secrets.compare_digest(secret, expected):
             raise HTTPException(404)
+        raw = await request.body() if request.method == "POST" else b""
+        if provider == "telnyx" and not sms.verify_telnyx(raw, request.headers):
+            db.audit(c, "system", "sms.bad_signature")
+            c.commit()
+            raise HTTPException(403, "bad signature")
         if request.method == "POST" and request.headers.get("content-type", "").startswith("application/json"):
-            payload = await request.json()
+            try:
+                payload = json.loads(raw or b"{}")
+            except ValueError:
+                raise HTTPException(400, "bad JSON")
         elif request.method == "POST":
-            payload = dict(await request.form())
+            from urllib.parse import parse_qsl
+            payload = dict(parse_qsl(raw.decode("utf-8", "replace")))
         else:
             payload = dict(request.query_params)
         try:
@@ -411,6 +420,22 @@ def create_app(db_path: str | None = None, http: httpx.Client | None = None, cli
             if result["reply"] or result["approved"] or result["message"]:
                 runner(lambda: after_text(c, result))
         return {"ok": True}
+
+    @app.get("/api/sms/readiness", dependencies=api)
+    def sms_readiness(request: Request, live: bool = False, c=Depends(get_conn)):
+        """Each go-live step for texting, with its fix. The webhook secret is masked here."""
+        base = store.get_setting(c, "appUrl") or str(request.base_url).rstrip("/")
+        return sms.readiness(c, base=base, live=live, http=http)
+
+    @app.post("/api/sms/test", dependencies=api)
+    def sms_test(c=Depends(get_conn)):
+        """Text the principal a hello, to prove the number works end to end."""
+        try:
+            return {"parts": sms.test_text(c, http)}
+        except sms.SmsNotConfigured as e:
+            raise HTTPException(409, str(e))
+        except httpx.HTTPError as e:
+            raise HTTPException(502, f"the provider refused it: {e.__class__.__name__}")
 
     @app.get("/api/status", dependencies=api)
     def status_all(c=Depends(get_conn)):

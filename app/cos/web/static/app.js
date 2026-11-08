@@ -786,7 +786,14 @@
         ev.target.disabled = true;
         try { const r = await send("/api/brain/sync", "POST", {}); ev.target.textContent = `+${r.pulled} / ↑${r.pushed}`; } catch (e) { ev.target.textContent = "Failed"; }
       } } : null));
-    box.append(conn("Texting", st.sms.configured ? `On (${st.sms.provider})` + (st.sms.briefByText ? " · brief by text" : "") : "Not set up (needs a phone number)", st.sms.configured ? true : null));
+    const smsLine = conn("Texting", st.sms.configured ? `On (${st.sms.provider})` + (st.sms.briefByText ? " · brief by text" : "") : "Not set up (needs a phone number)", st.sms.configured ? true : null);
+    box.append(smsLine);
+    // the go-live checklist: show the next step that isn't done yet
+    api("/api/sms/readiness").then((r) => {
+      const next = r.checks.find((ch) => ch.ok === false);
+      if (next) smsLine.append(el("p", "note", "Next: " + next.label + ". " + next.fix));
+      else if (st.sms.configured) smsLine.append(el("p", "note", "Ready. Texts are filtered until the US texting registration (10DLC) is approved."));
+    }).catch(() => {});
     const sch = st.scheduler;
     box.append(conn("Schedule", !sch.running ? "Not running on this server (set COS_SCHEDULER=1)" : sch.lastError ? "Last problem: " + sch.lastError : "Running", sch.running && !sch.lastError));
     $("moreBadge").textContent = (!g.connected || !g.canWriteCalendar || !st.anthropicKey || sch.lastError) ? "!" : "";
