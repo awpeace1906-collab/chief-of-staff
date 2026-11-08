@@ -132,3 +132,84 @@ def test_status_endpoint(app):
         st = c.get("/api/status").json()
         assert st["sms"] == {"configured": True, "provider": "telnyx", "briefByText": False}
         assert st["google"]["canWriteCalendar"] and st["check"]["minute"] == 45 and "triage" in st["ai"]
+
+
+# Go-live framework: Telnyx webhook signatures, the readiness checklist, the test text
+
+import base64
+
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
+
+
+def signed(key, body: bytes, ts: int):
+    return {"telnyx-signature-ed25519": base64.b64encode(key.sign(str(ts).encode() + b"|" + body)).decode(),
+            "telnyx-timestamp": str(ts), "content-type": "application/json"}
+
+
+def test_telnyx_signatures_are_checked_when_the_key_is_set(app, monkeypatch):
+    build, carrier, path = app
+    key = Ed25519PrivateKey.generate()
+    pub = base64.b64encode(key.public_key().public_bytes(Encoding.Raw, PublicFormat.Raw)).decode()
+    monkeypatch.setenv("TELNYX_PUBLIC_KEY", pub)
+    body = json.dumps(inbound("list")).encode()
+    now = int(time.time())
+    with build(ToolClaude()) as c:
+        assert c.post("/hooks/sms/telnyx/hook-secret", content=body, headers={"content-type": "application/json"}).status_code == 403
+        bad = signed(key, b'{"tampered": true}', now)
+        assert c.post("/hooks/sms/telnyx/hook-secret", content=body, headers=bad).status_code == 403
+        stale = signed(key, body, now - 3600)
+        assert c.post("/hooks/sms/telnyx/hook-secret", content=body, headers=stale).status_code == 403
+        assert carrier.texts == []
+        ok = c.post("/hooks/sms/telnyx/hook-secret", content=body, headers=signed(key, body, now))
+        assert ok.status_code == 200
+    assert carrier.texts and carrier.texts[0].startswith("Nothing waiting")
+
+
+def test_readiness_lists_what_is_missing(tmp_path, monkeypatch):
+    for k in ("TELNYX_API_KEY", "TELNYX_PUBLIC_KEY", "COS_HOOK_SECRET"):
+        monkeypatch.delenv(k, raising=False)
+    c = db.connect(tmp_path / "cos.db")
+    r = sms.readiness(c)
+    assert not r["ready"] and r["webhook"] is None
+    failing = {ch["id"] for ch in r["checks"] if ch["ok"] is False}
+    assert {"provider", "number", "owner", "apiKey", "signatures", "hookSecret", "https"} <= failing
+    assert all(ch["fix"] for ch in r["checks"] if ch["ok"] is False)
+
+
+def test_readiness_ready_and_live_check(tmp_path, monkeypatch):
+    monkeypatch.setenv("TELNYX_API_KEY", "tk")
+    monkeypatch.setenv("TELNYX_PUBLIC_KEY", "pk")
+    monkeypatch.setenv("COS_HOOK_SECRET", "s3cret-s3cret-s3cret")
+    c = db.connect(tmp_path / "cos.db")
+    store.put_setting(c, "sms", {"provider": "telnyx", "number": "+15755550199", "ownerNumber": OWNER})
+    store.put_setting(c, "appUrl", "https://agent.fly.dev")
+    r = sms.readiness(c)
+    assert r["ready"] and r["webhook"] == "https://agent.fly.dev/hooks/sms/telnyx/s3cr…"  # masked
+    assert next(ch for ch in r["checks"] if ch["id"] == "registration")["ok"] is None  # can't be checked; never blocks
+
+    hook = {"url": "https://agent.fly.dev/hooks/sms/telnyx/s3cret-s3cret-s3cret"}
+
+    def telnyx(request):
+        assert request.headers["Authorization"] == "Bearer tk"
+        if request.url.path == "/v2/phone_numbers":
+            assert request.url.params["filter[phone_number]"] == "+15755550199"
+            return httpx.Response(200, json={"data": [{"phone_number": "+15755550199", "messaging_profile_id": "mp1"}]})
+        return httpx.Response(200, json={"data": {"id": "mp1", "webhook_url": hook["url"]}})
+
+    http = httpx.Client(transport=httpx.MockTransport(telnyx))
+    live = sms.readiness(c, live=True, http=http)
+    assert live["ready"] and {ch["id"]: ch["ok"] for ch in live["checks"]}["webhook"] is True
+    hook["url"] = "https://old.example/hooks/sms/telnyx/other"
+    wrong = sms.readiness(c, live=True, http=http)
+    assert not wrong["ready"] and "show-webhook" in next(ch["fix"] for ch in wrong["checks"] if ch["id"] == "webhook")
+    assert sms.readiness(c, reveal=True)["webhook"].endswith("/s3cret-s3cret-s3cret")
+
+
+def test_readiness_endpoint_and_test_text(app):
+    build, carrier, path = app
+    with build(ToolClaude()) as c:
+        r = c.get("/api/sms/readiness").json()
+        assert r["provider"] == "telnyx" and "…" in r["webhook"] and "hook-secret" not in r["webhook"]
+        assert c.post("/api/sms/test").json() == {"parts": 1}
+    assert "Texting works" in carrier.texts[-1]

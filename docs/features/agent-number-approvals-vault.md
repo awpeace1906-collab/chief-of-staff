@@ -1,11 +1,11 @@
 # Agent's number, calls, standing approvals and the vault
 
-**Status:** design sketch. Nothing here is built yet. It adapts patterns from consumer texting agents: an agent you text like a person, allow/always/deny approvals, and a vault the model never sees. Their hosting model is left out: the principal's data stays on the principal's own server, per principle 7 in [vision.md](../vision.md) ("Local first, server when needed").
+**Status:** design sketch. Built so far: the number itself, on Telnyx, with webhook signatures and a go-live check ([../setup/sms.md](../setup/sms.md)); the rest is design. It adapts patterns from consumer texting agents: an agent you text like a person, allow/always/deny approvals, and a vault the model never sees. Their hosting model is left out: the principal's data stays on the principal's own server, per principle 7 in [vision.md](../vision.md) ("Local first, server when needed").
 
 ```
- Household phones ──SMS / MMS──► Agent's own number (prepaid SIM in a spare Android phone)
-                                   │  open-source SMS-gateway app
-                                   │  private network (Tailscale) or the app's tunnel
+ Household phones ──SMS / MMS──► Agent's own number (Telnyx; fallback: SIM in an Android gateway)
+                                   │  signed webhook (Ed25519) + secret URL
+                                   │  over HTTPS to the hosted app
                                    ▼
                                  Chief of Staff server
                                    │  1. who is this (member, or guest)
@@ -25,14 +25,16 @@ The agent gets its own phone number that the household texts and, later, calls l
 
 | Phase | What | How |
 |---|---|---|
-| **Texting** (first) | Texts to and from the agent | A prepaid talk-and-text SIM in a spare Android phone running an open-source SMS-gateway app. The gateway posts inbound texts to `/hooks/sms/gateway/{COS_HOOK_SECRET}` and sends replies through its local API, over Tailscale (or the app's existing tunnel). No open ports |
-| **Voice notes** | Audio sent by text | Works if the gateway app passes MMS (pictures and audio) through: a setup test item. Audio is transcribed locally (Whisper) and handled as a text |
-| **Calls** (later) | Ring the agent | Speech → text (Whisper) → Claude → speech (Piper), as in [voice-and-messaging.md](voice-and-messaging.md). Whether the call path runs through a voice provider or a cellular modem is decided when it's built |
+| **Texting** (first, built) | Texts to and from the agent | A **Telnyx** local number (VoIP), about $1/month plus fractions of a cent per text. Inbound texts reach `/hooks/sms/telnyx/{COS_HOOK_SECRET}` with an Ed25519 signature the app checks; replies go out through the Telnyx API. Works with the hosted app (Fly.io) and needs no hardware at home. Go-live steps and `cos sms status` are in [../setup/sms.md](../setup/sms.md) |
+| **Voice notes** | Audio sent by text | Telnyx passes MMS to the webhook as media URLs; the app downloads the audio, transcribes it (Whisper) and handles it as a text |
+| **Calls** (later) | Ring the agent | Speech → text (Whisper) → Claude → speech (Piper), as in [voice-and-messaging.md](voice-and-messaging.md), on Telnyx's voice API for the same number |
 | **Calls out** (with calls) | The agent rings a business for the principal | See "Calls the agent places" below |
 
-Because it's a real personal line, its texts are ordinary person-to-person messages: no A2P 10DLC business registration, and the only cost is the prepaid plan. The Telnyx and VoIP.ms adapters in [../setup/sms.md](../setup/sms.md) stay as alternatives for a hosted app with no phone at home.
+**Why Telnyx over a SIM at home.** It's already in the app, it works with the hosted server and nothing at home, and calls come from the same provider later. The trade-off: US carriers require **A2P 10DLC registration** for texts from a VoIP number (a sole-proprietor brand and one campaign, small fees, days to a couple of weeks); unregistered texts are filtered. Some banks and services reject VoIP numbers, which doesn't matter for a household agent. Either way the carrier or provider can read texts, so the privacy ceiling below applies the same.
 
-The gateway becomes a third provider in `sms.py` (`parse_inbound("gateway", payload)`, `send(...)`). Commands are unchanged: `list`, `approve 1, 3`, `decline 2`, plus the new answers in section 2.
+**Fallback: a SIM in an Android gateway.** If registration is refused or texts are filtered, a prepaid talk-and-text SIM in a spare Android phone running an open-source SMS-gateway app gives a person-to-person number with no registration. It becomes a third provider in `sms.py` (`parse_inbound("gateway", payload)`, `send(...)`), posting to `/hooks/sms/gateway/{COS_HOOK_SECRET}` over Tailscale. The phone then has to stay on power and Wi-Fi at home.
+
+Commands are the same on every provider: `list`, `approve 1, 3`, `decline 2`, plus the new answers in section 2.
 
 ### Calls the agent places
 
@@ -51,8 +53,9 @@ The agent can phone a business for the principal (a clinic, a restaurant, a hote
 
 ### Line hygiene (checklist)
 
-- Prepaid talk-and-text line with **auto-renew**, a **carrier account PIN** and a **port-out lock**, so the number can't be stolen or lapse.
-- A spare Android phone, kept on power and Wi-Fi, to test the gateway app (including MMS).
+- Telnyx account with **two-factor sign-in**, a **port-out PIN** on the number, and **auto-recharge** so the balance can't lapse.
+- **10DLC registration** started early: brand (sole proprietor) and one campaign ("household assistant: schedules, reminders, approvals with family members who opted in").
+- Fallback only: a prepaid SIM with a carrier PIN and port-out lock, and a spare Android phone on power and Wi-Fi.
 - An **approval PIN** for each adult (see "Second factor").
 
 ### Household members
@@ -210,11 +213,11 @@ The existing callers of `get_secret` (Google, Microsoft, SMS, APNs) move behind 
 ## Build order
 
 1. **Vault first** (smallest; makes the rest safe): `vault.py`, move current secret callers, add redaction, tests that no secret reaches a prompt or log.
-2. **Gateway provider:** the Android SMS gateway in `sms.py`, over Tailscale; line-hygiene checklist; MMS test.
+2. **Number live (built):** Telnyx with signed webhooks and the go-live check. Remaining: register 10DLC, buy the number, run `cos sms status --live`, send `cos sms test`. MMS voice notes next. The Android gateway is a fallback only.
 3. **Privacy ceiling and guest mode:** classify replies, notice-plus-link, member matching from `channels`.
 4. **Policy, tiers and second factor:** `policy.decide`, PINs, Always / Never, learned rules; `standingApprovals` and `channels` in memory (and `docs/memory.md`, `examples/memory/`); the test scenarios above.
 5. **Household roles:** partner and caregiver permissions.
-6. **Calls:** Whisper → Claude → Piper, inbound first, then calls the agent places; provider or modem decided then.
+6. **Calls:** Whisper → Claude → Piper on Telnyx voice, inbound first, then calls the agent places.
 
 The **tally** in the brief ([morning-brief.md](morning-brief.md)) needs only the audit log, so it can ship any time, ahead of this order.
 

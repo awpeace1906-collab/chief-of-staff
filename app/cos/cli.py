@@ -7,7 +7,7 @@ import sys
 
 import httpx
 
-from . import accounts, agent, brain, brief, capture, db, evening, llm, memory, store
+from . import accounts, agent, brain, brief, capture, db, evening, llm, memory, sms, store
 from .google import oauth
 from .google.api import Google
 from .importer import export_all, import_board, import_brain, import_config, import_page
@@ -56,6 +56,11 @@ def main(argv: list[str] | None = None) -> int:
     m.add_argument("action", choices=["search", "intake"])
     m.add_argument("query", nargs="?", help="Gmail search query (for search)")
     m.add_argument("--limit", type=int, default=10)
+
+    smsp = sub.add_parser("sms", help="texting: go-live checklist, or a test text to you")
+    smsp.add_argument("action", choices=["status", "test"])
+    smsp.add_argument("--live", action="store_true", help="also check the number and webhook on Telnyx")
+    smsp.add_argument("--show-webhook", action="store_true", help="print the full webhook URL to paste into Telnyx")
 
     sub.add_parser("capture", help="read new mail and update the board")
     sub.add_parser("check", help="the hourly check now: approvals, messages, new mail")
@@ -133,6 +138,16 @@ def main(argv: list[str] | None = None) -> int:
         else:
             msgs = g.intake(limit=args.limit)
         _print([{k: m[k] for k in ("date", "from", "subject", "snippet", "url")} for m in msgs])
+    elif args.cmd == "sms":
+        if args.action == "test":
+            _print({"parts": sms.test_text(conn)})
+        else:
+            r = sms.readiness(conn, live=args.live, reveal=args.show_webhook)
+            for ch in r["checks"]:
+                mark = "✓" if ch["ok"] else "·" if ch["ok"] is None else "✗"
+                print(f"{mark} {ch['label']}" + (f"\n    → {ch['fix']}" if ch["fix"] and ch["ok"] is not True else ""))
+            print(("READY" if r["ready"] else "NOT READY") + (f"  ·  webhook: {r['webhook']}" if r["webhook"] else ""))
+            return 0 if r["ready"] else 1
     elif args.cmd == "check":
         _print(agent.check(conn, Google(conn), microsoft=accounts.microsoft_clients(conn) or None))
     elif args.cmd == "brain":
