@@ -10,6 +10,30 @@ Pick one:
 
 **US texting rules.** Business texting from a local number needs **A2P 10DLC registration** (sole proprietor brand + one campaign; small one-time and monthly fees). Telnyx walks you through it in the portal (**Messaging → Compliance**). Until it's approved, texts may be filtered. Start it first: it's the slow step.
 
+**What it costs** (Telnyx, approximate as of Nov 2026; check telnyx.com/pricing before you sign up). There's no unlimited plan: it's pay as you go, with auto-recharge.
+
+| Item | Cost |
+|---|---|
+| The number | about $1/month |
+| Each text (SMS), sent or received | about $0.004 |
+| Picture or voice-note messages (MMS) | about $0.015 each |
+| Carrier fees on registered texts (passed through) | about $0.003 per text |
+| 10DLC registration (sole proprietor) | about $4 once, plus about $2/month |
+| Calls, later | about $0.01/min; about $0.05/min with Telnyx's hosted voice AI |
+
+A household sending around 500 texts a month pays roughly **$5–7 a month all in**.
+
+**Flat-price alternatives**, if per-text billing or registration becomes a problem:
+
+| Option | Price | Trade-off |
+|---|---|---|
+| A prepaid SIM in a spare Android phone, running an SMS-gateway app (the designed fallback) | about $10–15/month, unlimited talk and text | No registration, but the phone stays on power and Wi-Fi at home; the agent can't answer calls |
+| Linq (iMessage, RCS and SMS) | flat monthly, sales quote (competitors list about $40 per line) | Blue bubbles and group chats; unofficial Apple infrastructure ([details](../features/agent-number-approvals-vault.md#later-imessage-through-linq)) |
+| Business phone apps (OpenPhone/Quo and similar) | about $15–20/month per user | Still need 10DLC; built for people typing, not an agent |
+| Google Voice | free | No API, and automating it breaks Google's terms: not usable |
+
+Per-text billing stays cheaper than a flat plan up to a few thousand texts a month.
+
 **Lock the number down:** turn on two-factor sign-in for the Telnyx account, set a port-out PIN on the number, and turn on auto-recharge so the balance never lapses.
 
 ## 2. Tell the app

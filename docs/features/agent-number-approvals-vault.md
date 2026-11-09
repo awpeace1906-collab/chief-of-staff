@@ -27,7 +27,7 @@ The agent gets its own phone number that the household texts and, later, calls l
 |---|---|---|
 | **Texting** (first, built) | Texts to and from the agent | A **Telnyx** local number (VoIP), about $1/month plus fractions of a cent per text. Inbound texts reach `/hooks/sms/telnyx/{COS_HOOK_SECRET}` with an Ed25519 signature the app checks; replies go out through the Telnyx API. Works with the hosted app (Fly.io) and needs no hardware at home. Go-live steps and `cos sms status` are in [../setup/sms.md](../setup/sms.md) |
 | **Voice notes** | Audio sent by text | Telnyx passes MMS to the webhook as media URLs; the app downloads the audio, transcribes it (Whisper) and handles it as a text |
-| **Calls** (later) | Ring the agent | Speech → text (Whisper) → Claude → speech (Piper), as in [voice-and-messaging.md](voice-and-messaging.md), on Telnyx's voice API for the same number |
+| **Calls** (later) | Ring the agent | Speech → text (Whisper) → Claude → speech (Piper), as in [voice-and-messaging.md](voice-and-messaging.md), on Telnyx's Voice API for the same number. Telnyx also has a hosted voice-AI engine (about $0.05 a minute plus model tokens) if running the speech path ourselves proves too slow |
 | **Calls out** (with calls) | The agent rings a business for the principal | See "Calls the agent places" below |
 
 **Why Telnyx over a SIM at home.** It's already in the app, it works with the hosted server and nothing at home, and calls come from the same provider later. The trade-off: US carriers require **A2P 10DLC registration** for texts from a VoIP number (a sole-proprietor brand and one campaign, small fees, days to a couple of weeks); unregistered texts are filtered. Some banks and services reject VoIP numbers, which doesn't matter for a household agent. Either way the carrier or provider can read texts, so the privacy ceiling below applies the same.
@@ -57,6 +57,33 @@ The agent can phone a business for the principal (a clinic, a restaurant, a hote
 - **10DLC registration** started early: brand (sole proprietor) and one campaign ("household assistant: schedules, reminders, approvals with family members who opted in").
 - Fallback only: a prepaid SIM with a carrier PIN and port-out lock, and a spare Android phone on power and Wi-Fi.
 - An **approval PIN** for each adult (see "Second factor").
+
+### Later: iMessage through Linq
+
+Texts from a 10DLC number show as green bubbles, can be filtered, and lose iMessage features. **Linq** (linqapp.com) offers an API that sends and receives iMessage, with RCS and SMS fallback, from a number it provisions. It is a candidate *second* provider, not a replacement for Telnyx; nothing is built.
+
+**What it offers** (from its docs at docs.linqapp.com, Nov 2026):
+
+- REST API, bearer token, at `https://api.linqapp.com/api/partner/v3`: create a chat, send a message, list chats and messages. Idempotency keys on sends.
+- Blue bubbles, typing indicators, read receipts, reactions, replies, voice memos and media up to 100 MB, contact cards. Group chats up to 31 people, so a household thread could include the agent.
+- Automatic fallback to RCS or SMS when the other side has no iMessage.
+- Inbound and status events by webhook, signed per the Standard Webhooks scheme (HMAC-SHA256 over `{webhook-id}.{webhook-timestamp}.{body}`, `whsec_` secret, 5-minute window). Delivery is at least once, so events are deduplicated on their id.
+- Also voice calls with transcription, and WhatsApp, on the same account.
+- Sandbox and a 7-day trial. SOC 2 Type II and encrypted message content (vendor's claims, not checked).
+
+**How it would plug in.** A `linq` provider in `app/cos/sms.py` next to `telnyx` and `gateway`: `parse_inbound("linq", payload)`, `send(...)`, inbound at `/hooks/sms/linq/{COS_HOOK_SECRET}`, signature checked with the vault-held `whsec_` secret, and the same readiness checks (`cos sms status`: key, line ACTIVE, webhook URL, signatures, HTTPS). Commands, the privacy ceiling, guest mode and the second factor are unchanged: Linq is a pipe, and approval stays in the app.
+
+**Limits and pacing** to build in: about 7,000 messages per line per day and 30 a minute to any one person; Linq asks that a person text the line first, that outbound stay near two messages per inbound, and that opt-outs be honored (its error 2024 means "stop texting this person").
+
+**Risks, before choosing it:**
+
+- **No official Apple API.** iMessage for businesses runs on infrastructure Linq manages (devices, Apple accounts, number rotation). Apple could break it, and a line can be **flagged** and replaced; the readiness check must watch line status and fall back to Telnyx.
+- **A third party carries the family's texts.** The privacy ceiling already assumes the carrier can read texts; with Linq, it holds them too. Its retention and data-processing terms need reading first.
+- **Price unknown.** Flat monthly per line with no per-message fees, but quoted by sales only (competitors list about $40 a month per line, against about $3 a month for Telnyx).
+
+**Questions for the sales call:** price for one line at household volume; whether a line can keep a number the principal already owns; retention and deletion of message content; how often lines are flagged or rotated and what notice is given; whether the agent's line may be added to an existing family group chat; voice pricing on the same line.
+
+**Decision point:** after Telnyx texting has run for a month. Choose Linq if green bubbles or filtering are a real problem for the household; otherwise stay on Telnyx.
 
 ### Household members
 
@@ -218,6 +245,7 @@ The existing callers of `get_secret` (Google, Microsoft, SMS, APNs) move behind 
 4. **Policy, tiers and second factor:** `policy.decide`, PINs, Always / Never, learned rules; `standingApprovals` and `channels` in memory (and `docs/memory.md`, `examples/memory/`); the test scenarios above.
 5. **Household roles:** partner and caregiver permissions.
 6. **Calls:** Whisper → Claude → Piper on Telnyx voice, inbound first, then calls the agent places.
+7. **Later, if needed:** iMessage through Linq as a second provider (see "Later: iMessage through Linq").
 
 The **tally** in the brief ([morning-brief.md](morning-brief.md)) needs only the audit log, so it can ship any time, ahead of this order.
 
