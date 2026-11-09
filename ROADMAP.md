@@ -78,6 +78,7 @@ See [docs/self-contained.md](docs/self-contained.md).
 - [ ] Scheduler for the brief and re-plan triggers
 - [ ] One-tap approvals (push / email)
 - [ ] Voice line
+- [ ] iMessage through Linq as a second texting provider, if green bubbles or filtering become a problem ([docs/features/agent-number-approvals-vault.md](docs/features/agent-number-approvals-vault.md#later-imessage-through-linq))
 - [ ] Settings → Advanced → Hosting: cloud / hybrid / self-hosted, with telephony, speech, AI endpoint, storage and intake options
 - [ ] Docker image (self-hosted) and one-line installer (hybrid)
 - [ ] Company installs: SSO, per-user agents, audit log, retention, integration API
